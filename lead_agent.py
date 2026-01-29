@@ -80,33 +80,54 @@ def analyze_leads_batch(leads: list, max_leads: int = 10) -> list:
         )
         leads_context.append(info)
     
-    prompt = f"""You are a local business owner who JUST found these leads.
-Write a WhatsApp message for EACH that sounds like you typed it on your phone.
+    prompt = f"""You are a freelance website developer doing cold outreach.
+Your goal: Get them to reply. NOT to sell on the first message.
 
 LEAD DATA:
 {'-' * 20}
 {chr(10).join(leads_context)}
 {'-' * 20}
 
-RULES FOR EACH MESSAGE:
-1. First line: Compliment their reviews/rating (if good).
-2. Second line: Point out the website problem directly.
-3. Third line: Estimate customers lost ("probably losing 20-30 people/month").
-4. Fourth line: Mention ONE fix (simple website OR booking form).
-5. Fifth line: Soft question ending with "?"
+WRITE A WHATSAPP MESSAGE FOR EACH LEAD. Follow this structure:
 
-TONE:
-- Casual. Use "hey" not "Hello".
-- NO "I'm from an agency". NO "We offer". NO marketing speak.
-- Sound like a helpful stranger, not a salesperson.
-- Max 5 short lines per message. WhatsApp style.
+LINE 1 - PERSONALIZED HOOK (Use their actual data)
+- Use their business NAME and something specific (rating, reviews, category)
+- Make them feel seen: "4.8 stars with 200+ reviews is impressive"
 
-Respond with a JSON LIST of objects (one for each lead):
+LINE 2 - THE PROBLEM (Direct)
+- Point out the missing/weak website
+- Be direct: "no website" or "your site looks outdated"
+
+LINE 3 - THE COST (Make it tangible)
+- "People searching '[category] near me' are going to competitors"
+- "That's probably 10-20 lost customers every month"
+
+LINE 4 - YOUR OFFER (Indirect, helpful)
+- Don't say "I make websites" - say "I can help you with that"
+- Position yourself as someone who can solve THEIR problem
+
+LINE 5 - KILLER CLOSE (FOMO + Genuine Advice)
+- Make them feel they're leaving money on the table RIGHT NOW
+- Sound like a friend giving honest advice, not a pitch
+- Options:
+  * "tbh you're too good to not have a website - let me know if you want to fix that"
+  * "with reviews like yours, you're leaving money on the table - i can sort this out for you"
+  * "your competitors with worse ratings have sites and are getting those customers - just saying"
+  * "honestly a website would 10x your reach - hmu if you want to get this done"
+
+EXAMPLE OUTPUT:
+hey! just saw [Business Name] - 4.9 stars from 300+ reviews, that's impressive 🔥
+noticed you don't have a website though
+people searching "dentist near me" are going straight to competitors - that's easily 20+ lost customers/month
+i can help you with that if you're interested
+tbh you're too good to not have a site - lmk if you want to get this sorted
+
+RESPOND WITH JSON:
 [
     {{
-        "id": <id from above>,
-        "priority": <1-5, where 5 is 'Easy Sale'>,
-        "reasoning": "<Why they need us>",
+        "id": <id>,
+        "priority": <1-5>,
+        "reasoning": "<Why they're a good lead>",
         "outreach_angle": "<The 5-line WhatsApp message>"
     }}
 ]
@@ -198,34 +219,61 @@ def generate_instagram_dms_batch(profiles: list) -> list:
         )
         profiles_context.append(info)
 
-    prompt = f"""Write a high-conversion, extremely casual Instagram DM to these {len(profiles)} small business owners. 
-Think: "Helpful Local" who just found their page.
+    prompt = f"""You are a freelance web designer sliding into DMs to offer help.
+Your goal: Get a reply. NOT to close a sale in the first message.
 
-DATA:
+PROFILE DATA:
 {'-' * 20}
 {chr(10).join(profiles_context)}
 {'-' * 20}
 
-RULES FOR EACH MESSAGE:
-1. First line: hey + compliment bio/photos (if they have good work).
-2. Second line: Point out they don't have a website/booking link.
-3. Third line: Estimate customers lost ("probably losing 10-20 clients/month").
-4. Fourth line: Mention ONE fix (making a simple landing page).
-5. Fifth line: Soft question ending with "?"
+WRITE AN INSTAGRAM DM FOR EACH PROFILE. Follow this structure:
 
-TONE:
-- lowercase vibes preferred.
-- no jargon.
-- NO "I run an agency". NO "We offer".
-- Sound like a helpful stranger, not a salesperson.
-- Max 5 short lines per message. 
+LINE 1 - PERSONALIZED COMPLIMENT
+- Reference something SPECIFIC from their bio or work
+- "your bridal looks are 🔥" or "love the aesthetic"
+- Make them feel like you actually looked at their page
 
-OUTPUT:
-JSON LIST of objects:
+LINE 2 - THE OBSERVATION (Direct)
+- "noticed you don't have a website linked"
+- "saw you're just using linktree"
+- Be direct, not apologetic
+
+LINE 3 - THE CONSEQUENCE
+- "clients want to see a portfolio before booking"
+- "you're losing inquiries to artists who have proper sites"
+
+LINE 4 - YOUR OFFER (Indirect, helpful)
+- Don't say "I make portfolios" - say "I can help you with that"
+- Position yourself as someone who solves THEIR problem
+
+LINE 5 - KILLER CLOSE (FOMO + Genuine Advice)
+- Make them feel they're leaving bookings on the table RIGHT NOW
+- Sound like a friend giving honest advice
+- Options:
+  * "tbh you're too talented to not have a portfolio - let me know if you want to fix that"
+  * "with work like yours, you're leaving bookings on the table - i can sort this for you"
+  * "other artists with half your skill have portfolios and are getting those clients - just saying"
+  * "honestly a proper site would change your game - hmu if you want to get this done"
+
+TONE RULES:
+- lowercase everything
+- 1-2 emojis max
+- sound like a peer giving real advice
+- 4-5 short lines max
+
+EXAMPLE OUTPUT:
+hey! your bridal work is 🔥
+noticed you don't have a portfolio site linked
+clients want to see more before booking - you're losing some to artists who do have sites
+i can help you with that if you want
+tbh you're too talented to not have a portfolio - lmk if you want to get this sorted
+
+RESPOND WITH JSON:
 [
     {{
         "id": <id>,
-        "dm_message": "<The 5-line casual DM>"
+        "dm_message": "<The casual 4-5 line DM>"
     }}
 ]
 """
