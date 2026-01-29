@@ -96,50 +96,8 @@ def score_profile(profile: dict, target_city: str = None) -> int:
     return score
 
 
-def generate_dm(profile: dict, model) -> str:
-    """
-    Generate 2-line conversational opener using Gemini.
-    """
-    if not model:
-        return "Hey! Loved your profile, are you taking new clients?"
-
-    name = profile.get("username")
-    bio = profile.get("biography", "")
-    
-    prompt = f"""Write a friendly, extremely casual Instagram DM to a potential client.
-
-Context:
-- User: {name}
-- Bio Snippet: {bio[:100]}
-- THEY ARE A MICRO Business (Baker/Coach).
-- YOU are a real person, not a bot.
-
-Tone: 
-- Lowercase vibes.
-- No "Hello", use "hey" or "hi".
-- No jargon.
-- No "I run a digital agency".
-
-Goal: 
-- Ask a genuine question to start a chat. 
-- Mention something specific from their bio if possible.
-- Example: "hey loved the cake photos! are you taking orders for next week?"
-
-Output ONLY the message. Max 2 sentences."""
-
-    try:
-        response = model.generate_content(prompt)
-        return response.text.strip().replace('"', '')
-    except Exception:
-        return "hey! quick question, do you take orders via DM?"
-
-
-
-# Import clients
-from apify_client import run_instagram_search, poll_run_status, fetch_dataset
+# Import batch DM generator from lead_agent
 from lead_agent import generate_instagram_dms_batch
-
-# ... (Config constants remain)
 
 
 def process_target(target: dict, model) -> list:

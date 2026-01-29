@@ -121,20 +121,8 @@ if __name__ == "__main__":
     
     try:
         config = load_batch_config(config_file)
-        config = load_batch_config(config_file)
         run_batch(config)
     except FileNotFoundError:
         print(f"❌ Config file not found: {config_file}")
-        print("\nCreate a batch_config.json file like this:")
-        print("""
-{
-  "targets": [
-    {"city": "Mumbai", "category": "Gym", "limit": 50},
-    {"city": "Delhi", "category": "Bakery", "limit": 50},
-    {"city": "Bangalore", "category": "Cafe", "limit": 50}
-  ],
-  "delay_seconds": 60,
-  "enrich_instagram": true,
-  "find_emails": true
-}
-        """)
+        print("\nCreate a batch_config.json file. See README for format.")
+

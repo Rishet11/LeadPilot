@@ -179,25 +179,6 @@ def run_agent_pipeline(df, max_leads: int = 10):
     return result_df
 
 
-if __name__ == "__main__":
-    # Test with demo data
-    from apify_client import get_demo_data
-    from cleaner import clean_dataframe, add_derived_columns
-    from scorer import score_dataframe
-    
-    print("🧪 Testing Lead Agent (Batch Mode)...\n")
-    
-    raw_data = get_demo_data()
-    df = clean_dataframe(raw_data)
-    df = add_derived_columns(df)
-    df = score_dataframe(df)
-    # Run agent
-    result = run_agent_pipeline(df, max_leads=3)
-    
-    print("\n✅ Agent pipeline complete!")
-    print(f"Analyzed {len(result)} leads with AI insights.")
-
-
 def generate_instagram_dms_batch(profiles: list) -> list:
     """
     Generate Instagram DM scripts for a BATCH of profiles (Cost efficient).

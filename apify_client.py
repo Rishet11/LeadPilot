@@ -126,6 +126,42 @@ def load_raw_data(path: str = "data/raw.json") -> list:
         return json.load(f)
 
 
+def get_demo_data() -> list:
+    """Return demo data for testing without API calls."""
+    return [
+        {
+            "title": "FitZone Gym Delhi",
+            "phone": "+91 98765 43210",
+            "city": "New Delhi, India",
+            "categoryName": "Gym",
+            "totalScore": 4.5,
+            "reviewsCount": 120,
+            "website": None,
+            "url": "https://maps.google.com/?cid=123"
+        },
+        {
+            "title": "Healthy Smiles Dental",
+            "phone": "+91 88888 77777",
+            "city": "Gurgaon, India",
+            "categoryName": "Dental Clinic",
+            "totalScore": 4.8,
+            "reviewsCount": 85,
+            "website": None,
+            "url": "https://maps.google.com/?cid=456"
+        },
+        {
+            "title": "Tampa HVAC Pros",
+            "phone": "+1 813 555 1234",
+            "city": "Tampa FL, USA",
+            "categoryName": "HVAC Contractor",
+            "totalScore": 4.2,
+            "reviewsCount": 45,
+            "website": "https://example.com",
+            "url": "https://maps.google.com/?cid=789"
+        }
+    ]
+
+
 # Instagram Search Actor (apify~instagram-search-scraper)
 INSTAGRAM_ACTOR = "apify~instagram-search-scraper"
 
