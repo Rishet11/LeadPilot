@@ -62,7 +62,7 @@ def extract_email(bio: str) -> str:
 def score_profile(profile: dict, target_city: str = None) -> int:
     """
     Score logic:
-    - 500 < followers < 5000: +40
+    - Min < followers < Max: +40
     - No real website: +40
     - Niche keyword in bio: +20
     - City Match (if provided): +20 (CRITICAL for local)

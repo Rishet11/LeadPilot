@@ -198,27 +198,32 @@ def generate_instagram_dms_batch(profiles: list) -> list:
         )
         profiles_context.append(info)
 
-    prompt = f"""Write a casual Instagram DM to these {len(profiles)} small business owners.
+    prompt = f"""Write a high-conversion, extremely casual Instagram DM to these {len(profiles)} small business owners. 
+Think: "Helpful Local" tone, not "Agency Salesman".
 
 DATA:
 {'-' * 20}
 {chr(10).join(profiles_context)}
 {'-' * 20}
 
-RULES:
-- 2 lines max per user.
-- Start with "hey" or "hi".
-- Mention something SPECIFIC from their bio (niche/city/keyword).
-- Ask a question, don't pitch your services.
-- Sound like a real person, lowercase vibes preferred.
-- No "I run an agency".
+MESSAGE STRUCTURE (Max 3-4 short lines per user):
+1. hey + compliment (if they have good work/vibe in bio).
+2. Observation: "noticed you don't have a website/booking link".
+3. The Gap: "probably losing a few clients every week because of that".
+4. Soft Question: "ever thought about setting up a simple landing page?"
+
+TONE:
+- lowercase vibes preferred.
+- no jargon.
+- no "i run an agency".
+- sound like someone who just stumbled on their page and wants to help.
 
 OUTPUT:
 JSON LIST of objects:
 [
     {{
         "id": <id>,
-        "dm_message": "<The 2-line casual message>"
+        "dm_message": "<The casual 3-line DM>"
     }}
 ]
 """
