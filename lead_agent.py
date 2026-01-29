@@ -198,7 +198,69 @@ if __name__ == "__main__":
     df = clean_dataframe(raw_data)
     df = add_derived_columns(df)
     df = score_dataframe(df)
+    # Run agent
+    result = run_agent_pipeline(df, max_leads=3)
     
-    result = run_agent_pipeline(df, max_leads=5)
+    print("\n✅ Agent pipeline complete!")
+    print(f"Analyzed {len(result)} leads with AI insights.")
+
+
+def generate_instagram_dms_batch(profiles: list) -> list:
+    """
+    Generate Instagram DM scripts for a BATCH of profiles (Cost efficient).
+    """
+    if not profiles:
+        return []
+        
+    print(f"\n🤖 AI Agent generating DMs for {len(profiles)} profiles...")
     
-    print("\n✅ Batch Analysis complete!")
+    # Context Builder
+    profiles_context = []
+    for i, p in enumerate(profiles):
+        info = (
+            f"ID: {i}\n"
+            f"Username: {p.get('username')}\n"
+            f"Bio: {p.get('bio', '')[:200]}\n"
+        )
+        profiles_context.append(info)
+
+    prompt = f"""Write a casual Instagram DM to these {len(profiles)} small business owners.
+
+DATA:
+{'-' * 20}
+{chr(10).join(profiles_context)}
+{'-' * 20}
+
+RULES:
+- 2 lines max per user.
+- Start with "hey" or "hi".
+- Mention something SPECIFIC from their bio (niche/city/keyword).
+- Ask a question, don't pitch your services.
+- Sound like a real person, lowercase vibes preferred.
+- No "I run an agency".
+
+OUTPUT:
+JSON LIST of objects:
+[
+    {{
+        "id": <id>,
+        "dm_message": "<The 2-line casual message>"
+    }}
+]
+"""
+    agent = get_agent()
+    try:
+        response = agent.generate_content(prompt)
+        text = response.text.strip()
+        
+        # Clean JSON
+        if '```json' in text:
+            text = text.split('```json')[1].split('```')[0]
+        elif '```' in text:
+            text = text.split('```')[1].split('```')[0]
+            
+        return json.loads(text)
+        
+    except Exception as e:
+        print(f"❌ Batch DM gen failed: {e}")
+        return []

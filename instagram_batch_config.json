@@ -1,0 +1,12 @@
+{
+  "targets": [
+    {
+      "keyword": "home baker delhi",
+      "limit": 50
+    },
+    {
+      "keyword": "makeup artist mumbai",
+      "limit": 50
+    }
+  ]
+}
