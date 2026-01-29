@@ -71,14 +71,12 @@ def has_website(url: str, timeout: int = 5) -> bool:
 
 def score_lead(row: dict, config: dict = None) -> tuple:
     """
-    Score a single lead based on rules.
+    Score a single lead based on 'Value + Friction' logic.
     
-    Args:
-        row: Dictionary with lead data
-        config: Scoring configuration
-        
-    Returns:
-        Tuple of (score, reason)
+    ROI Heuristics:
+    1. Digital Misfit: High Rating (>4.0) + No Website = Prime Web Target.
+    2. Busy but Broken: High Volume (>100 reviews) + Low Rating (<4/5) or No Web = Prime Automation Target.
+    3. Socially Active: Instagram presence + No Web.
     """
     if config is None:
         config = load_config()
@@ -89,47 +87,41 @@ def score_lead(row: dict, config: dict = None) -> tuple:
     score = 0
     reasons = []
     
-    # Check website
-    website = row.get('website', '') or ''
-    if not website.strip():
-        score += rules.get("no_website", 40)
-        reasons.append("No website")
+    # 1. Digital Misfit Logic (The "High Quality but Invisible" Lead)
+    has_web = bool(row.get('website', '').strip())
+    rating = float(row.get('rating', 0) or 0)
+    reviews = int(row.get('reviews', 0) or 0)
     
-    # Check Instagram followers (assuming we have this data)
-    followers = row.get('instagram_followers', 0) or 0
-    threshold = config.get("instagram_follower_threshold", 5000)
-    if followers < threshold:
-        score += rules.get("low_instagram_followers", 20)
-        if followers == 0:
-            reasons.append("No Instagram presence")
-        else:
-            reasons.append(f"Low IG followers ({followers})")
-    
-    # Check reviews
-    reviews = row.get('reviews', 0) or 0
-    review_threshold = config.get("review_threshold", 50)
-    if reviews < review_threshold:
-        score += rules.get("low_reviews", 15)
-        reasons.append(f"Low reviews ({reviews})")
-    
-    # Check rating
-    rating = row.get('rating', 0) or 0
-    rating_threshold = config.get("rating_threshold", 4.2)
-    if rating > 0 and rating < rating_threshold:
-        score += rules.get("low_rating", 10)
-        reasons.append(f"Low rating ({rating})")
-    
-    # Check priority category
+    if not has_web and rating >= 4.0 and reviews >= 10:
+        score += rules.get("digital_misfit", 60)
+        reasons.append(f"Digital Misfit: High Rating ({rating}) but NO website")
+
+    # 2. Busy but Broken (High Volume + Low Tech/Performance)
+    volume_thresh = config.get("high_volume_threshold", 100)
+    if reviews >= volume_thresh and (rating < 4.0 or not has_web):
+        score += rules.get("busy_but_broken", 40)
+        reasons.append(f"Busy but Broken: High Volume ({reviews}) + Optimization Gap")
+
+    # 3. Socially Active, Web Dead
+    has_ig = bool(row.get('instagram', '').strip())
+    if has_ig and not has_web:
+        score += rules.get("social_without_web", 30)
+        reasons.append("Socially Active but No Official Website")
+
+    # 4. High Value Categories (ROI for specialized services)
     category = (row.get('category', '') or '').lower()
-    if category in priority_cats:
-        score += rules.get("priority_category", 15)
-        reasons.append(f"Priority category ({category})")
-    
-    # Cap at 100
+    if any(p_cat in category for p_cat in priority_cats):
+        score += rules.get("high_value_category", 20)
+        reasons.append(f"High-Value Category: {category}")
+
+    # 5. Low Rating Fix (Reputation Mgmt Strategy)
+    if 0 < rating < 3.8:
+        score += rules.get("low_rating_fix", 15)
+        reasons.append(f"Reputation Gap: Low Rating ({rating}) needs fix")
+
+    # Final Adjustment: Cap at 100 and handle well-established
     score = min(score, 100)
-    
-    # Build reason string
-    reason = " + ".join(reasons) if reasons else "Well-established business"
+    reason = " | ".join(reasons) if reasons else "Established business (Low ROI for basic services)"
     
     return score, reason
 

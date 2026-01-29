@@ -3,16 +3,16 @@
   "category": "Gym",
   "limit": 100,
   "scoring_rules": {
-    "no_website": 40,
-    "low_instagram_followers": 20,
-    "low_reviews": 15,
-    "low_rating": 10,
-    "priority_category": 15
+    "digital_misfit": 60,
+    "busy_but_broken": 40,
+    "social_without_web": 30,
+    "high_value_category": 20,
+    "low_rating_fix": 15
   },
-  "priority_categories": ["gym", "bakery", "salon", "cafe", "restaurant"],
-  "instagram_follower_threshold": 5000,
-  "review_threshold": 50,
-  "rating_threshold": 4.2,
+  "priority_categories": ["dentist", "lawyer", "plumber", "hvac", "medical clinic", "gym", "restaurant"],
+  "high_volume_threshold": 100,
+  "instagram_follower_threshold": 2000,
+  "rating_threshold": 4.0,
   "export": {
     "csv": true,
     "google_sheets": false,

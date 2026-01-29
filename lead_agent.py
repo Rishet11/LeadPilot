@@ -2,16 +2,16 @@
 Lead Agent - Agentic AI layer for autonomous lead evaluation
 
 This module adds "agentic" capabilities where Gemini:
-1. Autonomously evaluates each lead with reasoning
-2. Prioritizes leads based on potential value
-3. Generates personalized outreach strategies
-4. Recommends next actions
+1. Autonomously evaluates a BATCH of leads (10 at a time) for cost efficiency.
+2. Generates "Kill Lines" (Sales Hooks) for direct outreach.
+3. Prioritizes leads based on potential value.
 
 Unlike the rule-based scorer, this agent THINKS about each lead.
 """
 
 import os
 import json
+import traceback
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -33,193 +33,122 @@ def get_agent():
     # Use a capable model for reasoning
     return genai.GenerativeModel(
         'gemini-2.0-flash',
-        system_instruction="""You are LeadPilot AI, an expert at evaluating small business leads 
-for digital marketing agencies. You analyze businesses and determine:
-1. How likely they are to need marketing services
-2. What specific services would benefit them
-3. The best approach to reach out to them
-4. Priority level (1-5, where 5 is highest)
+        system_instruction="""You are LeadPilot AI, a cynical B2B Sales Sniper. 
+Your goal is to find high-ROI clients for a digital agency.
 
-Be concise but insightful. Focus on actionable recommendations."""
+TARGETS:
+1. "Digital Misfit": High Ratings (4.5+) but NO Website. (Easy sell: "Showcase your reputation")
+2. "Busy but Broken": Huge Reviews (100+) but bad rating or no site. (Easy sell: "Fix your leaks")
+
+YOUR JOB:
+- Analyze leads in BATCHES.
+- Ignore "average" businesses. Focus on the ones bleeding money.
+- Generate a "Kill Line": A single, direct WhatsApp/SMS hook that mentions SPECIFIC data (e.g. "Saw you have 288 reviews but no site").
+- NO FLUFF. NO "Hello sir". NO "We can help". Just the hook.
+"""
     )
-
-
-def analyze_lead(lead: dict) -> dict:
-    """
-    Have the AI agent autonomously analyze a single lead.
-    
-    Returns structured analysis with reasoning.
-    """
-    agent = get_agent()
-    
-    prompt = f"""Analyze this business as a potential client for a digital marketing agency.
-
-BUSINESS DATA:
-- Name: {lead.get('name', 'Unknown')}
-- Category: {lead.get('category', 'Unknown')}
-- City: {lead.get('city', 'Unknown')}
-- Rating: {lead.get('rating', 'N/A')}/5 ({lead.get('reviews', 0)} reviews)
-- Has Website: {'Yes' if lead.get('website') else 'No'}
-- Website URL: {lead.get('website', 'None')}
-- Has Instagram: {'Yes' if lead.get('instagram') else 'No'}
-- Rule-based Score: {lead.get('lead_score', 'N/A')}/100
-
-Respond in this exact JSON format:
-{{
-    "priority": <1-5>,
-    "confidence": <0.0-1.0>,
-    "reasoning": "<2-3 sentences explaining your analysis>",
-    "pain_points": ["<pain point 1>", "<pain point 2>"],
-    "recommended_services": ["<service 1>", "<service 2>"],
-    "outreach_angle": "<one sentence hook for outreach>",
-    "next_action": "<specific recommended action>"
-}}"""
-
-    try:
-        response = agent.generate_content(prompt)
-        text = response.text.strip()
-        
-        # Extract JSON from response
-        if '```json' in text:
-            text = text.split('```json')[1].split('```')[0]
-        elif '```' in text:
-            text = text.split('```')[1].split('```')[0]
-        
-        return json.loads(text)
-    except Exception as e:
-        return {
-            "priority": 3,
-            "confidence": 0.5,
-            "reasoning": f"Analysis failed: {str(e)}",
-            "pain_points": ["Unknown"],
-            "recommended_services": ["General marketing audit"],
-            "outreach_angle": "Offer free consultation",
-            "next_action": "Manual review required"
-        }
 
 
 def analyze_leads_batch(leads: list, max_leads: int = 10) -> list:
     """
-    Analyze multiple leads with the AI agent.
+    Analyze multiple leads in a SINGLE API call for cost efficiency.
     
-    Returns list of leads with AI analysis attached.
+    Args:
+        leads: List of lead dictionaries
+        max_leads: Limit to process
+        
+    Returns:
+        List of leads with 'ai_analysis' attached
     """
-    print(f"\n🤖 AI Agent analyzing {min(len(leads), max_leads)} leads...")
-    
-    results = []
-    for i, lead in enumerate(leads[:max_leads]):
-        print(f"  Analyzing {i+1}/{min(len(leads), max_leads)}: {lead.get('name', 'Unknown')}...")
+    # 1. Prepare Batch
+    batch_leads = leads[:max_leads]
+    if not batch_leads:
+        return []
         
-        analysis = analyze_lead(lead)
-        
-        # Merge lead data with AI analysis
-        enriched_lead = {**lead, 'ai_analysis': analysis}
-        results.append(enriched_lead)
-        
-        # Show quick preview
-        priority = analysis.get('priority', '?')
-        print(f"    → Priority: {priority}/5 | {analysis.get('outreach_angle', '')[:50]}...")
+    print(f"\n🤖 AI Agent analyzing {len(batch_leads)} leads in ONE batch...")
     
-    # Sort by AI priority (descending)
-    results.sort(key=lambda x: x.get('ai_analysis', {}).get('priority', 0), reverse=True)
+    # 2. Construct Prompt
+    leads_context = []
+    for i, lead in enumerate(batch_leads):
+        info = (
+            f"ID: {i}\n"
+            f"Name: {lead.get('name')}\n"
+            f"Category: {lead.get('category')}\n"
+            f"Rating: {lead.get('rating')}/5 ({lead.get('reviews')} reviews)\n"
+            f"Website: {lead.get('website') or 'None'}\n"
+            f"Instagram: {lead.get('instagram') or 'None'}\n"
+        )
+        leads_context.append(info)
     
-    return results
+    prompt = f"""ANALYZE THESE {len(batch_leads)} LEADS.
 
+DATA:
+{'-' * 20}
+{chr(10).join(leads_context)}
+{'-' * 20}
 
-def generate_outreach_plan(leads: list) -> str:
-    """
-    Have the agent create a prioritized outreach plan.
-    """
+Respond with a JSON LIST of objects (one for each lead), in this format:
+[
+    {{
+        "id": <id from above>,
+        "priority": <1-5, where 5 is 'Easy Sale'>,
+        "reasoning": "<Why they need us>",
+        "outreach_angle": "<THE KILL LINE: A direct, specific hook using their data>"
+    }}
+]
+"""
+
+    # 3. Call API
     agent = get_agent()
-    
-    # Prepare leads summary
-    leads_summary = "\n".join([
-        f"- {l.get('name')}: Priority {l.get('ai_analysis', {}).get('priority', '?')}/5, "
-        f"Services: {', '.join(l.get('ai_analysis', {}).get('recommended_services', []))}"
-        for l in leads[:10]
-    ])
-    
-    prompt = f"""Based on these analyzed leads, create a prioritized outreach plan for this week.
-
-LEADS:
-{leads_summary}
-
-Create a brief action plan with:
-1. Which 3 leads to contact first and why
-2. Best outreach method for each (call, email, DM)
-3. Key talking points for each
-4. Suggested follow-up schedule
-
-Keep it actionable and concise."""
-
     try:
         response = agent.generate_content(prompt)
-        return response.text.strip()
+        text = response.text.strip()
+        
+        # Clean JSON
+        if '```json' in text:
+            text = text.split('```json')[1].split('```')[0]
+        elif '```' in text:
+            text = text.split('```')[1].split('```')[0]
+            
+        analysis_list = json.loads(text)
+        
+        # 4. Map Results back to Leads
+        results = []
+        analysis_map = {item['id']: item for item in analysis_list if 'id' in item}
+        
+        for i, lead in enumerate(batch_leads):
+            analysis = analysis_map.get(i, {
+                "priority": 0, 
+                "reasoning": "Analysis failed", 
+                "outreach_angle": "Check manually"
+            })
+            
+            # Print Kill Line
+            print(f"  🎯 {lead.get('name')[:20]}: {analysis.get('outreach_angle')}")
+            
+            enriched = {**lead, 'ai_analysis': analysis}
+            results.append(enriched)
+
+        # Sort by priority
+        results.sort(key=lambda x: x.get('ai_analysis', {}).get('priority', 0), reverse=True)
+        return results
+
     except Exception as e:
-        return f"Failed to generate plan: {str(e)}"
-
-
-def generate_cold_email(lead: dict) -> str:
-    """
-    Generate a personalized cold email for a specific lead.
-    """
-    agent = get_agent()
-    
-    analysis = lead.get('ai_analysis', {})
-    
-    prompt = f"""Write a short, personalized cold email for this business.
-
-BUSINESS:
-- Name: {lead.get('name')}
-- Category: {lead.get('category')}
-- Pain Points: {', '.join(analysis.get('pain_points', ['online presence']))}
-- Recommended Services: {', '.join(analysis.get('recommended_services', ['marketing']))}
-- Outreach Angle: {analysis.get('outreach_angle', 'Help grow their business')}
-
-Rules:
-- Keep it under 100 words
-- Be conversational, not salesy
-- Include ONE specific observation about their business
-- End with a soft CTA (coffee chat, quick call)
-- Sign as "Alex from LeadPilot"
-
-Just write the email body, no subject line."""
-
-    try:
-        response = agent.generate_content(prompt)
-        return response.text.strip()
-    except Exception as e:
-        return f"Failed to generate email: {str(e)}"
+        print(f"❌ Batch analysis failed: {e}")
+        traceback.print_exc()
+        return batch_leads  # Return original leads if failure
 
 
 def run_agent_pipeline(df, max_leads: int = 10):
     """
     Run the full agentic pipeline on a DataFrame.
-    
-    Returns enriched DataFrame with AI analysis.
     """
     import pandas as pd
     
-    # Convert to list of dicts
     leads = df.to_dict('records')
     
-    # Analyze with AI agent
+    # Run Batch Analysis
     enriched_leads = analyze_leads_batch(leads, max_leads)
-    
-    # Print outreach plan
-    print("\n" + "="*50)
-    print("📋 AI-GENERATED OUTREACH PLAN")
-    print("="*50)
-    plan = generate_outreach_plan(enriched_leads)
-    print(plan)
-    
-    # Generate sample email for top lead
-    if enriched_leads:
-        print("\n" + "="*50)
-        print(f"✉️  SAMPLE EMAIL FOR: {enriched_leads[0].get('name')}")
-        print("="*50)
-        email = generate_cold_email(enriched_leads[0])
-        print(email)
     
     # Convert back to DataFrame
     result_df = pd.DataFrame(enriched_leads)
@@ -227,9 +156,10 @@ def run_agent_pipeline(df, max_leads: int = 10):
     # Flatten AI analysis for CSV export
     if 'ai_analysis' in result_df.columns:
         result_df['ai_priority'] = result_df['ai_analysis'].apply(lambda x: x.get('priority', 0) if isinstance(x, dict) else 0)
-        result_df['ai_reasoning'] = result_df['ai_analysis'].apply(lambda x: x.get('reasoning', '') if isinstance(x, dict) else '')
+        # result_df['ai_reasoning'] = result_df['ai_analysis'].apply(lambda x: x.get('reasoning', '') if isinstance(x, dict) else '')
         result_df['ai_outreach'] = result_df['ai_analysis'].apply(lambda x: x.get('outreach_angle', '') if isinstance(x, dict) else '')
-        result_df['ai_services'] = result_df['ai_analysis'].apply(lambda x: ', '.join(x.get('recommended_services', [])) if isinstance(x, dict) else '')
+        
+        # Drop complex column, keep flat ones
         result_df = result_df.drop(columns=['ai_analysis'])
     
     return result_df
@@ -241,16 +171,13 @@ if __name__ == "__main__":
     from cleaner import clean_dataframe, add_derived_columns
     from scorer import score_dataframe
     
-    print("🧪 Testing Lead Agent with demo data...\n")
+    print("🧪 Testing Lead Agent (Batch Mode)...\n")
     
-    # Prepare test data
     raw_data = get_demo_data()
     df = clean_dataframe(raw_data)
     df = add_derived_columns(df)
     df = score_dataframe(df)
     
-    # Run agent
-    result = run_agent_pipeline(df, max_leads=3)
+    result = run_agent_pipeline(df, max_leads=5)
     
-    print("\n✅ Agent pipeline complete!")
-    print(f"Analyzed {len(result)} leads with AI insights.")
+    print("\n✅ Batch Analysis complete!")

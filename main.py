@@ -53,9 +53,7 @@ def load_config(config_path: str = "config.json") -> dict:
 
 def run_pipeline(city: str, category: str, limit: int, 
                  dry_run: bool = False, check_websites: bool = False,
-                 ai_summary: bool = False, google_sheets: bool = False,
-                 agent_mode: bool = False, enrich_instagram: bool = False,
-                 find_emails: bool = False):
+                 agent_mode: bool = True):
     """
     Run the complete lead generation pipeline.
     
@@ -65,11 +63,7 @@ def run_pipeline(city: str, category: str, limit: int,
         limit: Maximum results
         dry_run: Use demo data instead of API
         check_websites: Verify website accessibility
-        ai_summary: Add AI-powered summaries
-        google_sheets: Export to Google Sheets
         agent_mode: Use agentic AI for autonomous lead evaluation
-        enrich_instagram: Fetch Instagram follower counts
-        find_emails: Find contact email addresses
     """
     from apify_client import (
         run_google_maps_scraper, poll_run_status, 
@@ -77,7 +71,7 @@ def run_pipeline(city: str, category: str, limit: int,
     )
     from cleaner import clean_dataframe, add_derived_columns
     from scorer import score_dataframe, load_config as load_scoring_config
-    from exporter import export_csv, export_google_sheets, print_summary
+    from exporter import export_csv, print_summary
     
     print("\n" + "="*50)
     print("🚀 LEADPILOT - Lead Generation Agent")
@@ -125,36 +119,13 @@ def run_pipeline(city: str, category: str, limit: int,
     df = add_derived_columns(df)
     print(f"✅ Cleaned data: {len(df)} unique leads")
     
-    # Step 3: Enrichment (Instagram & Email)
-    if enrich_instagram:
-        if dry_run:
-            print("\n📸 Adding mock Instagram data (dry-run mode)...")
-            from instagram_enricher import enrich_with_mock_data
-            df = enrich_with_mock_data(df)
-        else:
-            from instagram_enricher import enrich_dataframe
-            df = enrich_dataframe(df, max_profiles=20)
-    
-    if find_emails:
-        from email_finder import enrich_dataframe_with_emails
-        df = enrich_dataframe_with_emails(df, max_leads=20, guess_only=True)
-    
     # Step 4: Score leads
     print("\n📊 Scoring leads...")
     scoring_config = load_scoring_config()
     df = score_dataframe(df, scoring_config, check_websites=check_websites)
     print(f"✅ Scored {len(df)} leads")
     
-    # Step 5: AI summaries (optional)
-    if ai_summary and not agent_mode:
-        print("\n🤖 Generating AI summaries...")
-        try:
-            from ai_summary import add_ai_summaries
-            df = add_ai_summaries(df, max_leads=10)
-        except Exception as e:
-            print(f"⚠️  AI summary failed: {e}")
-    
-    # Step 5b: Agentic AI mode (autonomous evaluation)
+    # Step 5: Agentic AI mode (autonomous evaluation)
     if agent_mode:
         print("\n🤖 Running Agentic AI pipeline...")
         try:
@@ -176,14 +147,6 @@ def run_pipeline(city: str, category: str, limit: int,
     # Also save as latest
     export_csv(df, "data/leads.csv")
     
-    # Google Sheets (optional)
-    if google_sheets:
-        try:
-            sheet_url = export_google_sheets(df)
-            print(f"📊 Google Sheets: {sheet_url}")
-        except Exception as e:
-            print(f"⚠️  Google Sheets export failed: {e}")
-    
     # Print summary
     print_summary(df)
     
@@ -203,7 +166,7 @@ Examples:
   python main.py                                  # Use config.json
   python main.py --city Mumbai --category Bakery  # Override city/category
   python main.py --dry-run                        # Test with demo data
-  python main.py --ai-summary                     # Add AI summaries
+  python main.py --agent                          # Enable agentic AI mode
         """
     )
     
@@ -214,16 +177,8 @@ Examples:
                         help="Use demo data instead of API")
     parser.add_argument("--check-websites", action="store_true",
                         help="Verify website accessibility (slower)")
-    parser.add_argument("--ai-summary", action="store_true",
-                        help="Add AI-powered summaries (requires Gemini API)")
-    parser.add_argument("--google-sheets", action="store_true",
-                        help="Export to Google Sheets")
-    parser.add_argument("--agent", action="store_true",
+    parser.add_argument("--agent", action="store_true", default=True,
                         help="Enable agentic AI mode (autonomous lead evaluation)")
-    parser.add_argument("--enrich-instagram", action="store_true",
-                        help="Fetch Instagram follower counts (requires Apify)")
-    parser.add_argument("--find-emails", action="store_true",
-                        help="Find contact email addresses")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to config file")
     
@@ -244,11 +199,7 @@ Examples:
         limit=limit,
         dry_run=args.dry_run,
         check_websites=args.check_websites,
-        ai_summary=args.ai_summary or config.get("ai_summary", {}).get("enabled", False),
-        google_sheets=args.google_sheets or config.get("export", {}).get("google_sheets", False),
-        agent_mode=args.agent,
-        enrich_instagram=args.enrich_instagram,
-        find_emails=args.find_emails
+        agent_mode=args.agent
     )
 
 

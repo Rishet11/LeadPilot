@@ -17,7 +17,7 @@ APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN")
 APIFY_BASE_URL = "https://api.apify.com/v2"
 
 # Google Maps Scraper Actor ID
-GOOGLE_MAPS_ACTOR = "compass/crawler-google-places"
+GOOGLE_MAPS_ACTOR = "compass~crawler-google-places"
 
 
 def run_google_maps_scraper(city: str, category: str, limit: int = 100) -> dict:

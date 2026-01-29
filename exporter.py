@@ -22,95 +22,23 @@ def export_csv(df: pd.DataFrame, path: str = "data/leads.csv") -> str:
         Path to the saved file
     """
     # Ensure directory exists
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    dirname = os.path.dirname(path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
     
-    # Define column order for output
-    column_order = [
-        'name', 'category', 'city', 'phone', 'website', 
-        'instagram', 'rating', 'reviews', 'lead_score', 'reason'
+    # Define column order for output (Agency specific)
+    output_cols = [
+        'name', 'phone', 'city', 'category', 'rating', 
+        'reviews', 'website', 'lead_score', 'ai_outreach'
     ]
     
-    # Only include columns that exist
-    output_cols = [col for col in column_order if col in df.columns]
+    # Filter for columns that actually exist in the dataframe
+    final_cols = [col for col in output_cols if col in df.columns]
     
-    # Add any remaining columns
-    for col in df.columns:
-        if col not in output_cols:
-            output_cols.append(col)
-    
-    df[output_cols].to_csv(path, index=False)
+    df[final_cols].to_csv(path, index=False)
     print(f"✅ Exported {len(df)} leads to {path}")
     
     return path
-
-
-def export_google_sheets(df: pd.DataFrame, sheet_name: str = "LeadPilot Leads", 
-                         credentials_path: str = None) -> str:
-    """
-    Export DataFrame to Google Sheets.
-    
-    Args:
-        df: DataFrame to export
-        sheet_name: Name of the sheet/spreadsheet
-        credentials_path: Path to service account credentials JSON
-        
-    Returns:
-        URL of the created/updated sheet
-    """
-    try:
-        import gspread
-        from google.oauth2.service_account import Credentials
-    except ImportError:
-        raise ImportError("Please install gspread and google-auth: pip install gspread google-auth")
-    
-    # Get credentials path from env if not provided
-    if credentials_path is None:
-        credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH", "credentials.json")
-    
-    if not os.path.exists(credentials_path):
-        raise FileNotFoundError(
-            f"Google Sheets credentials not found at {credentials_path}. "
-            "Please set GOOGLE_SHEETS_CREDENTIALS_PATH or provide credentials.json"
-        )
-    
-    # Define scopes
-    scopes = [
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/drive'
-    ]
-    
-    # Authenticate
-    creds = Credentials.from_service_account_file(credentials_path, scopes=scopes)
-    client = gspread.authorize(creds)
-    
-    try:
-        # Try to open existing spreadsheet
-        spreadsheet = client.open(sheet_name)
-        worksheet = spreadsheet.sheet1
-        print(f"📊 Updating existing sheet: {sheet_name}")
-    except gspread.SpreadsheetNotFound:
-        # Create new spreadsheet
-        spreadsheet = client.create(sheet_name)
-        worksheet = spreadsheet.sheet1
-        print(f"📊 Created new sheet: {sheet_name}")
-    
-    # Clear existing content
-    worksheet.clear()
-    
-    # Convert DataFrame to list of lists
-    headers = df.columns.tolist()
-    values = [headers] + df.values.tolist()
-    
-    # Update sheet
-    worksheet.update(values, 'A1')
-    
-    # Format header row
-    worksheet.format('1:1', {'textFormat': {'bold': True}})
-    
-    url = spreadsheet.url
-    print(f"✅ Exported {len(df)} leads to Google Sheets: {url}")
-    
-    return url
 
 
 def print_summary(df: pd.DataFrame):

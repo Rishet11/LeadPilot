@@ -16,13 +16,12 @@ def load_batch_config(config_path: str = "batch_config.json") -> dict:
         return json.load(f)
 
 
-def run_batch(batch_config: dict, delay_seconds: int = 60):
+def run_batch(batch_config: dict):
     """
     Run pipeline for multiple city/category combinations.
     
     Args:
         batch_config: Dict with 'targets' list
-        delay_seconds: Delay between runs to avoid rate limits
     """
     targets = batch_config.get("targets", [])
     
@@ -46,9 +45,7 @@ def run_batch(batch_config: dict, delay_seconds: int = 60):
                 category=category,
                 limit=limit,
                 dry_run=target.get("dry_run", False),
-                enrich_instagram=target.get("enrich_instagram", False),
-                find_emails=target.get("find_emails", False),
-                agent_mode=target.get("agent_mode", False)
+                agent_mode=target.get("agent_mode", True)
             )
             
             results.append({
@@ -68,10 +65,7 @@ def run_batch(batch_config: dict, delay_seconds: int = 60):
                 "error": str(e)
             })
         
-        # Delay between runs
-        if i < len(targets):
-            print(f"\n⏳ Waiting {delay_seconds}s before next run...")
-            time.sleep(delay_seconds)
+
     
     # Print summary
     print(f"\n{'='*60}")
@@ -109,7 +103,8 @@ if __name__ == "__main__":
     
     try:
         config = load_batch_config(config_file)
-        run_batch(config, delay_seconds=config.get("delay_seconds", 60))
+        config = load_batch_config(config_file)
+        run_batch(config)
     except FileNotFoundError:
         print(f"❌ Config file not found: {config_file}")
         print("\nCreate a batch_config.json file like this:")
