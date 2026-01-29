@@ -11,6 +11,7 @@ Usage:
     python main.py --dry-run                # Test with demo data
     python main.py --check-websites         # Verify website accessibility
     python main.py --ai-summary             # Add Gemini AI summaries
+    python main.py --agent                  # Enable agentic AI mode
 """
 
 import os
@@ -50,7 +51,8 @@ def load_config(config_path: str = "config.json") -> dict:
 
 def run_pipeline(city: str, category: str, limit: int, 
                  dry_run: bool = False, check_websites: bool = False,
-                 ai_summary: bool = False, google_sheets: bool = False):
+                 ai_summary: bool = False, google_sheets: bool = False,
+                 agent_mode: bool = False):
     """
     Run the complete lead generation pipeline.
     
@@ -62,6 +64,7 @@ def run_pipeline(city: str, category: str, limit: int,
         check_websites: Verify website accessibility
         ai_summary: Add AI-powered summaries
         google_sheets: Export to Google Sheets
+        agent_mode: Use agentic AI for autonomous lead evaluation
     """
     from apify_client import (
         run_google_maps_scraper, poll_run_status, 
@@ -124,13 +127,24 @@ def run_pipeline(city: str, category: str, limit: int,
     print(f"✅ Scored {len(df)} leads")
     
     # Step 4: AI summaries (optional)
-    if ai_summary:
+    if ai_summary and not agent_mode:
         print("\n🤖 Generating AI summaries...")
         try:
             from ai_summary import add_ai_summaries
             df = add_ai_summaries(df, max_leads=10)
         except Exception as e:
             print(f"⚠️  AI summary failed: {e}")
+    
+    # Step 4b: Agentic AI mode (autonomous evaluation)
+    if agent_mode:
+        print("\n🤖 Running Agentic AI pipeline...")
+        try:
+            from lead_agent import run_agent_pipeline
+            df = run_agent_pipeline(df, max_leads=10)
+        except Exception as e:
+            print(f"⚠️  Agent mode failed: {e}")
+            import traceback
+            traceback.print_exc()
     
     # Step 5: Export
     print("\n💾 Exporting leads...")
@@ -185,6 +199,8 @@ Examples:
                         help="Add AI-powered summaries (requires Gemini API)")
     parser.add_argument("--google-sheets", action="store_true",
                         help="Export to Google Sheets")
+    parser.add_argument("--agent", action="store_true",
+                        help="Enable agentic AI mode (autonomous lead evaluation)")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to config file")
     
@@ -206,7 +222,8 @@ Examples:
         dry_run=args.dry_run,
         check_websites=args.check_websites,
         ai_summary=args.ai_summary or config.get("ai_summary", {}).get("enabled", False),
-        google_sheets=args.google_sheets or config.get("export", {}).get("google_sheets", False)
+        google_sheets=args.google_sheets or config.get("export", {}).get("google_sheets", False),
+        agent_mode=args.agent
     )
 
 
