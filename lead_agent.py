@@ -80,41 +80,34 @@ def analyze_leads_batch(leads: list, max_leads: int = 10) -> list:
         )
         leads_context.append(info)
     
-    prompt = f"""ANALYZE THESE {len(batch_leads)} LEADS.
+    prompt = f"""You are a local business owner who JUST found these leads.
+Write a WhatsApp message for EACH that sounds like you typed it on your phone.
 
-DATA:
+LEAD DATA:
 {'-' * 20}
 {chr(10).join(leads_context)}
 {'-' * 20}
 
-TASK:
-For each lead, act as a friendly fellow business owner (not an AI). Write a 5-7 line WhatsApp message.
+RULES FOR EACH MESSAGE:
+1. First line: Compliment their reviews/rating (if good).
+2. Second line: Point out the website problem directly.
+3. Third line: Estimate customers lost ("probably losing 20-30 people/month").
+4. Fourth line: Mention ONE fix (simple website OR booking form).
+5. Fifth line: Soft question ending with "?"
 
-RULES for 'outreach_message':
-- Friendly, human tone
-- Mention their rating/reviews if good
-- Explain that people search on Google and expect a website
-- Explain that competitors with websites capture those customers
-- Mention online booking / enquiry forms
-- Make a realistic estimate of lost customers per month (e.g. 20-30)
-- No buzzwords, No "AI", No selling packages
-- End with a soft question
-- NO long dashes (use standard hyphens provided)
+TONE:
+- Casual. Use "hey" not "Hello".
+- NO "I'm from an agency". NO "We offer". NO marketing speak.
+- Sound like a helpful stranger, not a salesperson.
+- Max 5 short lines per message. WhatsApp style.
 
-Structure:
-1. Personal observation (reviews / reputation)
-2. Problem (no website / weak website)
-3. Consequence (lost customers every month)
-4. Simple solution (website + booking/enquiry)
-5. Soft CTA
-
-Respond with a JSON LIST of objects (one for each lead), in this format:
+Respond with a JSON LIST of objects (one for each lead):
 [
     {{
         "id": <id from above>,
         "priority": <1-5, where 5 is 'Easy Sale'>,
         "reasoning": "<Why they need us>",
-        "outreach_angle": "<The WhatsApp Message following above rules>"
+        "outreach_angle": "<The 5-line WhatsApp message>"
     }}
 ]
 """

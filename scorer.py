@@ -73,55 +73,62 @@ def score_lead(row: dict, config: dict = None) -> tuple:
     """
     Score a single lead based on 'Value + Friction' logic.
     
-    ROI Heuristics:
-    1. Digital Misfit: High Rating (>4.0) + No Website = Prime Web Target.
-    2. Busy but Broken: High Volume (>100 reviews) + Low Rating (<4/5) or No Web = Prime Automation Target.
-    3. Socially Active: Instagram presence + No Web.
+    HARDCODED VALUES (No Config Dependency):
+    - No Website: +50
+    - High Rating (4.0+): +20
+    - High Volume (100+ reviews): +30
+    - Medium Volume (30+ reviews): +15
+    - High-Value Category: +10
+    - Low Rating (<3.8): +15 (Reputation Fix Opportunity)
     """
-    if config is None:
-        config = load_config()
-    
-    rules = config.get("scoring_rules", DEFAULT_CONFIG["scoring_rules"])
-    priority_cats = config.get("priority_categories", DEFAULT_CONFIG["priority_categories"])
-    
     score = 0
     reasons = []
     
-    # 1. Digital Misfit Logic (The "High Quality but Invisible" Lead)
+    # Extract fields safely
     has_web = bool(row.get('website', '').strip())
     rating = float(row.get('rating', 0) or 0)
     reviews = int(row.get('reviews', 0) or 0)
-    
-    if not has_web and rating >= 4.0 and reviews >= 10:
-        score += rules.get("digital_misfit", 60)
-        reasons.append(f"Digital Misfit: High Rating ({rating}) but NO website")
-
-    # 2. Busy but Broken (High Volume + Low Tech/Performance)
-    volume_thresh = config.get("high_volume_threshold", 100)
-    if reviews >= volume_thresh and (rating < 4.0 or not has_web):
-        score += rules.get("busy_but_broken", 40)
-        reasons.append(f"Busy but Broken: High Volume ({reviews}) + Optimization Gap")
-
-    # 3. Socially Active, Web Dead
-    has_ig = bool(row.get('instagram', '').strip())
-    if has_ig and not has_web:
-        score += rules.get("social_without_web", 30)
-        reasons.append("Socially Active but No Official Website")
-
-    # 4. High Value Categories (ROI for specialized services)
     category = (row.get('category', '') or '').lower()
-    if any(p_cat in category for p_cat in priority_cats):
-        score += rules.get("high_value_category", 20)
+    
+    # HARD FILTER: Skip established businesses with websites and low reviews
+    if has_web and reviews < 20:
+        return 0, "Established but small (Low ROI)"
+    
+    # 1. Tech Deficit = Prime Target (+50)
+    if not has_web:
+        score += 50
+        reasons.append("NO WEBSITE (Prime Target)")
+    
+    # 2. Volume = Money
+    if reviews >= 100:
+        score += 30
+        reasons.append(f"High Volume ({reviews} reviews)")
+    elif reviews >= 30:
+        score += 15
+        reasons.append(f"Medium Volume ({reviews} reviews)")
+    
+    # 3. Rating = Reputation (they care about quality)
+    if rating >= 4.5:
+        score += 20
+        reasons.append(f"High Rating ({rating})")
+    elif rating >= 4.0:
+        score += 10
+        reasons.append(f"Good Rating ({rating})")
+    
+    # 4. High Value Categories
+    high_value_cats = ["dental", "skin", "physio", "gym", "clinic", "hvac", "plumber", "fitness"]
+    if any(cat in category for cat in high_value_cats):
+        score += 10
         reasons.append(f"High-Value Category: {category}")
-
-    # 5. Low Rating Fix (Reputation Mgmt Strategy)
+    
+    # 5. Low Rating = Reputation Fix Opportunity
     if 0 < rating < 3.8:
-        score += rules.get("low_rating_fix", 15)
-        reasons.append(f"Reputation Gap: Low Rating ({rating}) needs fix")
-
-    # Final Adjustment: Cap at 100 and handle well-established
+        score += 15
+        reasons.append(f"Reputation Gap ({rating}) - Fix Opportunity")
+    
+    # Cap at 100
     score = min(score, 100)
-    reason = " | ".join(reasons) if reasons else "Established business (Low ROI for basic services)"
+    reason = " | ".join(reasons) if reasons else "Low Priority"
     
     return score, reason
 

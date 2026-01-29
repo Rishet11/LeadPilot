@@ -10,13 +10,14 @@ import os
 import pandas as pd
 
 
-def export_csv(df: pd.DataFrame, path: str = "data/leads.csv") -> str:
+def export_csv(df: pd.DataFrame, path: str = "data/leads.csv", source: str = "google_maps") -> str:
     """
     Export DataFrame to CSV file.
     
     Args:
         df: DataFrame to export
         path: Output file path
+        source: Lead source (google_maps or instagram)
         
     Returns:
         Path to the saved file
@@ -26,10 +27,21 @@ def export_csv(df: pd.DataFrame, path: str = "data/leads.csv") -> str:
     if dirname:
         os.makedirs(dirname, exist_ok=True)
     
+    # Add source column
+    df = df.copy()
+    df['source'] = source
+    
+    # Add country detection from city
+    if 'city' in df.columns:
+        usa_indicators = ['USA', 'FL', 'TX', 'AZ', 'CA', 'NY', 'Tampa', 'Orlando', 'Austin', 'Phoenix']
+        df['country'] = df['city'].apply(
+            lambda x: 'USA' if any(ind in str(x) for ind in usa_indicators) else 'India'
+        )
+    
     # Define column order for output (Agency specific)
     output_cols = [
-        'name', 'phone', 'city', 'category', 'rating', 
-        'reviews', 'website', 'lead_score', 'ai_outreach'
+        'name', 'phone', 'city', 'country', 'category', 'rating', 
+        'reviews', 'website', 'lead_score', 'ai_outreach', 'source'
     ]
     
     # Filter for columns that actually exist in the dataframe
