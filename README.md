@@ -62,16 +62,31 @@ Options:
 
 ```
 LeadPilot/
-├── main.py           # CLI + orchestrator
-├── config.json       # Configuration
-├── apify_client.py   # Apify integration
-├── cleaner.py        # Data normalization
-├── scorer.py         # Lead scoring
-├── exporter.py       # CSV/Sheets export
-├── ai_summary.py     # Gemini summaries
+├── main.py                 # CLI + orchestrator
+├── config.json             # Configuration
+├── apify_client.py         # Google Maps scraper
+├── cleaner.py              # Data normalization
+├── scorer.py               # Rule-based scoring
+├── instagram_enricher.py   # Instagram follower counts
+├── email_finder.py         # Email discovery
+├── lead_agent.py           # Agentic AI evaluation
+├── exporter.py             # CSV/Sheets export
+├── ai_summary.py           # Gemini summaries
+├── EXAMPLES.md             # Real-world examples
 └── data/
-    ├── raw.json      # Raw API response
-    └── leads.csv     # Final output
+    ├── raw.json            # Raw API response
+    └── leads.csv           # Final output
+```
+
+## Complete Pipeline
+
+```
+1. Scrape        → Google Maps (Apify)
+2. Clean         → Normalize phones, dedupe
+3. Enrich        → Instagram followers + Emails
+4. Score         → Rule-based (0-100)
+5. AI Analysis   → Autonomous evaluation (optional)
+6. Export        → CSV + Google Sheets
 ```
 
 ## API Keys Required
