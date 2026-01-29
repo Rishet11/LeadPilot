@@ -87,13 +87,34 @@ DATA:
 {chr(10).join(leads_context)}
 {'-' * 20}
 
+TASK:
+For each lead, act as a friendly fellow business owner (not an AI). Write a 5-7 line WhatsApp message.
+
+RULES for 'outreach_message':
+- Friendly, human tone
+- Mention their rating/reviews if good
+- Explain that people search on Google and expect a website
+- Explain that competitors with websites capture those customers
+- Mention online booking / enquiry forms
+- Make a realistic estimate of lost customers per month (e.g. 20-30)
+- No buzzwords, No "AI", No selling packages
+- End with a soft question
+- NO long dashes (use standard hyphens provided)
+
+Structure:
+1. Personal observation (reviews / reputation)
+2. Problem (no website / weak website)
+3. Consequence (lost customers every month)
+4. Simple solution (website + booking/enquiry)
+5. Soft CTA
+
 Respond with a JSON LIST of objects (one for each lead), in this format:
 [
     {{
         "id": <id from above>,
         "priority": <1-5, where 5 is 'Easy Sale'>,
         "reasoning": "<Why they need us>",
-        "outreach_angle": "<THE KILL LINE: A direct, specific hook using their data>"
+        "outreach_angle": "<The WhatsApp Message following above rules>"
     }}
 ]
 """

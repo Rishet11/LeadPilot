@@ -30,6 +30,10 @@ def run_batch(batch_config: dict):
     print(f"{'='*60}\n")
     
     results = []
+    import pandas as pd
+    
+    # Store all dataframes
+    all_dfs = []
     
     for i, target in enumerate(targets, 1):
         city = target.get("city")
@@ -48,6 +52,9 @@ def run_batch(batch_config: dict):
                 agent_mode=target.get("agent_mode", True)
             )
             
+            if not df.empty:
+                all_dfs.append(df)
+            
             results.append({
                 "city": city,
                 "category": category,
@@ -64,8 +71,20 @@ def run_batch(batch_config: dict):
                 "status": "failed",
                 "error": str(e)
             })
+    
+    # Save Combined CSV
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    if all_dfs:
+        combined_df = pd.concat(all_dfs, ignore_index=True)
+        combined_path = f"data/batch_leads_{timestamp}.csv"
         
-
+        # Use exporter to ensure correct columns
+        from exporter import export_csv
+        export_csv(combined_df, combined_path)
+        export_csv(combined_df, "data/leads.csv") # Update latest
+        
+        print(f"\n🌎 MERGED OUTPUT SAVED: {combined_path} ({len(combined_df)} total leads)")
     
     # Print summary
     print(f"\n{'='*60}")
@@ -84,14 +103,13 @@ def run_batch(batch_config: dict):
         print(f"\n📈 Total leads: {total_leads}")
         print(f"🏆 High quality: {total_high_quality}")
     
-    # Save results
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Save results json
     results_file = f"data/batch_results_{timestamp}.json"
     
     with open(results_file, "w") as f:
         json.dump(results, f, indent=2)
     
-    print(f"\n📁 Results saved to: {results_file}")
+    print(f"\n📁 Stats saved to: {results_file}")
     
     return results
 
