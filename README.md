@@ -24,9 +24,11 @@ python main.py --city "Mumbai" --category "Bakery" --limit 50
 - 🔍 **Google Maps Scraping** via Apify
 - 🧹 **Data Cleaning** - Normalizes phones, removes duplicates
 - 📊 **Lead Scoring** - Rule-based scoring (0-100)
+- 📸 **Instagram Enrichment** - Fetch follower counts
+- 📧 **Email Finder** - Scrape/guess contact emails
+- 🤖 **Agentic AI Mode** - Autonomous lead evaluation with Gemini
 - 📁 **CSV Export** - Ready-to-use lead lists
 - 📊 **Google Sheets** - Optional cloud export
-- 🤖 **AI Summaries** - Gemini-powered insights
 
 ## Scoring Logic
 
@@ -49,6 +51,9 @@ Options:
   --limit INT          Max results (default: 100)
   --dry-run            Use demo data
   --check-websites     Verify website accessibility
+  --enrich-instagram   Fetch Instagram follower counts
+  --find-emails        Find contact email addresses
+  --agent              Enable agentic AI mode
   --ai-summary         Add Gemini AI summaries
   --google-sheets      Export to Google Sheets
 ```
