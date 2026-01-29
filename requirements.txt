@@ -1,0 +1,14 @@
+# Core dependencies
+requests>=2.31.0
+pandas>=2.0.0
+python-dotenv>=1.0.0
+
+# Website detection
+beautifulsoup4>=4.12.0
+
+# Google Sheets export (optional)
+gspread>=5.12.0
+google-auth>=2.23.0
+
+# AI summaries with Gemini (optional)
+google-generativeai>=0.3.0

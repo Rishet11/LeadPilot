@@ -1,0 +1,25 @@
+{
+  "city": "Delhi",
+  "category": "Gym",
+  "limit": 100,
+  "scoring_rules": {
+    "no_website": 40,
+    "low_instagram_followers": 20,
+    "low_reviews": 15,
+    "low_rating": 10,
+    "priority_category": 15
+  },
+  "priority_categories": ["gym", "bakery", "salon", "cafe", "restaurant"],
+  "instagram_follower_threshold": 5000,
+  "review_threshold": 50,
+  "rating_threshold": 4.2,
+  "export": {
+    "csv": true,
+    "google_sheets": false,
+    "sheet_name": "LeadPilot Leads"
+  },
+  "ai_summary": {
+    "enabled": false,
+    "provider": "gemini"
+  }
+}

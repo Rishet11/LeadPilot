@@ -1,0 +1,188 @@
+"""
+Lead Scorer - Rule-based scoring engine
+
+Scores leads based on online presence indicators:
+- No website: +40 points
+- Low Instagram followers: +20 points  
+- Low reviews: +15 points
+- Low rating: +10 points
+- Priority category: +15 points
+"""
+
+import json
+import requests
+import pandas as pd
+
+
+# Default scoring configuration
+DEFAULT_CONFIG = {
+    "scoring_rules": {
+        "no_website": 40,
+        "low_instagram_followers": 20,
+        "low_reviews": 15,
+        "low_rating": 10,
+        "priority_category": 15
+    },
+    "priority_categories": ["gym", "bakery", "salon", "cafe", "restaurant"],
+    "instagram_follower_threshold": 5000,
+    "review_threshold": 50,
+    "rating_threshold": 4.2
+}
+
+
+def load_config(config_path: str = "config.json") -> dict:
+    """Load scoring configuration from file."""
+    try:
+        with open(config_path, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return DEFAULT_CONFIG
+
+
+def has_website(url: str, timeout: int = 5) -> bool:
+    """
+    Check if a website URL is accessible.
+    
+    Args:
+        url: Website URL to check
+        timeout: Request timeout in seconds
+        
+    Returns:
+        True if website is accessible, False otherwise
+    """
+    if not url or not url.strip():
+        return False
+    
+    # Ensure URL has protocol
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+    
+    try:
+        response = requests.head(url, timeout=timeout, allow_redirects=True)
+        return response.status_code == 200
+    except requests.RequestException:
+        try:
+            # Fallback to GET if HEAD fails
+            response = requests.get(url, timeout=timeout, allow_redirects=True)
+            return response.status_code == 200
+        except requests.RequestException:
+            return False
+
+
+def score_lead(row: dict, config: dict = None) -> tuple:
+    """
+    Score a single lead based on rules.
+    
+    Args:
+        row: Dictionary with lead data
+        config: Scoring configuration
+        
+    Returns:
+        Tuple of (score, reason)
+    """
+    if config is None:
+        config = load_config()
+    
+    rules = config.get("scoring_rules", DEFAULT_CONFIG["scoring_rules"])
+    priority_cats = config.get("priority_categories", DEFAULT_CONFIG["priority_categories"])
+    
+    score = 0
+    reasons = []
+    
+    # Check website
+    website = row.get('website', '') or ''
+    if not website.strip():
+        score += rules.get("no_website", 40)
+        reasons.append("No website")
+    
+    # Check Instagram followers (assuming we have this data)
+    followers = row.get('instagram_followers', 0) or 0
+    threshold = config.get("instagram_follower_threshold", 5000)
+    if followers < threshold:
+        score += rules.get("low_instagram_followers", 20)
+        if followers == 0:
+            reasons.append("No Instagram presence")
+        else:
+            reasons.append(f"Low IG followers ({followers})")
+    
+    # Check reviews
+    reviews = row.get('reviews', 0) or 0
+    review_threshold = config.get("review_threshold", 50)
+    if reviews < review_threshold:
+        score += rules.get("low_reviews", 15)
+        reasons.append(f"Low reviews ({reviews})")
+    
+    # Check rating
+    rating = row.get('rating', 0) or 0
+    rating_threshold = config.get("rating_threshold", 4.2)
+    if rating > 0 and rating < rating_threshold:
+        score += rules.get("low_rating", 10)
+        reasons.append(f"Low rating ({rating})")
+    
+    # Check priority category
+    category = (row.get('category', '') or '').lower()
+    if category in priority_cats:
+        score += rules.get("priority_category", 15)
+        reasons.append(f"Priority category ({category})")
+    
+    # Cap at 100
+    score = min(score, 100)
+    
+    # Build reason string
+    reason = " + ".join(reasons) if reasons else "Well-established business"
+    
+    return score, reason
+
+
+def score_dataframe(df: pd.DataFrame, config: dict = None, check_websites: bool = False) -> pd.DataFrame:
+    """
+    Score all leads in a DataFrame.
+    
+    Args:
+        df: DataFrame with lead data
+        config: Scoring configuration
+        check_websites: Whether to verify website accessibility (slower)
+        
+    Returns:
+        DataFrame with score and reason columns added
+    """
+    if config is None:
+        config = load_config()
+    
+    scores = []
+    reasons = []
+    
+    for _, row in df.iterrows():
+        row_dict = row.to_dict()
+        
+        # Optional: Check website accessibility
+        if check_websites and row_dict.get('website'):
+            if not has_website(row_dict['website']):
+                row_dict['website'] = ''  # Treat as no website if not accessible
+        
+        score, reason = score_lead(row_dict, config)
+        scores.append(score)
+        reasons.append(reason)
+    
+    df = df.copy()
+    df['lead_score'] = scores
+    df['reason'] = reasons
+    
+    # Sort by score descending
+    df = df.sort_values('lead_score', ascending=False).reset_index(drop=True)
+    
+    return df
+
+
+def filter_qualified_leads(df: pd.DataFrame, min_score: int = 50) -> pd.DataFrame:
+    """
+    Filter to only qualified leads above minimum score.
+    
+    Args:
+        df: Scored DataFrame
+        min_score: Minimum score threshold
+        
+    Returns:
+        Filtered DataFrame
+    """
+    return df[df['lead_score'] >= min_score].copy()
