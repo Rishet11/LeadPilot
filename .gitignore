@@ -14,6 +14,11 @@ env/
 # Data files (can be large)
 data/raw.json
 data/*.csv
+data/batch_results_*.json
+
+# Logs
+logs/
+*.log
 
 # IDE
 .idea/
@@ -29,3 +34,6 @@ Thumbs.db
 credentials.json
 *.pem
 *.key
+
+# Batch configs (may contain sensitive data)
+batch_config.json
