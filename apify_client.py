@@ -8,10 +8,13 @@ Supports:
 import os
 import time
 import json
+import logging
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger("leadpilot")
 
 APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN")
 APIFY_BASE_URL = "https://api.apify.com/v2"
@@ -82,7 +85,7 @@ def poll_run_status(run_id: str, max_wait: int = 300, poll_interval: int = 10) -
         response.raise_for_status()
         
         status = response.json()["data"]["status"]
-        print(f"Run status: {status} (elapsed: {elapsed}s)")
+        logger.info("Run status: %s (elapsed: %ds)", status, elapsed)
         
         if status in ["SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"]:
             return status
@@ -117,7 +120,7 @@ def save_raw_data(data: list, path: str = "data/raw.json"):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
-    print(f"Saved {len(data)} items to {path}")
+    logger.info("Saved %d items to %s", len(data), path)
 
 
 def load_raw_data(path: str = "data/raw.json") -> list:

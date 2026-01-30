@@ -9,14 +9,13 @@ Security Features:
 """
 
 import json
-import sys
 import os
+import logging
 from datetime import datetime
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Request
 from sqlalchemy.orm import Session
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+logger = logging.getLogger("leadpilot")
 
 from ..database import get_db, Lead, Job, JobStatus
 from ..schemas import BatchScrapeRequest, InstagramScrapeRequest, ScrapeResponse, ScrapeTarget
@@ -26,7 +25,10 @@ from ..rate_limit import limiter, SCRAPE_LIMIT
 router = APIRouter(prefix="/scrape", tags=["scrape"])
 
 # Maximum concurrent jobs allowed
-MAX_CONCURRENT_JOBS = int(os.getenv("MAX_CONCURRENT_JOBS", "3"))
+try:
+    MAX_CONCURRENT_JOBS = int(os.getenv("MAX_CONCURRENT_JOBS", "3"))
+except (ValueError, TypeError):
+    MAX_CONCURRENT_JOBS = 3
 
 
 def check_concurrent_jobs(db: Session):
@@ -42,14 +44,19 @@ def check_concurrent_jobs(db: Session):
         )
 
 
-def run_google_maps_batch(job_id: int, targets: list, db_path: str):
-    """Background task to run Google Maps scraping."""
+def _create_background_session(db_path: str):
+    """Create a new DB session for background tasks (which run outside the request lifecycle)."""
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    
+
     engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
     SessionLocal = sessionmaker(bind=engine)
-    db = SessionLocal()
+    return SessionLocal()
+
+
+def run_google_maps_batch(job_id: int, targets: list, db_path: str):
+    """Background task to run Google Maps scraping."""
+    db = _create_background_session(db_path)
     
     try:
         # Update job status to running
@@ -88,7 +95,7 @@ def run_google_maps_batch(job_id: int, targets: list, db_path: str):
                 
                 db.commit()
             except Exception as e:
-                print(f"Error processing target {target}: {e}")
+                logger.error("Error processing target %s: %s", target, e)
                 continue
         
         # Update job as completed
@@ -109,12 +116,7 @@ def run_google_maps_batch(job_id: int, targets: list, db_path: str):
 
 def run_instagram_batch(job_id: int, targets: list, db_path: str):
     """Background task to run Instagram scraping."""
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-    
-    engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
-    SessionLocal = sessionmaker(bind=engine)
-    db = SessionLocal()
+    db = _create_background_session(db_path)
     
     try:
         job = db.query(Job).filter(Job.id == job_id).first()
@@ -150,7 +152,7 @@ def run_instagram_batch(job_id: int, targets: list, db_path: str):
                 
                 db.commit()
             except Exception as e:
-                print(f"Error processing Instagram target {target}: {e}")
+                logger.error("Error processing Instagram target %s: %s", target, e)
                 continue
         
         job.status = JobStatus.COMPLETED.value

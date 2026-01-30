@@ -2,294 +2,275 @@
 Lead Agent - Agentic AI layer for autonomous lead evaluation
 
 This module adds "agentic" capabilities where Gemini:
-1. Autonomously evaluates a BATCH of leads (10 at a time) for cost efficiency.
-2. Generates "Kill Lines" (Sales Hooks) for direct outreach.
+1. Autonomously evaluates a BATCH of leads for cost efficiency.
+2. Generates personalized outreach messages for direct contact.
 3. Prioritizes leads based on potential value.
-
-Unlike the rule-based scorer, this agent THINKS about each lead.
 """
 
 import os
 import json
-import traceback
+import time
+import logging
 from dotenv import load_dotenv
+
+from constants import DEFAULT_AI_SYSTEM_PROMPT
 
 load_dotenv()
 
+logger = logging.getLogger("leadpilot")
 
-def get_agent():
-    """Initialize Gemini agent."""
+MAX_RETRIES = 2
+RETRY_DELAY = 3
+
+
+def get_agent(temperature: float = 0.9):
+    """Initialize Gemini agent with generation config."""
     try:
         import google.generativeai as genai
     except ImportError:
         raise ImportError("Please install google-generativeai: pip install google-generativeai")
-    
+
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not found in environment variables")
-    
+
     genai.configure(api_key=api_key)
-    
-    # Use a capable model for reasoning
+
+    generation_config = genai.GenerationConfig(
+        temperature=temperature,
+        response_mime_type="application/json",
+    )
+
     return genai.GenerativeModel(
         'gemini-2.0-flash',
-        system_instruction="""You are LeadPilot AI, a cynical B2B Sales Sniper. 
-Your goal is to find high-ROI clients for a digital agency.
-
-TARGETS:
-1. "Digital Misfit": High Ratings (4.5+) but NO Website. (Easy sell: "Showcase your reputation")
-2. "Busy but Broken": Huge Reviews (100+) but bad rating or no site. (Easy sell: "Fix your leaks")
-
-YOUR JOB:
-- Analyze leads in BATCHES.
-- Ignore "average" businesses. Focus on the ones bleeding money.
-- Generate a "Kill Line": A single, direct WhatsApp/SMS hook that mentions SPECIFIC data (e.g. "Saw you have 288 reviews but no site").
-- NO FLUFF. NO "Hello sir". NO "We can help". Just the hook.
-"""
+        system_instruction=DEFAULT_AI_SYSTEM_PROMPT,
+        generation_config=generation_config,
     )
 
 
-def analyze_leads_batch(leads: list, max_leads: int = 10) -> list:
+def _call_with_retry(agent, prompt: str) -> str:
+    """Call Gemini with retry logic for transient failures."""
+    last_error = None
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            response = agent.generate_content(prompt)
+            text = response.text.strip()
+            # Clean JSON markdown wrappers if present
+            if '```json' in text:
+                text = text.split('```json')[1].split('```')[0]
+            elif '```' in text:
+                text = text.split('```')[1].split('```')[0]
+            return text.strip()
+        except Exception as e:
+            last_error = e
+            if attempt < MAX_RETRIES:
+                logger.warning("API call failed (attempt %d/%d): %s", attempt + 1, MAX_RETRIES + 1, e)
+                time.sleep(RETRY_DELAY * (attempt + 1))
+            else:
+                raise last_error
+
+
+def analyze_leads_batch(leads: list, max_leads: int = 25) -> list:
     """
     Analyze multiple leads in a SINGLE API call for cost efficiency.
-    
+
     Args:
         leads: List of lead dictionaries
-        max_leads: Limit to process
-        
+        max_leads: Limit to process per batch
+
     Returns:
         List of leads with 'ai_analysis' attached
     """
-    # 1. Prepare Batch
     batch_leads = leads[:max_leads]
     if not batch_leads:
         return []
-        
-    print(f"\n🤖 AI Agent analyzing {len(batch_leads)} leads in ONE batch...")
-    
-    # 2. Construct Prompt
+
+    logger.info("AI Agent analyzing %d leads...", len(batch_leads))
+
+    # Build rich context for each lead
     leads_context = []
     for i, lead in enumerate(batch_leads):
-        info = (
-            f"ID: {i}\n"
-            f"Name: {lead.get('name')}\n"
-            f"Category: {lead.get('category')}\n"
-            f"Rating: {lead.get('rating')}/5 ({lead.get('reviews')} reviews)\n"
-            f"Website: {lead.get('website') or 'None'}\n"
-            f"Instagram: {lead.get('instagram') or 'None'}\n"
-        )
-        leads_context.append(info)
-    
-    prompt = f"""You are a freelance website developer doing cold outreach.
-Your goal: Get them to reply. NOT to sell on the first message.
+        parts = [
+            f"ID: {i}",
+            f"Name: {lead.get('name')}",
+            f"Category: {lead.get('category')}",
+            f"City: {lead.get('city', 'Unknown')}",
+            f"Rating: {lead.get('rating')}/5 ({lead.get('reviews', 0)} reviews)",
+            f"Website: {lead.get('website') or 'NONE'}",
+            f"Phone: {lead.get('phone') or 'Unknown'}",
+        ]
+        if lead.get('instagram'):
+            parts.append(f"Instagram: @{lead.get('instagram')}")
+        if lead.get('address'):
+            parts.append(f"Address: {lead.get('address')}")
+        leads_context.append("\n".join(parts))
+
+    prompt = f"""Analyze these leads and write a WhatsApp outreach message for each.
 
 LEAD DATA:
-{'-' * 20}
-{chr(10).join(leads_context)}
-{'-' * 20}
+{"=" * 30}
+{chr(10).join(f"[Lead {i}]{chr(10)}{ctx}" for i, ctx in enumerate(leads_context))}
+{"=" * 30}
 
-WRITE A WHATSAPP MESSAGE FOR EACH LEAD. Follow this structure:
+FOR EACH LEAD, provide:
+1. priority (1-5): How likely they are to convert. 5 = hot lead (high ratings, no website, many reviews). 1 = cold (has website, average metrics).
+2. reasoning: One sentence on WHY this lead is worth pursuing or not.
+3. outreach_angle: A 4-5 line WhatsApp message following this structure:
 
-LINE 1 - PERSONALIZED HOOK (Use their actual data)
-- Use their business NAME and something specific (rating, reviews, category)
-- Make them feel seen: "4.8 stars with 200+ reviews is impressive"
+LINE 1 - PERSONALIZED HOOK: Reference their exact data (name, rating, review count). Make them feel seen.
+LINE 2 - THE GAP: Point out their missing or weak website directly.
+LINE 3 - THE COST: Make the lost revenue tangible. "People searching '[their category] near me' are finding competitors instead."
+LINE 4 - SOFT OFFER: "I can help with that if you're interested" — position as solving their problem, not selling.
+LINE 5 - CLOSE: Sound like a friend giving real advice. Reference their specific strength.
 
-LINE 2 - THE PROBLEM (Direct)
-- Point out the missing/weak website
-- Be direct: "no website" or "your site looks outdated"
+RULES:
+- Use their ACTUAL business name, rating, and review count in the message.
+- Lowercase, conversational tone. No "Dear" or "Hello sir".
+- Each message must be UNIQUE — no copy-paste templates with swapped names.
+- If a lead already HAS a website, focus on improving it or their online presence instead.
 
-LINE 3 - THE COST (Make it tangible)
-- "People searching '[category] near me' are going to competitors"
-- "That's probably 10-20 lost customers every month"
-
-LINE 4 - YOUR OFFER (Indirect, helpful)
-- Don't say "I make websites" - say "I can help you with that"
-- Position yourself as someone who can solve THEIR problem
-
-LINE 5 - KILLER CLOSE (FOMO + Genuine Advice)
-- Make them feel they're leaving money on the table RIGHT NOW
-- Sound like a friend giving honest advice, not a pitch
-- Options:
-  * "tbh you're too good to not have a website - let me know if you want to fix that"
-  * "with reviews like yours, you're leaving money on the table - i can sort this out for you"
-  * "your competitors with worse ratings have sites and are getting those customers - just saying"
-  * "honestly a website would 10x your reach - hmu if you want to get this done"
-
-EXAMPLE OUTPUT:
-hey! just saw [Business Name] - 4.9 stars from 300+ reviews, that's impressive 🔥
-noticed you don't have a website though
-people searching "dentist near me" are going straight to competitors - that's easily 20+ lost customers/month
-i can help you with that if you're interested
-tbh you're too good to not have a site - lmk if you want to get this sorted
-
-RESPOND WITH JSON:
+RESPOND WITH A JSON ARRAY:
 [
     {{
         "id": <id>,
         "priority": <1-5>,
-        "reasoning": "<Why they're a good lead>",
-        "outreach_angle": "<The 5-line WhatsApp message>"
+        "reasoning": "<one sentence>",
+        "outreach_angle": "<the 4-5 line message>"
     }}
 ]
 """
 
-    # 3. Call API
-    agent = get_agent()
+    agent = get_agent(temperature=0.9)
     try:
-        response = agent.generate_content(prompt)
-        text = response.text.strip()
-        
-        # Clean JSON
-        if '```json' in text:
-            text = text.split('```json')[1].split('```')[0]
-        elif '```' in text:
-            text = text.split('```')[1].split('```')[0]
-            
+        text = _call_with_retry(agent, prompt)
         analysis_list = json.loads(text)
-        
-        # 4. Map Results back to Leads
+
         results = []
         analysis_map = {item['id']: item for item in analysis_list if 'id' in item}
-        
+
         for i, lead in enumerate(batch_leads):
             analysis = analysis_map.get(i, {
-                "priority": 0, 
-                "reasoning": "Analysis failed", 
+                "priority": 0,
+                "reasoning": "Analysis failed",
                 "outreach_angle": "Check manually"
             })
-            
-            # Print Kill Line
-            print(f"  🎯 {lead.get('name')[:20]}: {analysis.get('outreach_angle')}")
-            
+
+            logger.info("Lead %s → Priority %s",
+                        lead.get('name', '')[:25],
+                        analysis.get('priority', '?'))
+
             enriched = {**lead, 'ai_analysis': analysis}
             results.append(enriched)
 
-        # Sort by priority
         results.sort(key=lambda x: x.get('ai_analysis', {}).get('priority', 0), reverse=True)
         return results
 
     except Exception as e:
-        print(f"❌ Batch analysis failed: {e}")
-        traceback.print_exc()
-        return batch_leads  # Return original leads if failure
+        logger.error("Batch analysis failed: %s", e, exc_info=True)
+        return batch_leads
 
 
-def run_agent_pipeline(df, max_leads: int = 10):
+def run_agent_pipeline(df, max_leads: int = 25):
     """
     Run the full agentic pipeline on a DataFrame.
+    Processes leads in batches of 25 for API efficiency.
     """
     import pandas as pd
-    
+
     leads = df.to_dict('records')
-    
-    # Run Batch Analysis
-    enriched_leads = analyze_leads_batch(leads, max_leads)
-    
-    # Convert back to DataFrame
-    result_df = pd.DataFrame(enriched_leads)
-    
+
+    # Process in batches
+    batch_size = 25
+    all_enriched = []
+
+    for i in range(0, min(len(leads), max_leads), batch_size):
+        chunk = leads[i:i + batch_size]
+        enriched = analyze_leads_batch(chunk, max_leads=batch_size)
+        all_enriched.extend(enriched)
+
+    if not all_enriched:
+        return df
+
+    result_df = pd.DataFrame(all_enriched)
+
     # Flatten AI analysis for CSV export
     if 'ai_analysis' in result_df.columns:
-        result_df['ai_priority'] = result_df['ai_analysis'].apply(lambda x: x.get('priority', 0) if isinstance(x, dict) else 0)
-        # result_df['ai_reasoning'] = result_df['ai_analysis'].apply(lambda x: x.get('reasoning', '') if isinstance(x, dict) else '')
-        result_df['ai_outreach'] = result_df['ai_analysis'].apply(lambda x: x.get('outreach_angle', '') if isinstance(x, dict) else '')
-        
-        # Drop complex column, keep flat ones
+        result_df['ai_priority'] = result_df['ai_analysis'].apply(
+            lambda x: x.get('priority', 0) if isinstance(x, dict) else 0
+        )
+        result_df['ai_outreach'] = result_df['ai_analysis'].apply(
+            lambda x: x.get('outreach_angle', '') if isinstance(x, dict) else ''
+        )
+        result_df['ai_reasoning'] = result_df['ai_analysis'].apply(
+            lambda x: x.get('reasoning', '') if isinstance(x, dict) else ''
+        )
         result_df = result_df.drop(columns=['ai_analysis'])
-    
+
+    # Re-sort by AI priority
+    if 'ai_priority' in result_df.columns:
+        result_df = result_df.sort_values('ai_priority', ascending=False)
+
     return result_df
 
 
 def generate_instagram_dms_batch(profiles: list) -> list:
     """
-    Generate Instagram DM scripts for a BATCH of profiles (Cost efficient).
+    Generate Instagram DM scripts for a BATCH of profiles.
     """
     if not profiles:
         return []
-        
-    print(f"\n🤖 AI Agent generating DMs for {len(profiles)} profiles...")
-    
-    # Context Builder
+
+    logger.info("AI Agent generating DMs for %d profiles...", len(profiles))
+
     profiles_context = []
     for i, p in enumerate(profiles):
-        info = (
-            f"ID: {i}\n"
-            f"Username: {p.get('username')}\n"
-            f"Bio: {p.get('bio', '')[:200]}\n"
-        )
-        profiles_context.append(info)
+        parts = [
+            f"ID: {i}",
+            f"Username: @{p.get('username')}",
+            f"Bio: {p.get('bio', '')[:300]}",
+        ]
+        if p.get('followers'):
+            parts.append(f"Followers: {p.get('followers')}")
+        if p.get('external_url'):
+            parts.append(f"Link: {p.get('external_url')}")
+        elif p.get('has_real_website') is False:
+            parts.append("Website: NONE (or linktree only)")
+        profiles_context.append("\n".join(parts))
 
-    prompt = f"""You are a freelance web designer sliding into DMs to offer help.
-Your goal: Get a reply. NOT to close a sale in the first message.
+    prompt = f"""Write an Instagram DM for each profile below. Goal: get a reply, not close a sale.
 
 PROFILE DATA:
-{'-' * 20}
-{chr(10).join(profiles_context)}
-{'-' * 20}
+{"=" * 30}
+{chr(10).join(f"[Profile {i}]{chr(10)}{ctx}" for i, ctx in enumerate(profiles_context))}
+{"=" * 30}
 
-WRITE AN INSTAGRAM DM FOR EACH PROFILE. Follow this structure:
+DM STRUCTURE (4-5 lines max):
+LINE 1 - COMPLIMENT: Reference something SPECIFIC from their bio or niche. Show you looked at their page.
+LINE 2 - OBSERVATION: Point out missing website/portfolio directly. "noticed you don't have a site linked"
+LINE 3 - CONSEQUENCE: Make it tangible. "clients check your site before booking" or "you're losing inquiries to others who have one"
+LINE 4 - OFFER: "I can help with that" — solve their problem, don't pitch services.
+LINE 5 - CLOSE: Sound like a peer. Reference their specific talent or niche.
 
-LINE 1 - PERSONALIZED COMPLIMENT
-- Reference something SPECIFIC from their bio or work
-- "your bridal looks are 🔥" or "love the aesthetic"
-- Make them feel like you actually looked at their page
+RULES:
+- Use their actual username and bio details. Each message MUST be unique.
+- Lowercase, casual. 1-2 emojis max.
+- If their bio mentions a specialty (bridal, fitness, baking), reference it directly.
+- If they have a linktree/bio link but no real site, mention upgrading from linktree.
+- Sound genuine, not scripted.
 
-LINE 2 - THE OBSERVATION (Direct)
-- "noticed you don't have a website linked"
-- "saw you're just using linktree"
-- Be direct, not apologetic
-
-LINE 3 - THE CONSEQUENCE
-- "clients want to see a portfolio before booking"
-- "you're losing inquiries to artists who have proper sites"
-
-LINE 4 - YOUR OFFER (Indirect, helpful)
-- Don't say "I make portfolios" - say "I can help you with that"
-- Position yourself as someone who solves THEIR problem
-
-LINE 5 - KILLER CLOSE (FOMO + Genuine Advice)
-- Make them feel they're leaving bookings on the table RIGHT NOW
-- Sound like a friend giving honest advice
-- Options:
-  * "tbh you're too talented to not have a portfolio - let me know if you want to fix that"
-  * "with work like yours, you're leaving bookings on the table - i can sort this for you"
-  * "other artists with half your skill have portfolios and are getting those clients - just saying"
-  * "honestly a proper site would change your game - hmu if you want to get this done"
-
-TONE RULES:
-- lowercase everything
-- 1-2 emojis max
-- sound like a peer giving real advice
-- 4-5 short lines max
-
-EXAMPLE OUTPUT:
-hey! your bridal work is 🔥
-noticed you don't have a portfolio site linked
-clients want to see more before booking - you're losing some to artists who do have sites
-i can help you with that if you want
-tbh you're too talented to not have a portfolio - lmk if you want to get this sorted
-
-RESPOND WITH JSON:
+RESPOND WITH A JSON ARRAY:
 [
     {{
         "id": <id>,
-        "dm_message": "<The casual 4-5 line DM>"
+        "dm_message": "<the 4-5 line DM>"
     }}
 ]
 """
-    agent = get_agent()
+    agent = get_agent(temperature=1.0)
     try:
-        response = agent.generate_content(prompt)
-        text = response.text.strip()
-        
-        # Clean JSON
-        if '```json' in text:
-            text = text.split('```json')[1].split('```')[0]
-        elif '```' in text:
-            text = text.split('```')[1].split('```')[0]
-            
+        text = _call_with_retry(agent, prompt)
         return json.loads(text)
-        
+
     except Exception as e:
-        print(f"❌ Batch DM gen failed: {e}")
+        logger.error("Batch DM gen failed: %s", e)
         return []
