@@ -13,13 +13,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadData();
+
+    // Auto-refresh every 5 seconds to show live progress
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
     try {
       const [statsData, jobsData] = await Promise.all([
         getLeadStats(),
-        getJobs(5),
+        getJobs(10), // Increased from 5 to 10 to see more activity
       ]);
       setStats(statsData);
       setJobs(jobsData);
@@ -75,7 +79,16 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white mb-6">Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+          </span>
+          <span className="text-xs font-medium text-green-400">Live Updates</span>
+        </div>
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
