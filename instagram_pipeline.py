@@ -4,9 +4,8 @@ Goal: Acquire 1-3 paying clients (No SaaS, Just Money)
 """
 
 import os
-import argparse
+import logging
 import pandas as pd
-import traceback
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -17,12 +16,40 @@ load_dotenv()
 
 import re
 
+logger = logging.getLogger("leadpilot")
+
 # --- CONFIG ---
-FOLLOWERS_MIN = 500
-FOLLOWERS_MAX = 5000
-SCORE_THRESHOLD = 60
-LINKTREE_DOMAINS = ["linktr.ee", "beacons.ai", "taplink.cc", "bio.link", "carrd.co"]
-NICHE_KEYWORDS = ["bakery", "baker", "cake", "trainer", "coach", "fitness", "gym", "makeup", "artist", "salon"]
+FOLLOWERS_MIN = 300
+FOLLOWERS_MAX = 10000
+SCORE_THRESHOLD = 50
+LINKTREE_DOMAINS = [
+    "linktr.ee", "beacons.ai", "taplink.cc", "bio.link", "carrd.co",
+    "linkin.bio", "hoo.be", "allmylinks.com", "lnk.bio", "campsite.bio",
+    "stan.store", "milkshake.app", "solo.to", "snipfeed.co", "withkoji.com",
+]
+NICHE_KEYWORDS = [
+    # Medical & Health — patients always google before booking
+    "dentist", "dental", "clinic", "orthodontist", "dermatologist",
+    "physiotherapy", "chiropractor", "veterinary", "vet", "ayurveda",
+    # Fitness & Wellness — need booking/class schedules online
+    "gym", "fitness", "yoga", "pilates", "trainer", "coach", "spa",
+    # Beauty & Salons — clients check reviews/portfolio before booking
+    "salon", "beauty", "skincare", "aesthetics", "makeup artist",
+    "barber", "hairstylist", "hairdresser", "mehndi",
+    # Home Services — "near me" search is their #1 lead source
+    "plumber", "electrician", "hvac", "roofing", "pest control",
+    "interior", "architect", "landscaping", "cleaning", "carpenter", "painting",
+    # Food & Hospitality — need menus, ordering, reservations
+    "restaurant", "cafe", "bakery", "baker", "catering", "chef", "tiffin",
+    # Events & Photography — portfolio is everything
+    "wedding", "photographer", "photography", "event", "planner",
+    # Professional Services — trust = website
+    "lawyer", "realtor", "real estate", "accountant", "consultant",
+    # Education — enrollment/credibility dependent
+    "coaching", "academy", "institute", "tutor",
+    # Auto — local search heavy
+    "mechanic", "auto repair", "garage",
+]
 
 
 def get_gemini():
@@ -35,7 +62,7 @@ def get_gemini():
         genai.configure(api_key=api_key)
         return genai.GenerativeModel('gemini-2.0-flash')
     except Exception as e:
-        print(f"⚠️ Gemini init failed: {e}")
+        logger.warning("Gemini init failed: %s", e)
         return None
 
 
@@ -43,11 +70,11 @@ def is_real_website(url: str) -> bool:
     """Check if URL is a 'real' website (not Linktree/None)"""
     if not url:
         return False
-    
+
     url_lower = url.lower()
     if any(domain in url_lower for domain in LINKTREE_DOMAINS):
         return False
-        
+
     return True
 
 
@@ -71,28 +98,28 @@ def score_profile(profile: dict, target_city: str = None) -> int:
     followers = profile.get("followersCount", 0)
     external_url = profile.get("externalUrl")
     bio = (profile.get("biography") or "").lower()
-    
+
     # 1. Follower Sweet Spot
     if FOLLOWERS_MIN < followers < FOLLOWERS_MAX:
         score += 40
     else:
         return 0 # Fail instantly if not in range
-        
+
     # 2. Tech Deficit (No Website)
     if not is_real_website(external_url):
         score += 40
-        
+
     # 3. Niche Match
     if any(kw in bio for kw in NICHE_KEYWORDS):
         score += 20
-        
-    # 4. Location Match (Improvisation)
+
+    # 4. Location Match
     if target_city:
         if target_city.lower() in bio:
             score += 20
         else:
-            score -= 30 # Penalize heavily if city not found (avoiding remote leads)
-        
+            score -= 15  # Moderate penalty — many local businesses don't put city in bio
+
     return score
 
 
@@ -104,34 +131,39 @@ def process_instagram_targets(targets: list) -> list:
     """
     Process Instagram targets and return leads as list of dicts.
     Used by the API for programmatic access.
-    
+
     Args:
         targets: List of dicts with 'keyword', 'limit' keys
-        
+
     Returns:
         List of lead dictionaries
     """
-    model = get_gemini()
     all_leads = []
-    
+
     for target in targets:
-        leads = process_target(target, model)
+        leads = process_target(target)
         all_leads.extend(leads)
-    
+
     if not all_leads:
         return []
-    
+
     # Batch DM Generation
-    batch_size = 10
+    batch_size = 15
     final_leads = []
-    
+
     for i in range(0, len(all_leads), batch_size):
         chunk_leads = all_leads[i:i+batch_size]
-        chunk_input = [{"username": l["username"], "bio": l["bio"]} for l in chunk_leads]
-        
+        chunk_input = [{
+            "username": l["username"],
+            "bio": l["bio"],
+            "followers": l.get("followers"),
+            "external_url": l.get("external_url", ""),
+            "has_real_website": l.get("has_real_website", False),
+        } for l in chunk_leads]
+
         ai_responses = generate_instagram_dms_batch(chunk_input)
         chunk_map = {r['id']: r['dm_message'] for r in ai_responses if 'id' in r}
-        
+
         for local_id, lead in enumerate(chunk_leads):
             msg = chunk_map.get(local_id, "Check manually")
             lead['dm_message'] = msg
@@ -140,53 +172,59 @@ def process_instagram_targets(targets: list) -> list:
             lead['name'] = lead.get('username', '')
             lead['category'] = 'Instagram'
             final_leads.append(lead)
-    
+
     return final_leads
 
 
-def process_target(target: dict, model) -> list:
+def process_target(target: dict) -> list:
     """Process a single keyword target."""
     keyword = target.get("keyword")
     limit = target.get("limit", 30)
-    
-    print(f"\n� PROCESSING: '{keyword}' (Limit: {limit})")
-    
+
+    logger.info("PROCESSING: '%s' (Limit: %d)", keyword, limit)
+
     # 1. Search
-    print("   Running Apify Search...")
+    logger.info("Running Apify Search...")
     try:
         run_data = run_instagram_search(keyword, limit)
         run_id = run_data["run_id"]
         dataset_id = run_data["dataset_id"]
-        
+
         status = poll_run_status(run_id)
         if status != "SUCCEEDED":
-            print(f"   ❌ Scraper failed: {status}")
+            logger.error("Scraper failed: %s", status)
             return []
 
         raw_data = fetch_dataset(dataset_id)
-        print(f"   ✅ Fetched {len(raw_data)} profiles")
-        
+        logger.info("Fetched %d profiles", len(raw_data))
+
     except Exception as e:
-        print(f"   ❌ API Error: {e}")
+        logger.error("API Error: %s", e)
         return []
 
     # 2. Filter & Score
-    print("   Filtering & Scoring...")
+    logger.info("Filtering & Scoring...")
     filtered_leads = []
-    
-    # Smart City Detection
+
+    # Smart City Detection — extract the last word(s) as potential city from keyword
     target_city = ""
-    common_cities = ["delhi", "mumbai", "bangalore", "pune", "gurgaon", "noida", "chennai", "hyderabad"]
-    for city in common_cities:
-        if city in keyword.lower():
-            target_city = city
-            print(f"   📍 City Detected: {target_city.capitalize()}")
-            break
-            
+    keyword_lower = keyword.lower().strip()
+    # Try to find a city name in the keyword by splitting on common patterns
+    # e.g. "makeup artist london" → "london", "home baker mumbai" → "mumbai"
+    keyword_parts = keyword_lower.split()
+    if len(keyword_parts) >= 2:
+        # Last word is likely the city
+        candidate = keyword_parts[-1]
+        # Skip if the last word is a common niche keyword
+        niche_words = {"artist", "maker", "coach", "trainer", "designer", "photographer", "stylist"}
+        if candidate not in niche_words and len(candidate) >= 3:
+            target_city = candidate
+            logger.info("City Detected: %s", target_city.capitalize())
+
     for item in raw_data:
         username = item.get("username")
         if not username: continue
-        
+
         profile = {
             "username": username,
             "followersCount": item.get("followersCount", 0),
@@ -194,16 +232,16 @@ def process_target(target: dict, model) -> list:
             "externalUrl": item.get("externalUrl", ""),
             "url": f"https://instagram.com/{username}"
         }
-        
+
         score = score_profile(profile, target_city)
         email = extract_email(profile["biography"])
-        
+
         if score >= SCORE_THRESHOLD:
             filtered_leads.append({
                 "username": profile["username"],
                 "url": profile["url"],
                 "followers": profile["followersCount"],
-                "bio": profile["biography"][:150].replace("\n", " "),
+                "bio": profile["biography"][:300].replace("\n", " "),
                 "matches_city": target_city.lower() in profile["biography"].lower() if target_city else True,
                 "email": email,
                 "external_url": profile["externalUrl"],
@@ -211,73 +249,75 @@ def process_target(target: dict, model) -> list:
                 "score": score
             })
 
-    print(f"   ✅ Qualified: {len(filtered_leads)} leads (Score >= {SCORE_THRESHOLD})")
+    logger.info("Qualified: %d leads (Score >= %d)", len(filtered_leads), SCORE_THRESHOLD)
     return filtered_leads
 
 
 def run_batch_pipeline(config_path: str = "instagram_batch_config.json"):
-    print(f"\n🚀 STARTING INSTAGRAM BATCH PIPELINE")
-    
+    logger.info("STARTING INSTAGRAM BATCH PIPELINE")
+
     import json
     try:
         with open(config_path, "r") as f:
             config = json.load(f)
     except FileNotFoundError:
-        print(f"❌ Config not found: {config_path}")
+        logger.error("Config not found: %s", config_path)
         return
 
     targets = config.get("targets", [])
     all_leads = []
-    
-    # Init Gemini once
-    model = get_gemini() # Kept for backward compatibility if needed, but we use lead_agent now
-    
+
     # 1. Collect Leads from all targets
     for target in targets:
-        leads = process_target(target, model)
+        leads = process_target(target)
         all_leads.extend(leads)
-        
+
     if not all_leads:
-        print("\n⚠️ No leads found in this batch.")
+        logger.warning("No leads found in this batch.")
         return
 
     # 2. Batch DM Generation (Cost Optimized)
-    print(f"\n💬 Generating DMs for {len(all_leads)} total leads...")
-    
-    batch_size = 10
+    logger.info("Generating DMs for %d total leads...", len(all_leads))
+
+    batch_size = 15
     final_leads = []
-    
-    # Process in chunks of 10 for AI efficiency
+
     for i in range(0, len(all_leads), batch_size):
         chunk_leads = all_leads[i:i+batch_size]
-        chunk_input = [{"username": l["username"], "bio": l["bio"]} for l in chunk_leads]
-        
+        chunk_input = [{
+            "username": l["username"],
+            "bio": l["bio"],
+            "followers": l.get("followers"),
+            "external_url": l.get("external_url", ""),
+            "has_real_website": l.get("has_real_website", False),
+        } for l in chunk_leads]
+
         ai_responses = generate_instagram_dms_batch(chunk_input)
-        
+
         # Create map for this chunk
         chunk_map = {r['id']: r['dm_message'] for r in ai_responses if 'id' in r}
-        
+
         for local_id, lead in enumerate(chunk_leads):
             msg = chunk_map.get(local_id, "Check manually")
             lead['dm_message'] = msg
-            print(f"   💬 {lead['username']}: {msg}")
+            logger.info("DM for %s: %s", lead['username'], msg)
             final_leads.append(lead)
 
     # 4. Export Combined
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"data/instagram_leads_{timestamp}.csv"
-    
+
     df = pd.DataFrame(final_leads)
     df = df.sort_values("score", ascending=False)
-    
+
     # Ensure dir
     os.makedirs("data", exist_ok=True)
-    
+
     df.to_csv(filename, index=False)
     # Also save latest
     df.to_csv("data/instagram_leads.csv", index=False)
-    
-    print(f"\n💾 Batch Complete! Saved {len(df)} leads to {filename}")
+
+    logger.info("Batch Complete! Saved %d leads to %s", len(df), filename)
 
 
 if __name__ == "__main__":
