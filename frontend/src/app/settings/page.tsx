@@ -14,8 +14,8 @@ export default function SettingsPage() {
 
   const [scoringConfig, setScoringConfig] = useState({
     no_website: 50,
-    high_reviews: 30,
-    medium_reviews: 15,
+    high_reviews: 20,
+    medium_reviews: 25,
     high_rating: 20,
     good_rating: 10,
     high_value_category: 10,
@@ -24,8 +24,8 @@ export default function SettingsPage() {
   const [originalScoringConfig, setOriginalScoringConfig] = useState({ ...scoringConfig });
 
   const [instagramConfig, setInstagramConfig] = useState({
-    followers_min: 300,
-    followers_max: 10000,
+    followers_min: 500,
+    followers_max: 8000,
     score_threshold: 50,
   });
   const [originalInstagramConfig, setOriginalInstagramConfig] = useState({ ...instagramConfig });
@@ -182,8 +182,8 @@ export default function SettingsPage() {
 
   const scoringFields = [
     { key: "no_website" as const, label: "No Website", desc: "Prime target — no online presence to capture search traffic" },
-    { key: "high_reviews" as const, label: "High Reviews (100+)", desc: "Proven demand — high volume means established customer base" },
-    { key: "medium_reviews" as const, label: "Medium Reviews (30-99)", desc: "Growing business — enough traction to justify digital investment" },
+    { key: "high_reviews" as const, label: "High Reviews (100+)", desc: "Big business — may already have marketing sorted, harder sell" },
+    { key: "medium_reviews" as const, label: "Established Local (30-99)", desc: "Sweet spot — proven demand, has budget, no digital presence yet" },
     { key: "high_rating" as const, label: "High Rating (4.5+)", desc: "Strong reputation — website would showcase their quality" },
     { key: "good_rating" as const, label: "Good Rating (4.0+)", desc: "Solid foundation — ready for online growth" },
     { key: "high_value_category" as const, label: "High-Value Category", desc: "Dentists, salons, HVAC, lawyers — high ticket, need websites" },

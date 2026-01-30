@@ -32,8 +32,8 @@ DEFAULT_SETTINGS = {
     "scoring_low_rating_opportunity": "15",
 
     # Instagram settings
-    "instagram_followers_min": "300",
-    "instagram_followers_max": "10000",
+    "instagram_followers_min": "500",
+    "instagram_followers_max": "8000",
     "instagram_score_threshold": "50"
 }
 

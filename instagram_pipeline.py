@@ -19,8 +19,8 @@ import re
 logger = logging.getLogger("leadpilot")
 
 # --- CONFIG ---
-FOLLOWERS_MIN = 300
-FOLLOWERS_MAX = 10000
+FOLLOWERS_MIN = 500
+FOLLOWERS_MAX = 8000
 SCORE_THRESHOLD = 50
 LINKTREE_DOMAINS = [
     "linktr.ee", "beacons.ai", "taplink.cc", "bio.link", "carrd.co",

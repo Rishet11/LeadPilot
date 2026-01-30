@@ -99,13 +99,16 @@ def score_lead(row: dict, config: dict = None) -> tuple:
         score += 50
         reasons.append("NO WEBSITE (Prime Target)")
     
-    # 2. Volume = Money
+    # 2. Volume = Proof of demand
     if reviews >= 100:
-        score += 30
+        score += 20
         reasons.append(f"High Volume ({reviews} reviews)")
     elif reviews >= 30:
+        score += 25
+        reasons.append(f"Established Local ({reviews} reviews)")
+    elif reviews >= 15:
         score += 15
-        reasons.append(f"Medium Volume ({reviews} reviews)")
+        reasons.append(f"Growing Business ({reviews} reviews)")
     
     # 3. Rating = Reputation (they care about quality)
     if rating >= 4.5:
