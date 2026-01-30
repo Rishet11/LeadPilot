@@ -82,7 +82,7 @@ export async function getLeads(params?: {
       if (value !== undefined) searchParams.set(key, String(value));
     });
   }
-  const res = await fetch(`${API_BASE}/api/leads?${searchParams}`, {
+  const res = await fetch(`${API_BASE}/api/leads/?${searchParams}`, {
     headers: getHeaders(),
   });
   return handleResponse<Lead[]>(res);
@@ -148,7 +148,7 @@ export async function scrapeInstagram(targets: {
 
 // Jobs API
 export async function getJobs(limit = 20): Promise<Job[]> {
-  const res = await fetch(`${API_BASE}/api/jobs?limit=${limit}`, {
+  const res = await fetch(`${API_BASE}/api/jobs/?limit=${limit}`, {
     headers: getHeaders(),
   });
   return handleResponse<Job[]>(res);
@@ -163,7 +163,7 @@ export async function getJob(id: number): Promise<Job> {
 
 // Settings API
 export async function getSettings(): Promise<Setting[]> {
-  const res = await fetch(`${API_BASE}/api/settings`, {
+  const res = await fetch(`${API_BASE}/api/settings/`, {
     headers: getHeaders(),
   });
   return handleResponse<Setting[]>(res);
