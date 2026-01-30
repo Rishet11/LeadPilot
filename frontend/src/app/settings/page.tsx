@@ -24,9 +24,9 @@ export default function SettingsPage() {
   const [originalScoringConfig, setOriginalScoringConfig] = useState({ ...scoringConfig });
 
   const [instagramConfig, setInstagramConfig] = useState({
-    followers_min: 500,
-    followers_max: 5000,
-    score_threshold: 60,
+    followers_min: 300,
+    followers_max: 10000,
+    score_threshold: 50,
   });
   const [originalInstagramConfig, setOriginalInstagramConfig] = useState({ ...instagramConfig });
 
@@ -181,13 +181,13 @@ export default function SettingsPage() {
   }
 
   const scoringFields = [
-    { key: "no_website" as const, label: "No Website" },
-    { key: "high_reviews" as const, label: "High Reviews (100+)" },
-    { key: "medium_reviews" as const, label: "Medium Reviews (30-99)" },
-    { key: "high_rating" as const, label: "High Rating (4.5+)" },
-    { key: "good_rating" as const, label: "Good Rating (4.0+)" },
-    { key: "high_value_category" as const, label: "High-Value Category" },
-    { key: "low_rating_opportunity" as const, label: "Low Rating (<3.8)" },
+    { key: "no_website" as const, label: "No Website", desc: "Prime target — no online presence to capture search traffic" },
+    { key: "high_reviews" as const, label: "High Reviews (100+)", desc: "Proven demand — high volume means established customer base" },
+    { key: "medium_reviews" as const, label: "Medium Reviews (30-99)", desc: "Growing business — enough traction to justify digital investment" },
+    { key: "high_rating" as const, label: "High Rating (4.5+)", desc: "Strong reputation — website would showcase their quality" },
+    { key: "good_rating" as const, label: "Good Rating (4.0+)", desc: "Solid foundation — ready for online growth" },
+    { key: "high_value_category" as const, label: "High-Value Category", desc: "Dentists, salons, HVAC, lawyers — high ticket, need websites" },
+    { key: "low_rating_opportunity" as const, label: "Low Rating (<3.8)", desc: "Reputation fix — need a site to control the narrative" },
   ];
 
   return (
@@ -227,14 +227,15 @@ export default function SettingsPage() {
         <div className="card p-6">
           <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">AI System Prompt</h3>
           <p className="text-xs text-[var(--fg-muted)] mb-4">
-            Defines AI personality for outreach message generation.
+            Controls how the AI qualifies leads and writes outreach messages. Defines qualification tiers, scoring logic, and message tone.
           </p>
           <textarea
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
-            rows={8}
-            className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all font-mono"
+            rows={16}
+            className="field-inset w-full px-4 py-2.5 text-[13px] leading-relaxed text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all font-mono resize-y"
           />
+          <p className="text-[11px] text-[var(--fg-muted)] mt-2 tabular-nums">{aiPrompt.length} characters</p>
           {hasAiChanges && (
             <div className="flex justify-end gap-2.5 mt-3">
               <button
@@ -257,16 +258,17 @@ export default function SettingsPage() {
         <div className="card p-6">
           <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">Scoring</h3>
           <p className="text-xs text-[var(--fg-muted)] mb-5">
-            Points added to lead score per condition (0-100).
+            Points added to lead score per condition. Leads are scored 0-100 — higher score means higher conversion likelihood.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {scoringFields.map(({ key, label }) => (
+            {scoringFields.map(({ key, label, desc }) => (
               <div key={key}>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-0.5">
                   <label className="text-xs text-[var(--fg-muted)]">{label}</label>
                   <span className="text-xs font-medium text-[var(--fg-primary)] tabular-nums">+{scoringConfig[key]}</span>
                 </div>
+                <p className="text-[11px] text-[var(--fg-muted)]/60 mb-1.5">{desc}</p>
                 <input
                   type="range"
                   min="0"
@@ -302,12 +304,13 @@ export default function SettingsPage() {
         <div className="card p-6">
           <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">Instagram</h3>
           <p className="text-xs text-[var(--fg-muted)] mb-5">
-            Follower range and score threshold for lead discovery.
+            Filters for Instagram lead discovery. Targets micro-businesses in the sweet spot — big enough to pay, small enough to need you.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs text-[var(--fg-muted)] mb-2">Min Followers</label>
+              <label className="block text-xs text-[var(--fg-muted)] mb-1">Min Followers</label>
+              <p className="text-[11px] text-[var(--fg-muted)]/60 mb-2">Below this = too small to convert</p>
               <input
                 type="number"
                 value={instagramConfig.followers_min}
@@ -319,7 +322,8 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-xs text-[var(--fg-muted)] mb-2">Max Followers</label>
+              <label className="block text-xs text-[var(--fg-muted)] mb-1">Max Followers</label>
+              <p className="text-[11px] text-[var(--fg-muted)]/60 mb-2">Above this = already has agency or in-house</p>
               <input
                 type="number"
                 value={instagramConfig.followers_max}
@@ -331,7 +335,8 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-xs text-[var(--fg-muted)] mb-2">Score Threshold</label>
+              <label className="block text-xs text-[var(--fg-muted)] mb-1">Score Threshold</label>
+              <p className="text-[11px] text-[var(--fg-muted)]/60 mb-2">Minimum score to qualify as a lead</p>
               <input
                 type="number"
                 value={instagramConfig.score_threshold}
