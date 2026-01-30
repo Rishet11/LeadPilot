@@ -33,7 +33,7 @@ DEFAULT_SETTINGS = {
 
     # Instagram settings
     "instagram_followers_min": "500",
-    "instagram_followers_max": "8000",
+    "instagram_followers_max": "50000",
     "instagram_score_threshold": "50"
 }
 

@@ -25,7 +25,7 @@ export default function SettingsPage() {
 
   const [instagramConfig, setInstagramConfig] = useState({
     followers_min: 500,
-    followers_max: 8000,
+    followers_max: 50000,
     score_threshold: 50,
   });
   const [originalInstagramConfig, setOriginalInstagramConfig] = useState({ ...instagramConfig });
