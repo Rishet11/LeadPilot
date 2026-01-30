@@ -41,3 +41,10 @@ credentials.json
 
 # Batch configs (may contain sensitive data)
 batch_config.json
+
+# SQLite databases
+*.db
+*.db-journal
+
+# Claude Code
+.claude/
