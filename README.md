@@ -1,181 +1,157 @@
-# LeadPilot 🎯
+# LeadPilot 🚀
+**The Autonomous B2B Lead Generation Engine**
 
-An AI-powered lead generation system that discovers local businesses without websites and generates high-conversion outreach messages.
+LeadPilot is an AI-powered sales sniper that finds, filters, and personalizes outreach for high-ticket clients. It automates the tedious parts of lead generation so you can focus on closing deals.
 
-## Features
-
-- 🔍 **Google Maps Scraping** - Batch scrape local businesses from any city/region via Apify
-- 📸 **Instagram Discovery** - Find micro-businesses (configurable follower range, no website)
-- 📊 **Smart Lead Scoring** - Rule-based scoring prioritizes no-website, high-review businesses
-- 🤖 **AI Outreach Generation** - Personalized WhatsApp/DM messages via Gemini AI
-- 🌍 **Any Region Support** - Target any city globally (just specify in config)
-- 📁 **CSV Export** - Ready-to-use lead lists with contact info and AI-generated messages
+![LeadPilot Dashboard](https://via.placeholder.com/1200x600?text=LeadPilot+Dashboard+Preview)
 
 ---
 
-## Quick Start
+## ✨ Features
 
+*   **🕵️‍♂️ Multi-Source Scraping:**
+    *   **Google Maps:** Finds businesses by city & category (e.g., "Dentists in London").
+    *   **Instagram:** Finds specialized niches via hashtags/keywords (e.g., "interior designer dubai").
+*   **🧠 Intelligent Filtering:**
+    *   Automatically discards low-value leads (perfect rating + website = ignore).
+    *   Prioritizes "Digital Misfits": Businesses with money but poor online presence.
+*   **🤖 AI Outreach Agent:**
+    *   Generates **hyper-personalized** DMs for every single lead.
+    *   Uses real data (rating, review count, missing website) to write a hook that *actually* converts.
+*   **⚡ Real-Time Dashboard:**
+    *   Live progress tracking of scraping jobs.
+    *   "Leads CRM" to manage status (New -> Contacted -> Closed).
+    *   Batch processing queue for bulk operations.
+
+---
+
+## 🏗️ Architecture
+
+LeadPilot uses a modern, decoupled architecture designed for scale.
+
+```mermaid
+graph TD
+    User(👤 User) --> Frontend(Next.js Dashboard)
+    Frontend -->|API Requests| Backend(FastAPI Server)
+    
+    subgraph "Backend Infrastructure"
+        Backend --> DB[(SQLite / Postgres)]
+        Backend -->|Queue| BgTasks[Background Workers]
+    end
+    
+    subgraph "External Services"
+        BgTasks -->|Scrape| Apify(Apify Actors)
+        BgTasks -->|Enrich| Gemini(Google Gemini AI)
+    end
+```
+
+*   **Frontend:** Next.js 14, TypeScript, Tailwind CSS
+*   **Backend:** FastAPI (Python), SQLAlchemy, Pydantic
+*   **Database:** SQLite (Local) / PostgreSQL (Production)
+*   **AI Engine:** Google Gemini Pro
+*   **Scraping Provider:** Apify
+
+---
+
+## 🛠️ Local Setup
+
+### Prerequisites
+*   Node.js 18+
+*   Python 3.9+
+*   Git
+
+### 1. Clone the Repository
 ```bash
-# 1. Install dependencies
+git clone https://github.com/Rishet11/LeadPilot.git
+cd LeadPilot
+```
+
+### 2. Backend Setup
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-# 2. Set up environment
+# Create .env file
 cp .env.example .env
-# Add your APIFY_API_TOKEN and GEMINI_API_KEY
-
-# 3. Run single target
-python main.py --city "London, UK" --category "Restaurant" --limit 50
-
-# 4. Run batch pipeline (multiple targets)
-python batch_processor.py
-
-# 5. Run Instagram pipeline
-python instagram_pipeline.py
+# Edit .env and add your API keys (Apify, Gemini)
 ```
 
----
-
-## Pipelines
-
-### Single Target (`main.py`)
-
-Quick run for a single city/category combination.
-
+### 3. Frontend Setup
 ```bash
-python main.py --city "Berlin, Germany" --category "Gym" --limit 30
-python main.py --dry-run  # Test with demo data
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create local env file
+cp .env.example .env.local
+# Set NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-### Batch Pipeline (`batch_processor.py`)
+### 4. Run It 🚀
+You need two terminals:
 
-Run multiple city/category combinations at once.
-
+**Terminal 1 (Backend):**
 ```bash
-python batch_processor.py
+# Run from root directory
+uvicorn api.main:app --reload
 ```
 
-**Configure targets in `batch_config.json`:**
-```json
-{
-  "targets": [
-    {"city": "Mumbai, India", "category": "Dental Clinic", "limit": 20},
-    {"city": "London, UK", "category": "Plumber", "limit": 15},
-    {"city": "Sydney, Australia", "category": "Fitness Studio", "limit": 20},
-    {"city": "Toronto, Canada", "category": "HVAC Contractor", "limit": 15}
-  ]
-}
-```
-
-### Instagram Pipeline (`instagram_pipeline.py`)
-
-Find micro-businesses on Instagram without proper websites.
-
+**Terminal 2 (Frontend):**
 ```bash
-python instagram_pipeline.py
+cd frontend
+npm run dev
 ```
 
-**Configure targets in `instagram_batch_config.json`:**
-```json
-{
-  "targets": [
-    {"keyword": "home baker london", "limit": 50},
-    {"keyword": "makeup artist toronto", "limit": 50},
-    {"keyword": "personal trainer sydney", "limit": 30}
-  ]
-}
-```
+Visit **http://localhost:3000** to see the dashboard!
 
 ---
 
-## Scoring Logic
+## 🚢 Production Deployment
 
-Leads are scored 0-100 based on their potential as website development clients:
+LeadPilot is optimized for **Railway** (Backend) and **Vercel** (Frontend).
 
-| Condition | Points |
-|-----------|--------|
-| No website | +50 |
-| 100+ reviews (high volume) | +30 |
-| 30-99 reviews (medium volume) | +15 |
-| Rating ≥ 4.5 | +20 |
-| Rating ≥ 4.0 | +10 |
-| High-value category | +10 |
-| Low rating < 3.8 (reputation fix opportunity) | +15 |
+### Phase 1: Backend (Railway)
+1. Fork this repo.
+2. Login to [Railway.app](https://railway.app).
+3. Create new project from GitHub repo.
+4. Add Environment Variables:
+    *   `LEADPILOT_API_KEY`: (Generate a secure random string)
+    *   `APIFY_API_TOKEN`: Your Apify key
+    *   `GEMINI_API_KEY`: Your Google AI key
+    *   `ALLOWED_ORIGINS`: `https://your-vercel-app.vercel.app`
+5. Railway will auto-deploy using `railway.toml`.
 
-**High-value categories:** dental, skin, physio, gym, clinic, hvac, plumber, fitness
-
-**Prime targets:** No website + 100+ reviews + 4.5+ rating = Score 100
-
----
-
-## Project Structure
-
-```
-LeadPilot/
-├── main.py                  # Single target CLI
-├── batch_processor.py       # Multi-target batch orchestrator
-├── instagram_pipeline.py    # Instagram batch orchestrator
-├── apify_client.py          # Apify API wrapper (Google Maps + Instagram)
-├── cleaner.py               # Data normalization
-├── scorer.py                # Lead scoring logic
-├── lead_agent.py            # AI message generation (Gemini)
-├── exporter.py              # CSV export
-├── config.json              # Default configuration
-├── batch_config.json        # Google Maps batch targets
-├── instagram_batch_config.json  # Instagram batch targets
-└── data/
-    ├── google_maps_all_leads.csv  # Consolidated Google Maps leads
-    └── instagram_all_leads.csv    # Consolidated Instagram leads
-```
+### Phase 2: Frontend (Vercel)
+1. Login to [Vercel.com](https://vercel.com).
+2. Create new project from GitHub repo.
+3. Set **Root Directory** to `frontend`.
+4. Add Environment Variables:
+    *   `NEXT_PUBLIC_API_URL`: Your Railway URL (e.g., `https://web-production.up.railway.app`)
+    *   `NEXT_PUBLIC_API_KEY`: The same key from Phase 1.
+5. Deploy!
 
 ---
 
-## CLI Options
+## 🔒 Security
 
-```bash
-python main.py [OPTIONS]
-
-Options:
-  --city TEXT          Target city (e.g., "Paris, France")
-  --category TEXT      Business category (e.g., "Restaurant")
-  --limit INT          Max results (default: 100)
-  --dry-run            Use demo data (no API calls)
-  --check-websites     Verify website accessibility
-  --agent              Enable AI outreach generation (default: on)
-  --config PATH        Custom config file path
-```
+*   **API Key Auth:** All backend endpoints are protected by `X-API-Key`.
+*   **Rate Limiting:** Built-in throttling to prevent abuse and save API credits.
+*   **CORS:** Strict origin policies in production.
 
 ---
 
-## API Keys Required
+## 🤝 Contributing
 
-| Service | Required | Get it here |
-|---------|----------|-------------|
-| Apify | ✅ Yes | [apify.com](https://apify.com) → Settings → Integrations |
-| Gemini | ✅ Yes | [aistudio.google.com](https://aistudio.google.com/apikey) |
-
----
-
-## Output Format
-
-The exported CSV contains:
-
-| Column | Description |
-|--------|-------------|
-| `name` | Business name |
-| `phone` | Contact number |
-| `city` | Location |
-| `category` | Business type |
-| `rating` | Google/Instagram rating |
-| `reviews` | Review count |
-| `website` | Website URL (if any) |
-| `lead_score` | 0-100 priority score |
-| `reason` | Scoring explanation |
-| `ai_outreach` | Generated WhatsApp/DM message |
-| `source` | "google_maps" or "instagram" |
-| `country` | Detected country |
+1. Fork the repo.
+2. Create a feature branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes.
+4. Open a Pull Request.
 
 ---
 
-## License
-
-MIT
+**Built by [Rishet Mehra](https://github.com/Rishet11)**
