@@ -90,9 +90,9 @@ def score_lead(row: dict, config: dict = None) -> tuple:
     reviews = int(row.get('reviews', 0) or 0)
     category = (row.get('category', '') or '').lower()
     
-    # HARD FILTER: Skip established businesses with websites and low reviews
-    if has_web and reviews < 20:
-        return 0, "Established but small (Low ROI)"
+    # HARD FILTER: Skip businesses with websites and very low reviews
+    if has_web and reviews < 10:
+        return 0, "Has website, minimal presence (Low ROI)"
     
     # 1. Tech Deficit = Prime Target (+50)
     if not has_web:
@@ -115,8 +115,27 @@ def score_lead(row: dict, config: dict = None) -> tuple:
         score += 10
         reasons.append(f"Good Rating ({rating})")
     
-    # 4. High Value Categories
-    high_value_cats = ["dental", "skin", "physio", "gym", "clinic", "hvac", "plumber", "fitness"]
+    # 4. High Value Categories — businesses that NEED a website to get clients
+    high_value_cats = [
+        # Medical & Health (high ticket, trust-dependent — patients google first)
+        "dental", "dentist", "clinic", "orthodont", "chiropract", "physio",
+        "dermatolog", "skin", "veterinary", "vet", "ayurveda",
+        # Fitness & Wellness (booking-dependent — need online presence)
+        "gym", "fitness", "yoga", "pilates", "spa", "salon", "beauty",
+        # Home Services (searched on Google — "near me" goldmine)
+        "hvac", "plumber", "electrician", "roofing", "pest control",
+        "interior", "architect", "landscap", "cleaning", "carpenter",
+        # Professional Services (trust + credibility = need a site)
+        "lawyer", "attorney", "realtor", "real estate", "accountant",
+        # Food & Hospitality (menus, ordering, reservations)
+        "restaurant", "cafe", "catering", "bakery",
+        # Events (portfolio-dependent — clients check work before booking)
+        "wedding", "photography", "event", "planner",
+        # Education (enrollment-dependent)
+        "coaching", "academy", "institute", "tutor",
+        # Auto (local search heavy)
+        "auto repair", "mechanic", "garage",
+    ]
     if any(cat in category for cat in high_value_cats):
         score += 10
         reasons.append(f"High-Value Category: {category}")

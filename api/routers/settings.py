@@ -15,22 +15,13 @@ from ..database import get_db, Settings
 from ..schemas import SettingUpdate, SettingResponse
 from ..auth import verify_api_key
 from ..rate_limit import limiter, SETTINGS_LIMIT, READ_LIMIT
+from constants import DEFAULT_AI_SYSTEM_PROMPT
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 # Default settings
 DEFAULT_SETTINGS = {
-    "ai_system_prompt": """You are LeadPilot AI, a cynical B2B Sales Sniper. 
-Your goal is to find high-ROI clients for a digital agency.
-
-TARGETS:
-1. "Digital Misfit": High Ratings (4.5+) but NO Website. (Easy sell: "Showcase your reputation")
-2. "Busy but Broken": Huge Reviews (100+) but bad rating or no site. (Easy sell: "Fix your leaks")
-
-YOUR JOB:
-- Analyze leads in BATCHES.
-- Ignore "average" businesses. Focus on the ones bleeding money.
-- Generate a "Kill Line": A single, direct WhatsApp/SMS hook that mentions SPECIFIC data.""",
+    "ai_system_prompt": DEFAULT_AI_SYSTEM_PROMPT,
     
     "scoring_no_website": "50",
     "scoring_high_reviews": "30",
@@ -39,11 +30,11 @@ YOUR JOB:
     "scoring_good_rating": "10",
     "scoring_high_value_category": "10",
     "scoring_low_rating_opportunity": "15",
-    
+
     # Instagram settings
-    "instagram_followers_min": "500",
-    "instagram_followers_max": "5000",
-    "instagram_score_threshold": "60"
+    "instagram_followers_min": "300",
+    "instagram_followers_max": "10000",
+    "instagram_score_threshold": "50"
 }
 
 # Allowed setting keys (whitelist)
