@@ -1,12 +1,3 @@
-"""
-Leads router - CRUD operations for leads.
-
-Security Features:
-- API key authentication for write operations
-- Rate limiting on all endpoints
-- Input validation via Pydantic schemas
-"""
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -34,12 +25,6 @@ def get_leads(
     db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Get all leads with optional filtering.
-    
-    Requires: X-API-Key header
-    Rate limit: 100/minute
-    """
     query = db.query(Lead)
     
     if status:
@@ -49,15 +34,11 @@ def get_leads(
     if min_score:
         query = query.filter(Lead.lead_score >= min_score)
     if city:
-        # Limit wildcard matching abuse
-        safe_city = city[:100]
-        query = query.filter(Lead.city.ilike(f"%{safe_city}%"))
+        query = query.filter(Lead.city.ilike(f"%{city[:100]}%"))
     if category:
-        safe_category = category[:100]
-        query = query.filter(Lead.category.ilike(f"%{safe_category}%"))
+        query = query.filter(Lead.category.ilike(f"%{category[:100]}%"))
     
-    leads = query.order_by(desc(Lead.lead_score)).offset(skip).limit(limit).all()
-    return leads
+    return query.order_by(desc(Lead.lead_score)).offset(skip).limit(limit).all()
 
 
 @router.get("/stats")
@@ -67,22 +48,14 @@ def get_lead_stats(
     db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Get lead statistics for dashboard.
-    
-    Requires: X-API-Key header
-    Rate limit: 100/minute
-    """
     total = db.query(Lead).count()
     high_priority = db.query(Lead).filter(Lead.lead_score >= 80).count()
     
-    # Count by status
     status_counts = {}
     for status in LeadStatus:
         count = db.query(Lead).filter(Lead.status == status.value).count()
         status_counts[status.value] = count
     
-    # Count by source
     google_maps = db.query(Lead).filter(Lead.source == "google_maps").count()
     instagram = db.query(Lead).filter(Lead.source == "instagram").count()
     
@@ -105,12 +78,6 @@ def get_lead(
     db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Get a specific lead by ID.
-    
-    Requires: X-API-Key header
-    Rate limit: 100/minute
-    """
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -126,12 +93,6 @@ def update_lead_status(
     db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Update a lead's status.
-    
-    Requires: X-API-Key header
-    Rate limit: 30/minute
-    """
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -150,12 +111,6 @@ def delete_lead(
     db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Delete a lead.
-    
-    Requires: X-API-Key header
-    Rate limit: 30/minute
-    """
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")

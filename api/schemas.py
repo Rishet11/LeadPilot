@@ -1,12 +1,3 @@
-"""
-Pydantic schemas for API request/response validation.
-
-Security Features:
-- String length limits to prevent oversized payloads
-- Numeric bounds to prevent resource exhaustion
-- Input sanitization for text fields
-"""
-
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
@@ -22,8 +13,6 @@ class LeadStatus(str, Enum):
     CLOSED = "closed"
     NOT_INTERESTED = "not_interested"
 
-
-# --- Lead Schemas ---
 
 class LeadBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
@@ -59,20 +48,15 @@ class LeadStatusUpdate(BaseModel):
     status: LeadStatus
 
 
-# --- Scrape Schemas ---
-
 def sanitize_search_text(text: str) -> str:
-    """Remove potentially dangerous characters from search text."""
-    # Allow alphanumeric, spaces, and common punctuation
     sanitized = re.sub(r'[^\w\s\-\.,\'\"()]', '', text)
     return sanitized.strip()
 
 
 class ScrapeTarget(BaseModel):
-    """Google Maps scrape target with validation."""
     city: str = Field(..., min_length=1, max_length=100)
     category: str = Field(..., min_length=1, max_length=100)
-    limit: int = Field(default=50, ge=1, le=200)  # Max 200 per target
+    limit: int = Field(default=50, ge=1, le=200)
 
     @field_validator('city', 'category')
     @classmethod
@@ -81,14 +65,12 @@ class ScrapeTarget(BaseModel):
 
 
 class BatchScrapeRequest(BaseModel):
-    """Batch scrape request with target limit."""
-    targets: List[ScrapeTarget] = Field(..., min_length=1, max_length=50)  # Max 50 targets
+    targets: List[ScrapeTarget] = Field(..., min_length=1, max_length=50)
 
 
 class InstagramTarget(BaseModel):
-    """Instagram scrape target with validation."""
     keyword: str = Field(..., min_length=1, max_length=200)
-    limit: int = Field(default=50, ge=1, le=100)  # Max 100 per keyword
+    limit: int = Field(default=50, ge=1, le=100)
     followers_min: Optional[int] = Field(None, ge=0, le=10_000_000)
     followers_max: Optional[int] = Field(None, ge=0, le=10_000_000)
     score_threshold: Optional[int] = Field(None, ge=0, le=100)
@@ -100,8 +82,7 @@ class InstagramTarget(BaseModel):
 
 
 class InstagramScrapeRequest(BaseModel):
-    """Instagram batch scrape request with target limit."""
-    targets: List[InstagramTarget] = Field(..., min_length=1, max_length=30)  # Max 30 keywords
+    targets: List[InstagramTarget] = Field(..., min_length=1, max_length=30)
 
 
 class ScrapeResponse(BaseModel):
@@ -109,8 +90,6 @@ class ScrapeResponse(BaseModel):
     status: str
     message: str
 
-
-# --- Job Schemas ---
 
 class JobResponse(BaseModel):
     id: int
@@ -127,16 +106,13 @@ class JobResponse(BaseModel):
         from_attributes = True
 
 
-# --- Settings Schemas ---
-
 class SettingUpdate(BaseModel):
     key: str = Field(..., min_length=1, max_length=100)
-    value: str = Field(..., max_length=10000)  # Allow up to 10KB for prompts
+    value: str = Field(..., max_length=10000)
 
     @field_validator('key')
     @classmethod
     def validate_key(cls, v: str) -> str:
-        # Only allow alphanumeric and underscores
         if not re.match(r'^[a-z][a-z0-9_]*$', v):
             raise ValueError('Key must be lowercase alphanumeric with underscores')
         return v
@@ -151,10 +127,8 @@ class SettingResponse(BaseModel):
         from_attributes = True
 
 
-# --- Dashboard Schemas ---
-
 class DashboardMetrics(BaseModel):
     total_leads: int
-    high_priority_leads: int  # score >= 80
+    high_priority_leads: int
     leads_by_status: dict
     recent_jobs: List[JobResponse]

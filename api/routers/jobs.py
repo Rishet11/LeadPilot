@@ -1,11 +1,3 @@
-"""
-Jobs router - view job history and status.
-
-Security Features:
-- API key authentication required
-- Rate limiting on all endpoints
-"""
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -29,19 +21,12 @@ def get_jobs(
     db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Get job history.
-    
-    Requires: X-API-Key header
-    Rate limit: 100/minute
-    """
     query = db.query(Job)
     
     if status:
         query = query.filter(Job.status == status)
     
-    jobs = query.order_by(desc(Job.created_at)).offset(skip).limit(limit).all()
-    return jobs
+    return query.order_by(desc(Job.created_at)).offset(skip).limit(limit).all()
 
 
 @router.get("/{job_id}", response_model=JobResponse)
@@ -52,12 +37,6 @@ def get_job(
     db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Get a specific job by ID.
-    
-    Requires: X-API-Key header
-    Rate limit: 100/minute
-    """
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
