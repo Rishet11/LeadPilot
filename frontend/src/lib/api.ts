@@ -1,4 +1,16 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
+
+// Helper to get headers with API key
+function getHeaders(): HeadersInit {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  if (API_KEY) {
+    headers["X-API-Key"] = API_KEY;
+  }
+  return headers;
+}
 
 export interface Lead {
   id: number;
@@ -45,6 +57,15 @@ export interface Setting {
   updated_at: string;
 }
 
+// Error handling helper
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: "Request failed" }));
+    throw new Error(error.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
 // Leads API
 export async function getLeads(params?: {
   skip?: number;
@@ -61,30 +82,32 @@ export async function getLeads(params?: {
       if (value !== undefined) searchParams.set(key, String(value));
     });
   }
-  const res = await fetch(`${API_BASE}/api/leads?${searchParams}`);
-  if (!res.ok) throw new Error("Failed to fetch leads");
-  return res.json();
+  const res = await fetch(`${API_BASE}/api/leads?${searchParams}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<Lead[]>(res);
 }
 
 export async function getLeadStats(): Promise<LeadStats> {
-  const res = await fetch(`${API_BASE}/api/leads/stats`);
-  if (!res.ok) throw new Error("Failed to fetch lead stats");
-  return res.json();
+  const res = await fetch(`${API_BASE}/api/leads/stats`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<LeadStats>(res);
 }
 
 export async function updateLeadStatus(id: number, status: string): Promise<Lead> {
   const res = await fetch(`${API_BASE}/api/leads/${id}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: getHeaders(),
     body: JSON.stringify({ status }),
   });
-  if (!res.ok) throw new Error("Failed to update lead status");
-  return res.json();
+  return handleResponse<Lead>(res);
 }
 
 export async function deleteLead(id: number): Promise<void> {
   const res = await fetch(`${API_BASE}/api/leads/${id}`, {
     method: "DELETE",
+    headers: getHeaders(),
   });
   if (!res.ok) throw new Error("Failed to delete lead");
 }
@@ -93,21 +116,19 @@ export async function deleteLead(id: number): Promise<void> {
 export async function scrapeSingle(city: string, category: string, limit: number): Promise<{ job_id: number }> {
   const res = await fetch(`${API_BASE}/api/scrape/single`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getHeaders(),
     body: JSON.stringify({ city, category, limit }),
   });
-  if (!res.ok) throw new Error("Failed to start scrape");
-  return res.json();
+  return handleResponse<{ job_id: number }>(res);
 }
 
 export async function scrapeBatch(targets: { city: string; category: string; limit: number }[]): Promise<{ job_id: number }> {
   const res = await fetch(`${API_BASE}/api/scrape/google-maps`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getHeaders(),
     body: JSON.stringify({ targets }),
   });
-  if (!res.ok) throw new Error("Failed to start batch scrape");
-  return res.json();
+  return handleResponse<{ job_id: number }>(res);
 }
 
 export async function scrapeInstagram(targets: { 
@@ -119,46 +140,48 @@ export async function scrapeInstagram(targets: {
 }[]): Promise<{ job_id: number }> {
   const res = await fetch(`${API_BASE}/api/scrape/instagram`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getHeaders(),
     body: JSON.stringify({ targets }),
   });
-  if (!res.ok) throw new Error("Failed to start Instagram scrape");
-  return res.json();
+  return handleResponse<{ job_id: number }>(res);
 }
 
 // Jobs API
 export async function getJobs(limit = 20): Promise<Job[]> {
-  const res = await fetch(`${API_BASE}/api/jobs?limit=${limit}`);
-  if (!res.ok) throw new Error("Failed to fetch jobs");
-  return res.json();
+  const res = await fetch(`${API_BASE}/api/jobs?limit=${limit}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<Job[]>(res);
 }
 
 export async function getJob(id: number): Promise<Job> {
-  const res = await fetch(`${API_BASE}/api/jobs/${id}`);
-  if (!res.ok) throw new Error("Failed to fetch job");
-  return res.json();
+  const res = await fetch(`${API_BASE}/api/jobs/${id}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<Job>(res);
 }
 
 // Settings API
 export async function getSettings(): Promise<Setting[]> {
-  const res = await fetch(`${API_BASE}/api/settings`);
-  if (!res.ok) throw new Error("Failed to fetch settings");
-  return res.json();
+  const res = await fetch(`${API_BASE}/api/settings`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<Setting[]>(res);
 }
 
 export async function updateSetting(key: string, value: string): Promise<Setting> {
   const res = await fetch(`${API_BASE}/api/settings/${key}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: getHeaders(),
     body: JSON.stringify({ key, value }),
   });
-  if (!res.ok) throw new Error("Failed to update setting");
-  return res.json();
+  return handleResponse<Setting>(res);
 }
 
 export async function resetSettings(): Promise<void> {
   const res = await fetch(`${API_BASE}/api/settings/reset`, {
     method: "POST",
+    headers: getHeaders(),
   });
   if (!res.ok) throw new Error("Failed to reset settings");
 }

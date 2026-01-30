@@ -1,11 +1,17 @@
 """
 Pydantic schemas for API request/response validation.
+
+Security Features:
+- String length limits to prevent oversized payloads
+- Numeric bounds to prevent resource exhaustion
+- Input sanitization for text fields
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+import re
 
 
 class LeadStatus(str, Enum):
@@ -20,19 +26,19 @@ class LeadStatus(str, Enum):
 # --- Lead Schemas ---
 
 class LeadBase(BaseModel):
-    name: str
-    phone: Optional[str] = None
-    city: Optional[str] = None
-    category: Optional[str] = None
-    rating: Optional[float] = None
-    reviews: Optional[int] = None
-    website: Optional[str] = None
-    instagram: Optional[str] = None
-    lead_score: Optional[int] = 0
-    reason: Optional[str] = None
-    ai_outreach: Optional[str] = None
-    source: Optional[str] = "google_maps"
-    country: Optional[str] = None
+    name: str = Field(..., min_length=1, max_length=255)
+    phone: Optional[str] = Field(None, max_length=50)
+    city: Optional[str] = Field(None, max_length=100)
+    category: Optional[str] = Field(None, max_length=100)
+    rating: Optional[float] = Field(None, ge=0, le=5)
+    reviews: Optional[int] = Field(None, ge=0)
+    website: Optional[str] = Field(None, max_length=500)
+    instagram: Optional[str] = Field(None, max_length=255)
+    lead_score: Optional[int] = Field(0, ge=0, le=100)
+    reason: Optional[str] = Field(None, max_length=1000)
+    ai_outreach: Optional[str] = Field(None, max_length=5000)
+    source: Optional[str] = Field("google_maps", max_length=50)
+    country: Optional[str] = Field(None, max_length=100)
 
 
 class LeadCreate(LeadBase):
@@ -55,26 +61,47 @@ class LeadStatusUpdate(BaseModel):
 
 # --- Scrape Schemas ---
 
+def sanitize_search_text(text: str) -> str:
+    """Remove potentially dangerous characters from search text."""
+    # Allow alphanumeric, spaces, and common punctuation
+    sanitized = re.sub(r'[^\w\s\-\.,\'\"()]', '', text)
+    return sanitized.strip()
+
+
 class ScrapeTarget(BaseModel):
-    city: str
-    category: str
-    limit: int = 50
+    """Google Maps scrape target with validation."""
+    city: str = Field(..., min_length=1, max_length=100)
+    category: str = Field(..., min_length=1, max_length=100)
+    limit: int = Field(default=50, ge=1, le=200)  # Max 200 per target
+
+    @field_validator('city', 'category')
+    @classmethod
+    def sanitize_text(cls, v: str) -> str:
+        return sanitize_search_text(v)
 
 
 class BatchScrapeRequest(BaseModel):
-    targets: List[ScrapeTarget]
+    """Batch scrape request with target limit."""
+    targets: List[ScrapeTarget] = Field(..., min_length=1, max_length=50)  # Max 50 targets
 
 
 class InstagramTarget(BaseModel):
-    keyword: str
-    limit: int = 50
-    followers_min: Optional[int] = None  # Uses global setting if not specified
-    followers_max: Optional[int] = None
-    score_threshold: Optional[int] = None
+    """Instagram scrape target with validation."""
+    keyword: str = Field(..., min_length=1, max_length=200)
+    limit: int = Field(default=50, ge=1, le=100)  # Max 100 per keyword
+    followers_min: Optional[int] = Field(None, ge=0, le=10_000_000)
+    followers_max: Optional[int] = Field(None, ge=0, le=10_000_000)
+    score_threshold: Optional[int] = Field(None, ge=0, le=100)
+
+    @field_validator('keyword')
+    @classmethod
+    def sanitize_keyword(cls, v: str) -> str:
+        return sanitize_search_text(v)
 
 
 class InstagramScrapeRequest(BaseModel):
-    targets: List[InstagramTarget]
+    """Instagram batch scrape request with target limit."""
+    targets: List[InstagramTarget] = Field(..., min_length=1, max_length=30)  # Max 30 keywords
 
 
 class ScrapeResponse(BaseModel):
@@ -103,8 +130,16 @@ class JobResponse(BaseModel):
 # --- Settings Schemas ---
 
 class SettingUpdate(BaseModel):
-    key: str
-    value: str
+    key: str = Field(..., min_length=1, max_length=100)
+    value: str = Field(..., max_length=10000)  # Allow up to 10KB for prompts
+
+    @field_validator('key')
+    @classmethod
+    def validate_key(cls, v: str) -> str:
+        # Only allow alphanumeric and underscores
+        if not re.match(r'^[a-z][a-z0-9_]*$', v):
+            raise ValueError('Key must be lowercase alphanumeric with underscores')
+        return v
 
 
 class SettingResponse(BaseModel):

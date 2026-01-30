@@ -1,13 +1,20 @@
 """
 Settings router - manage AI prompts and scoring configuration.
+
+Security Features:
+- API key authentication required
+- Rate limiting (20/hour for settings changes)
+- Input validation for keys and values
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
 
 from ..database import get_db, Settings
 from ..schemas import SettingUpdate, SettingResponse
+from ..auth import verify_api_key
+from ..rate_limit import limiter, SETTINGS_LIMIT, READ_LIMIT
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -39,6 +46,9 @@ YOUR JOB:
     "instagram_score_threshold": "60"
 }
 
+# Allowed setting keys (whitelist)
+ALLOWED_KEYS = set(DEFAULT_SETTINGS.keys())
+
 
 def init_default_settings(db: Session):
     """Initialize default settings if they don't exist."""
@@ -51,16 +61,37 @@ def init_default_settings(db: Session):
 
 
 @router.get("/", response_model=List[SettingResponse])
-def get_all_settings(db: Session = Depends(get_db)):
-    """Get all settings."""
+@limiter.limit(READ_LIMIT)
+def get_all_settings(
+    request: Request,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
+):
+    """
+    Get all settings.
+    
+    Requires: X-API-Key header
+    Rate limit: 100/minute
+    """
     init_default_settings(db)
     settings = db.query(Settings).all()
     return settings
 
 
 @router.get("/{key}", response_model=SettingResponse)
-def get_setting(key: str, db: Session = Depends(get_db)):
-    """Get a specific setting by key."""
+@limiter.limit(READ_LIMIT)
+def get_setting(
+    request: Request,
+    key: str,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
+):
+    """
+    Get a specific setting by key.
+    
+    Requires: X-API-Key header
+    Rate limit: 100/minute
+    """
     init_default_settings(db)
     setting = db.query(Settings).filter(Settings.key == key).first()
     if not setting:
@@ -69,8 +100,29 @@ def get_setting(key: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{key}", response_model=SettingResponse)
-def update_setting(key: str, update: SettingUpdate, db: Session = Depends(get_db)):
-    """Update a setting value."""
+@limiter.limit(SETTINGS_LIMIT)
+def update_setting(
+    request: Request,
+    key: str,
+    update: SettingUpdate,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
+):
+    """
+    Update a setting value.
+    
+    Requires: X-API-Key header
+    Rate limit: 20/hour
+    
+    Note: Only predefined setting keys are allowed.
+    """
+    # Validate key is in whitelist
+    if key not in ALLOWED_KEYS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid setting key. Allowed keys: {', '.join(sorted(ALLOWED_KEYS))}"
+        )
+    
     setting = db.query(Settings).filter(Settings.key == key).first()
     if not setting:
         # Create new setting
@@ -85,8 +137,18 @@ def update_setting(key: str, update: SettingUpdate, db: Session = Depends(get_db
 
 
 @router.post("/reset")
-def reset_settings(db: Session = Depends(get_db)):
-    """Reset all settings to defaults."""
+@limiter.limit(SETTINGS_LIMIT)
+def reset_settings(
+    request: Request,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
+):
+    """
+    Reset all settings to defaults.
+    
+    Requires: X-API-Key header
+    Rate limit: 20/hour
+    """
     for key, value in DEFAULT_SETTINGS.items():
         setting = db.query(Settings).filter(Settings.key == key).first()
         if setting:

@@ -1,30 +1,45 @@
 """
 Leads router - CRUD operations for leads.
+
+Security Features:
+- API key authentication for write operations
+- Rate limiting on all endpoints
+- Input validation via Pydantic schemas
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
 
 from ..database import get_db, Lead
 from ..schemas import LeadResponse, LeadStatusUpdate, LeadStatus
+from ..auth import verify_api_key
+from ..rate_limit import limiter, READ_LIMIT, WRITE_LIMIT
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
 
 @router.get("/", response_model=List[LeadResponse])
+@limiter.limit(READ_LIMIT)
 def get_leads(
-    skip: int = Query(0, ge=0),
+    request: Request,
+    skip: int = Query(0, ge=0, le=10000),
     limit: int = Query(100, ge=1, le=500),
-    status: Optional[str] = None,
-    source: Optional[str] = None,
-    min_score: Optional[int] = None,
-    city: Optional[str] = None,
-    category: Optional[str] = None,
-    db: Session = Depends(get_db)
+    status: Optional[str] = Query(None, max_length=50),
+    source: Optional[str] = Query(None, max_length=50),
+    min_score: Optional[int] = Query(None, ge=0, le=100),
+    city: Optional[str] = Query(None, max_length=100),
+    category: Optional[str] = Query(None, max_length=100),
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
 ):
-    """Get all leads with optional filtering."""
+    """
+    Get all leads with optional filtering.
+    
+    Requires: X-API-Key header
+    Rate limit: 100/minute
+    """
     query = db.query(Lead)
     
     if status:
@@ -34,17 +49,30 @@ def get_leads(
     if min_score:
         query = query.filter(Lead.lead_score >= min_score)
     if city:
-        query = query.filter(Lead.city.ilike(f"%{city}%"))
+        # Limit wildcard matching abuse
+        safe_city = city[:100]
+        query = query.filter(Lead.city.ilike(f"%{safe_city}%"))
     if category:
-        query = query.filter(Lead.category.ilike(f"%{category}%"))
+        safe_category = category[:100]
+        query = query.filter(Lead.category.ilike(f"%{safe_category}%"))
     
     leads = query.order_by(desc(Lead.lead_score)).offset(skip).limit(limit).all()
     return leads
 
 
 @router.get("/stats")
-def get_lead_stats(db: Session = Depends(get_db)):
-    """Get lead statistics for dashboard."""
+@limiter.limit(READ_LIMIT)
+def get_lead_stats(
+    request: Request,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
+):
+    """
+    Get lead statistics for dashboard.
+    
+    Requires: X-API-Key header
+    Rate limit: 100/minute
+    """
     total = db.query(Lead).count()
     high_priority = db.query(Lead).filter(Lead.lead_score >= 80).count()
     
@@ -70,8 +98,19 @@ def get_lead_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/{lead_id}", response_model=LeadResponse)
-def get_lead(lead_id: int, db: Session = Depends(get_db)):
-    """Get a specific lead by ID."""
+@limiter.limit(READ_LIMIT)
+def get_lead(
+    request: Request,
+    lead_id: int,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
+):
+    """
+    Get a specific lead by ID.
+    
+    Requires: X-API-Key header
+    Rate limit: 100/minute
+    """
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -79,12 +118,20 @@ def get_lead(lead_id: int, db: Session = Depends(get_db)):
 
 
 @router.patch("/{lead_id}/status", response_model=LeadResponse)
+@limiter.limit(WRITE_LIMIT)
 def update_lead_status(
+    request: Request,
     lead_id: int,
     status_update: LeadStatusUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
 ):
-    """Update a lead's status."""
+    """
+    Update a lead's status.
+    
+    Requires: X-API-Key header
+    Rate limit: 30/minute
+    """
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -96,8 +143,19 @@ def update_lead_status(
 
 
 @router.delete("/{lead_id}")
-def delete_lead(lead_id: int, db: Session = Depends(get_db)):
-    """Delete a lead."""
+@limiter.limit(WRITE_LIMIT)
+def delete_lead(
+    request: Request,
+    lead_id: int,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
+):
+    """
+    Delete a lead.
+    
+    Requires: X-API-Key header
+    Rate limit: 30/minute
+    """
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")

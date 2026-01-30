@@ -1,26 +1,40 @@
 """
 Jobs router - view job history and status.
+
+Security Features:
+- API key authentication required
+- Rate limiting on all endpoints
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
-from typing import List
+from typing import List, Optional
 
 from ..database import get_db, Job
 from ..schemas import JobResponse
+from ..auth import verify_api_key
+from ..rate_limit import limiter, READ_LIMIT
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
 @router.get("/", response_model=List[JobResponse])
+@limiter.limit(READ_LIMIT)
 def get_jobs(
-    skip: int = 0,
-    limit: int = 20,
-    status: str = None,
-    db: Session = Depends(get_db)
+    request: Request,
+    skip: int = Query(0, ge=0, le=1000),
+    limit: int = Query(20, ge=1, le=100),
+    status: Optional[str] = Query(None, max_length=50),
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
 ):
-    """Get job history."""
+    """
+    Get job history.
+    
+    Requires: X-API-Key header
+    Rate limit: 100/minute
+    """
     query = db.query(Job)
     
     if status:
@@ -31,8 +45,19 @@ def get_jobs(
 
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job(job_id: int, db: Session = Depends(get_db)):
-    """Get a specific job by ID."""
+@limiter.limit(READ_LIMIT)
+def get_job(
+    request: Request,
+    job_id: int,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
+):
+    """
+    Get a specific job by ID.
+    
+    Requires: X-API-Key header
+    Rate limit: 100/minute
+    """
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
