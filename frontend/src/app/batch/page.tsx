@@ -63,7 +63,7 @@ export default function BatchQueue() {
       const result = await scrapeBatch(targets);
       setMessage({
         type: "success",
-        text: `Batch job started! Job ID: ${result.job_id}. Processing ${targets.length} targets.`,
+        text: `Batch job started. Job ID: ${result.job_id}. Processing ${targets.length} targets.`,
       });
       setTargets([]);
     } catch (err) {
@@ -71,7 +71,7 @@ export default function BatchQueue() {
         type: "error",
         text: "Failed to start batch job. Make sure the API is running.",
       });
-      console.error(err);
+      console.error("Failed to start batch job:", err);
     } finally {
       setIsLoading(false);
     }
@@ -79,51 +79,50 @@ export default function BatchQueue() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white mb-6">Batch Queue</h1>
+      <h1 className="text-xl font-semibold text-[var(--fg-primary)] tracking-[-0.025em] mb-8">Batch Queue</h1>
 
       {message && (
         <div
-          className={`mb-4 p-3 rounded-lg text-sm ${
+          className={`mb-6 p-3.5 rounded-xl text-sm ${
             message.type === "success"
-              ? "bg-green-500/20 border border-green-500/50 text-green-300"
-              : "bg-red-500/20 border border-red-500/50 text-red-300"
+              ? "bg-[var(--success-muted)] border border-[var(--success)]/15 text-[var(--success)]"
+              : "bg-[var(--error-muted)] border border-[var(--error)]/15 text-[var(--error)]"
           }`}
         >
           {message.text}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Add Target Form */}
-        <div className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Add Target</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="card p-6">
+          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-4">Add Target</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-1">City</label>
+              <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">City</label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="e.g., London, UK"
-                className="w-full px-3 py-2 bg-[var(--background-tertiary)] border border-[var(--border)] rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[var(--accent)]"
+                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-1">Industry</label>
+              <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">Industry</label>
               <input
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="e.g., Dentist"
-                className="w-full px-3 py-2 bg-[var(--background-tertiary)] border border-[var(--border)] rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[var(--accent)]"
+                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-1">Limit</label>
+              <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">Limit</label>
               <select
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-[var(--background-tertiary)] border border-[var(--border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent)]"
+                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
               >
                 <option value={10}>10 leads</option>
                 <option value={20}>20 leads</option>
@@ -134,17 +133,16 @@ export default function BatchQueue() {
             <button
               onClick={addTarget}
               disabled={!city || !category}
-              className="w-full py-2.5 bg-[var(--background-tertiary)] hover:bg-[var(--border)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors border border-[var(--border)]"
+              className="w-full py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-elevated)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--fg-primary)] text-sm font-medium rounded-xl transition-all border border-[var(--border)] hover:border-[var(--border-hover)]"
             >
               + Add to Queue
             </button>
           </div>
         </div>
 
-        {/* Quick Paste */}
-        <div className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Quick Paste</h3>
-          <p className="text-sm text-[var(--foreground-muted)] mb-3">
+        <div className="card p-6">
+          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-4">Quick Paste</h3>
+          <p className="text-xs text-[var(--fg-muted)] mb-3">
             Paste multiple targets (City, Industry, Limit per line)
           </p>
           <textarea
@@ -154,46 +152,45 @@ export default function BatchQueue() {
 Mumbai, Gym, 30
 Sydney, Plumber, 20"
             rows={6}
-            className="w-full px-3 py-2 bg-[var(--background-tertiary)] border border-[var(--border)] rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[var(--accent)] resize-none font-mono text-sm"
+            className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all resize-none font-mono"
           />
           <button
             onClick={parseAndAdd}
             disabled={!pasteText.trim()}
-            className="mt-3 w-full py-2.5 bg-[var(--background-tertiary)] hover:bg-[var(--border)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors border border-[var(--border)]"
+            className="mt-3 w-full py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-elevated)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--fg-primary)] text-sm font-medium rounded-xl transition-all border border-[var(--border)] hover:border-[var(--border-hover)]"
           >
             Parse & Add
           </button>
         </div>
       </div>
 
-      {/* Queue List */}
-      <div className="mt-6 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl p-5">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <div className="mt-6 card p-6">
+        <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-4">
           Queue ({targets.length} targets)
         </h3>
 
         {targets.length === 0 ? (
-          <p className="text-[var(--foreground-muted)] text-sm">
-            No targets in queue. Add some above!
+          <p className="text-[var(--fg-muted)] text-sm">
+            No targets in queue. Add some above.
           </p>
         ) : (
-          <div className="space-y-2 mb-4">
+          <div className="space-y-1.5 mb-4">
             {targets.map((target, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between py-2 px-3 bg-[var(--background-tertiary)] rounded-lg"
+                className="flex items-center justify-between p-3 bg-[var(--bg-tertiary)]/50 rounded-xl"
               >
-                <div className="flex items-center gap-4">
-                  <span className="text-white font-medium">{target.city}</span>
-                  <span className="text-[var(--foreground-muted)]">-</span>
-                  <span className="text-[var(--foreground-muted)]">{target.category}</span>
-                  <span className="text-xs text-[var(--accent)]">{target.limit} leads</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-[var(--fg-primary)]">{target.city}</span>
+                  <span className="text-[var(--fg-muted)]">/</span>
+                  <span className="text-sm text-[var(--fg-muted)]">{target.category}</span>
+                  <span className="text-[11px] text-[var(--accent-hover)] font-medium">{target.limit}</span>
                 </div>
                 <button
                   onClick={() => removeTarget(index)}
-                  className="text-red-400 hover:text-red-300 transition-colors"
+                  className="text-[var(--error)] hover:text-[var(--fg-primary)] transition-colors text-xs"
                 >
-                  ✕
+                  Remove
                 </button>
               </div>
             ))}
@@ -203,7 +200,7 @@ Sydney, Plumber, 20"
         <button
           onClick={runBatch}
           disabled={targets.length === 0 || isLoading}
-          className="w-full py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-3 px-5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all duration-150"
         >
           {isLoading ? "Running..." : `Run All (${targets.length} targets)`}
         </button>

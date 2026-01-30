@@ -9,10 +9,9 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Local state for editing
   const [aiPrompt, setAiPrompt] = useState("");
   const [originalAiPrompt, setOriginalAiPrompt] = useState("");
-  
+
   const [scoringConfig, setScoringConfig] = useState({
     no_website: 50,
     high_reviews: 30,
@@ -23,14 +22,14 @@ export default function SettingsPage() {
     low_rating_opportunity: 15,
   });
   const [originalScoringConfig, setOriginalScoringConfig] = useState({ ...scoringConfig });
-  
+
   const [instagramConfig, setInstagramConfig] = useState({
     followers_min: 500,
     followers_max: 5000,
     score_threshold: 60,
   });
   const [originalInstagramConfig, setOriginalInstagramConfig] = useState({ ...instagramConfig });
-  
+
   const [savingSection, setSavingSection] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,7 +42,6 @@ export default function SettingsPage() {
       const data = await getSettings();
       setSettings(data);
 
-      // Parse settings into local state
       const promptSetting = data.find((s) => s.key === "ai_system_prompt");
       if (promptSetting) {
         setAiPrompt(promptSetting.value);
@@ -62,7 +60,6 @@ export default function SettingsPage() {
       setScoringConfig(newScoring);
       setOriginalScoringConfig({ ...newScoring });
 
-      // Parse Instagram settings
       const newInstagram = { ...instagramConfig };
       data.forEach((s) => {
         if (s.key.startsWith("instagram_")) {
@@ -81,96 +78,83 @@ export default function SettingsPage() {
     }
   };
 
+  const saveSection = async (
+    section: string,
+    saveFn: () => Promise<void>,
+    successMsg: string,
+    errorMsg: string
+  ) => {
+    setSavingSection(section);
+    setMessage(null);
+    try {
+      await saveFn();
+      setMessage({ type: "success", text: successMsg });
+    } catch (err) {
+      setMessage({ type: "error", text: errorMsg });
+      console.error(`Failed to save ${section} settings:`, err);
+    } finally {
+      setSavingSection(null);
+    }
+  };
+
   const saveSettings = async () => {
     setIsSaving(true);
     setMessage(null);
 
     try {
-      // Save AI prompt
       await updateSetting("ai_system_prompt", aiPrompt);
 
-      // Save scoring config
       for (const [key, value] of Object.entries(scoringConfig)) {
         await updateSetting(`scoring_${key}`, String(value));
       }
 
-      // Save Instagram config
       for (const [key, value] of Object.entries(instagramConfig)) {
         await updateSetting(`instagram_${key}`, String(value));
       }
 
-      setMessage({ type: "success", text: "Settings saved successfully!" });
+      setMessage({ type: "success", text: "Settings saved." });
     } catch (err) {
       setMessage({ type: "error", text: "Failed to save settings." });
-      console.error(err);
+      console.error("Failed to save all settings:", err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Per-section save functions
-  const saveScoringConfig = async () => {
-    setSavingSection("scoring");
-    setMessage(null);
-    try {
+  const saveScoringConfig = () =>
+    saveSection("scoring", async () => {
       for (const [key, value] of Object.entries(scoringConfig)) {
         await updateSetting(`scoring_${key}`, String(value));
       }
       setOriginalScoringConfig({ ...scoringConfig });
-      setMessage({ type: "success", text: "Scoring configuration saved!" });
-    } catch (err) {
-      setMessage({ type: "error", text: "Failed to save scoring config." });
-      console.error(err);
-    } finally {
-      setSavingSection(null);
-    }
-  };
+    }, "Scoring configuration saved.", "Failed to save scoring config.");
 
   const cancelScoringConfig = () => {
     setScoringConfig({ ...originalScoringConfig });
   };
 
-  const saveInstagramConfig = async () => {
-    setSavingSection("instagram");
-    setMessage(null);
-    try {
+  const saveInstagramConfig = () =>
+    saveSection("instagram", async () => {
       for (const [key, value] of Object.entries(instagramConfig)) {
         await updateSetting(`instagram_${key}`, String(value));
       }
       setOriginalInstagramConfig({ ...instagramConfig });
-      setMessage({ type: "success", text: "Instagram settings saved!" });
-    } catch (err) {
-      setMessage({ type: "error", text: "Failed to save Instagram settings." });
-      console.error(err);
-    } finally {
-      setSavingSection(null);
-    }
-  };
+    }, "Instagram settings saved.", "Failed to save Instagram settings.");
 
   const cancelInstagramConfig = () => {
     setInstagramConfig({ ...originalInstagramConfig });
   };
 
-  const saveAiPrompt = async () => {
-    setSavingSection("ai");
-    setMessage(null);
-    try {
+  const saveAiPrompt = () =>
+    saveSection("ai", async () => {
       await updateSetting("ai_system_prompt", aiPrompt);
       setOriginalAiPrompt(aiPrompt);
-      setMessage({ type: "success", text: "AI prompt saved!" });
-    } catch (err) {
-      setMessage({ type: "error", text: "Failed to save AI prompt." });
-      console.error(err);
-    } finally {
-      setSavingSection(null);
-    }
-  };
+    }, "AI prompt saved.", "Failed to save AI prompt.");
 
   const cancelAiPrompt = () => {
     setAiPrompt(originalAiPrompt);
   };
 
-  // Check if sections have unsaved changes
   const hasAiChanges = aiPrompt !== originalAiPrompt;
   const hasScoringChanges = JSON.stringify(scoringConfig) !== JSON.stringify(originalScoringConfig);
   const hasInstagramChanges = JSON.stringify(instagramConfig) !== JSON.stringify(originalInstagramConfig);
@@ -184,45 +168,55 @@ export default function SettingsPage() {
       setMessage({ type: "success", text: "Settings reset to defaults." });
     } catch (err) {
       setMessage({ type: "error", text: "Failed to reset settings." });
-      console.error(err);
+      console.error("Failed to reset settings:", err);
     }
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-[var(--foreground-muted)]">Loading settings...</p>
+        <p className="text-[var(--fg-muted)] text-sm">Loading settings...</p>
       </div>
     );
   }
 
+  const scoringFields = [
+    { key: "no_website" as const, label: "No Website" },
+    { key: "high_reviews" as const, label: "High Reviews (100+)" },
+    { key: "medium_reviews" as const, label: "Medium Reviews (30-99)" },
+    { key: "high_rating" as const, label: "High Rating (4.5+)" },
+    { key: "good_rating" as const, label: "Good Rating (4.0+)" },
+    { key: "high_value_category" as const, label: "High-Value Category" },
+    { key: "low_rating_opportunity" as const, label: "Low Rating (<3.8)" },
+  ];
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <div className="flex gap-3">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-xl font-semibold text-[var(--fg-primary)] tracking-[-0.025em]">Settings</h1>
+        <div className="flex gap-2.5">
           <button
             onClick={handleReset}
-            className="px-4 py-2 text-sm text-[var(--foreground-muted)] hover:text-white transition-colors"
+            className="px-3.5 py-1.5 text-xs rounded-xl text-[var(--fg-muted)] hover:text-[var(--fg-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
           >
             Reset to Defaults
           </button>
           <button
             onClick={saveSettings}
             disabled={isSaving}
-            className="px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
+            className="px-4 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none text-white text-xs font-semibold rounded-xl transition-all duration-150"
           >
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? "Saving..." : "Save All"}
           </button>
         </div>
       </div>
 
       {message && (
         <div
-          className={`mb-4 p-3 rounded-lg text-sm ${
+          className={`mb-6 p-3.5 rounded-xl text-sm ${
             message.type === "success"
-              ? "bg-green-500/20 border border-green-500/50 text-green-300"
-              : "bg-red-500/20 border border-red-500/50 text-red-300"
+              ? "bg-[var(--success-muted)] border border-[var(--success)]/15 text-[var(--success)]"
+              : "bg-[var(--error-muted)] border border-[var(--error)]/15 text-[var(--error)]"
           }`}
         >
           {message.text}
@@ -230,30 +224,29 @@ export default function SettingsPage() {
       )}
 
       <div className="space-y-6">
-        {/* AI Prompt Editor */}
-        <div className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">AI System Prompt</h3>
-          <p className="text-sm text-[var(--foreground-muted)] mb-3">
-            This prompt defines the personality and behavior of the AI when generating outreach messages.
+        <div className="card p-6">
+          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">AI System Prompt</h3>
+          <p className="text-xs text-[var(--fg-muted)] mb-4">
+            Defines AI personality for outreach message generation.
           </p>
           <textarea
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
-            rows={10}
-            className="w-full px-3 py-2 bg-[var(--background-tertiary)] border border-[var(--border)] rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[var(--accent)] font-mono text-sm"
+            rows={8}
+            className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all font-mono"
           />
           {hasAiChanges && (
-            <div className="flex justify-end gap-2 mt-3">
+            <div className="flex justify-end gap-2.5 mt-3">
               <button
                 onClick={cancelAiPrompt}
-                className="px-4 py-2 text-sm text-[var(--foreground-muted)] hover:text-white transition-colors"
+                className="px-3 py-1.5 text-xs rounded-xl text-[var(--fg-muted)] hover:text-[var(--fg-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={saveAiPrompt}
                 disabled={savingSection === "ai"}
-                className="px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none text-white text-xs font-semibold rounded-xl transition-all duration-150"
               >
                 {savingSection === "ai" ? "Saving..." : "Save"}
               </button>
@@ -261,179 +254,44 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Scoring Configuration */}
-        <div className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">Scoring Configuration</h3>
-          <p className="text-sm text-[var(--foreground-muted)] mb-4">
-            Adjust how many points each condition adds to the lead score (0-100 scale).
+        <div className="card p-6">
+          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">Scoring</h3>
+          <p className="text-xs text-[var(--fg-muted)] mb-5">
+            Points added to lead score per condition (0-100).
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                No Website
-              </label>
-              <div className="flex items-center gap-3">
+            {scoringFields.map(({ key, label }) => (
+              <div key={key}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs text-[var(--fg-muted)]">{label}</label>
+                  <span className="text-xs font-medium text-[var(--fg-primary)] tabular-nums">+{scoringConfig[key]}</span>
+                </div>
                 <input
                   type="range"
                   min="0"
                   max="100"
-                  value={scoringConfig.no_website}
+                  value={scoringConfig[key]}
                   onChange={(e) =>
-                    setScoringConfig({ ...scoringConfig, no_website: parseInt(e.target.value) })
+                    setScoringConfig({ ...scoringConfig, [key]: parseInt(e.target.value) })
                   }
-                  className="flex-1"
+                  className="w-full"
                 />
-                <span className="w-12 text-center text-white font-medium">
-                  +{scoringConfig.no_website}
-                </span>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                High Reviews (100+)
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={scoringConfig.high_reviews}
-                  onChange={(e) =>
-                    setScoringConfig({ ...scoringConfig, high_reviews: parseInt(e.target.value) })
-                  }
-                  className="flex-1"
-                />
-                <span className="w-12 text-center text-white font-medium">
-                  +{scoringConfig.high_reviews}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                Medium Reviews (30-99)
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={scoringConfig.medium_reviews}
-                  onChange={(e) =>
-                    setScoringConfig({ ...scoringConfig, medium_reviews: parseInt(e.target.value) })
-                  }
-                  className="flex-1"
-                />
-                <span className="w-12 text-center text-white font-medium">
-                  +{scoringConfig.medium_reviews}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                High Rating (4.5+)
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={scoringConfig.high_rating}
-                  onChange={(e) =>
-                    setScoringConfig({ ...scoringConfig, high_rating: parseInt(e.target.value) })
-                  }
-                  className="flex-1"
-                />
-                <span className="w-12 text-center text-white font-medium">
-                  +{scoringConfig.high_rating}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                Good Rating (4.0+)
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={scoringConfig.good_rating}
-                  onChange={(e) =>
-                    setScoringConfig({ ...scoringConfig, good_rating: parseInt(e.target.value) })
-                  }
-                  className="flex-1"
-                />
-                <span className="w-12 text-center text-white font-medium">
-                  +{scoringConfig.good_rating}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                High-Value Category
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={scoringConfig.high_value_category}
-                  onChange={(e) =>
-                    setScoringConfig({
-                      ...scoringConfig,
-                      high_value_category: parseInt(e.target.value),
-                    })
-                  }
-                  className="flex-1"
-                />
-                <span className="w-12 text-center text-white font-medium">
-                  +{scoringConfig.high_value_category}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                Low Rating Opportunity (&lt;3.8)
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={scoringConfig.low_rating_opportunity}
-                  onChange={(e) =>
-                    setScoringConfig({
-                      ...scoringConfig,
-                      low_rating_opportunity: parseInt(e.target.value),
-                    })
-                  }
-                  className="flex-1"
-                />
-                <span className="w-12 text-center text-white font-medium">
-                  +{scoringConfig.low_rating_opportunity}
-                </span>
-              </div>
-            </div>
+            ))}
           </div>
           {hasScoringChanges && (
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[var(--border)]">
+            <div className="flex justify-end gap-2.5 mt-4 pt-4 border-t border-[var(--border)]">
               <button
                 onClick={cancelScoringConfig}
-                className="px-4 py-2 text-sm text-[var(--foreground-muted)] hover:text-white transition-colors"
+                className="px-3 py-1.5 text-xs rounded-xl text-[var(--fg-muted)] hover:text-[var(--fg-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={saveScoringConfig}
                 disabled={savingSection === "scoring"}
-                className="px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none text-white text-xs font-semibold rounded-xl transition-all duration-150"
               >
                 {savingSection === "scoring" ? "Saving..." : "Save"}
               </button>
@@ -441,46 +299,39 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Instagram Configuration */}
-        <div className="bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">📸 Instagram Settings</h3>
-          <p className="text-sm text-[var(--foreground-muted)] mb-4">
-            Configure follower range and score threshold for Instagram lead discovery.
+        <div className="card p-6">
+          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">Instagram</h3>
+          <p className="text-xs text-[var(--fg-muted)] mb-5">
+            Follower range and score threshold for lead discovery.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                Min Followers
-              </label>
+              <label className="block text-xs text-[var(--fg-muted)] mb-2">Min Followers</label>
               <input
                 type="number"
                 value={instagramConfig.followers_min}
                 onChange={(e) =>
                   setInstagramConfig({ ...instagramConfig, followers_min: parseInt(e.target.value) || 0 })
                 }
-                className="w-full px-3 py-2 bg-[var(--background-tertiary)] border border-[var(--border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent)]"
+                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                Max Followers
-              </label>
+              <label className="block text-xs text-[var(--fg-muted)] mb-2">Max Followers</label>
               <input
                 type="number"
                 value={instagramConfig.followers_max}
                 onChange={(e) =>
                   setInstagramConfig({ ...instagramConfig, followers_max: parseInt(e.target.value) || 0 })
                 }
-                className="w-full px-3 py-2 bg-[var(--background-tertiary)] border border-[var(--border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent)]"
+                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
-                Score Threshold
-              </label>
+              <label className="block text-xs text-[var(--fg-muted)] mb-2">Score Threshold</label>
               <input
                 type="number"
                 value={instagramConfig.score_threshold}
@@ -489,26 +340,26 @@ export default function SettingsPage() {
                 }
                 min="0"
                 max="100"
-                className="w-full px-3 py-2 bg-[var(--background-tertiary)] border border-[var(--border)] rounded-lg text-white focus:outline-none focus:border-[var(--accent)]"
+                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
               />
             </div>
           </div>
 
-          <p className="text-xs text-[var(--foreground-muted)] mt-3">
-            Only profiles with {instagramConfig.followers_min} - {instagramConfig.followers_max} followers and score ≥ {instagramConfig.score_threshold} will be included.
+          <p className="text-[11px] text-[var(--fg-muted)] mt-3">
+            Only profiles with {instagramConfig.followers_min}-{instagramConfig.followers_max} followers and score ≥ {instagramConfig.score_threshold} will be included.
           </p>
           {hasInstagramChanges && (
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[var(--border)]">
+            <div className="flex justify-end gap-2.5 mt-4 pt-4 border-t border-[var(--border)]">
               <button
                 onClick={cancelInstagramConfig}
-                className="px-4 py-2 text-sm text-[var(--foreground-muted)] hover:text-white transition-colors"
+                className="px-3 py-1.5 text-xs rounded-xl text-[var(--fg-muted)] hover:text-[var(--fg-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={saveInstagramConfig}
                 disabled={savingSection === "instagram"}
-                className="px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none text-white text-xs font-semibold rounded-xl transition-all duration-150"
               >
                 {savingSection === "instagram" ? "Saving..." : "Save"}
               </button>
@@ -516,16 +367,21 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* API Info */}
-        <div className="bg-[var(--background-tertiary)] border border-[var(--border)] rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-white mb-4">API Configuration</h3>
-          <p className="text-sm text-[var(--foreground-muted)]">
-            API keys are configured via environment variables on the server:
+        <div className="card-static p-6">
+          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">API</h3>
+          <p className="text-xs text-[var(--fg-muted)] mb-4">
+            Configured via server environment variables.
           </p>
-          <ul className="mt-2 text-sm text-[var(--foreground-muted)] space-y-1">
-            <li>• <code className="text-white">APIFY_API_TOKEN</code> - For Google Maps & Instagram scraping</li>
-            <li>• <code className="text-white">GEMINI_API_KEY</code> - For AI outreach generation</li>
-          </ul>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs">
+              <code className="px-2.5 py-1 bg-[var(--bg-tertiary)] rounded-lg text-[var(--fg-primary)] font-mono">APIFY_API_TOKEN</code>
+              <span className="text-[var(--fg-muted)]">Google Maps & Instagram</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <code className="px-2.5 py-1 bg-[var(--bg-tertiary)] rounded-lg text-[var(--fg-primary)] font-mono">GEMINI_API_KEY</code>
+              <span className="text-[var(--fg-muted)]">AI outreach generation</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

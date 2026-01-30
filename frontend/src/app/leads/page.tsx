@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import { getLeads, updateLeadStatus, Lead } from "@/lib/api";
 
 const statusOptions = [
-  { value: "new", label: "New", color: "bg-gray-500" },
-  { value: "contacted", label: "Contacted", color: "bg-blue-500" },
-  { value: "replied", label: "Replied", color: "bg-yellow-500" },
-  { value: "meeting", label: "Meeting", color: "bg-purple-500" },
-  { value: "closed", label: "Closed", color: "bg-green-500" },
-  { value: "not_interested", label: "Not Interested", color: "bg-red-500" },
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "replied", label: "Replied" },
+  { value: "meeting", label: "Meeting" },
+  { value: "closed", label: "Closed" },
+  { value: "not_interested", label: "Not Interested" },
 ];
 
 export default function LeadsCRM() {
@@ -63,28 +63,26 @@ export default function LeadsCRM() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "bg-green-500";
-    if (score >= 50) return "bg-yellow-500";
-    return "bg-gray-500";
+    if (score >= 80) return "bg-[var(--success)]";
+    if (score >= 50) return "bg-[var(--warning)]";
+    return "bg-[var(--fg-muted)]";
   };
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-120px)]">
-      {/* Leads Table */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-white">Leads CRM</h1>
-          <span className="text-sm text-[var(--foreground-muted)]">
+    <div className="flex gap-5 h-[calc(100vh-120px)]">
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-semibold text-[var(--fg-primary)] tracking-[-0.025em]">Leads</h1>
+          <span className="text-xs text-[var(--fg-muted)]">
             {leads.length} leads
           </span>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-2.5 mb-5">
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-white text-sm focus:outline-none focus:border-[var(--accent)]"
+            className="field-inset px-3 py-1.5 text-[var(--fg-primary)] text-xs focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
           >
             <option value="">All Status</option>
             {statusOptions.map((s) => (
@@ -96,7 +94,7 @@ export default function LeadsCRM() {
           <select
             value={filters.source}
             onChange={(e) => setFilters({ ...filters, source: e.target.value })}
-            className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-white text-sm focus:outline-none focus:border-[var(--accent)]"
+            className="field-inset px-3 py-1.5 text-[var(--fg-primary)] text-xs focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
           >
             <option value="">All Sources</option>
             <option value="google_maps">Google Maps</option>
@@ -107,39 +105,38 @@ export default function LeadsCRM() {
             placeholder="Filter by city..."
             value={filters.city}
             onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-            className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-[var(--accent)]"
+            className="field-inset px-3 py-1.5 text-[var(--fg-primary)] text-xs placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
           />
           <select
             value={filters.minScore}
             onChange={(e) => setFilters({ ...filters, minScore: Number(e.target.value) })}
-            className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-white text-sm focus:outline-none focus:border-[var(--accent)]"
+            className="field-inset px-3 py-1.5 text-[var(--fg-primary)] text-xs focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
           >
             <option value={0}>Any Score</option>
             <option value={50}>50+</option>
             <option value={70}>70+</option>
-            <option value={80}>80+ (High Priority)</option>
+            <option value={80}>80+</option>
           </select>
         </div>
 
-        {/* Table */}
-        <div className="flex-1 overflow-auto bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl">
+        <div className="flex-1 overflow-auto card-static">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[var(--foreground-muted)]">Loading...</p>
+              <p className="text-[var(--fg-muted)] text-sm">Loading...</p>
             </div>
           ) : leads.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[var(--foreground-muted)]">No leads found. Run a scrape to get started!</p>
+              <p className="text-[var(--fg-muted)] text-sm">No leads found.</p>
             </div>
           ) : (
             <table className="w-full">
-              <thead className="sticky top-0 bg-[var(--background-tertiary)]">
-                <tr className="text-left text-sm text-[var(--foreground-muted)]">
-                  <th className="px-4 py-3 font-medium">Business</th>
-                  <th className="px-4 py-3 font-medium">City</th>
-                  <th className="px-4 py-3 font-medium">Reviews</th>
-                  <th className="px-4 py-3 font-medium">Score</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+              <thead className="sticky top-0 bg-[var(--bg-tertiary)]">
+                <tr className="text-left text-[11px] text-[var(--fg-muted)] uppercase tracking-wider">
+                  <th className="px-4 py-2.5 font-medium">Business</th>
+                  <th className="px-4 py-2.5 font-medium">City</th>
+                  <th className="px-4 py-2.5 font-medium">Reviews</th>
+                  <th className="px-4 py-2.5 font-medium">Score</th>
+                  <th className="px-4 py-2.5 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,38 +146,38 @@ export default function LeadsCRM() {
                     onClick={() => setSelectedLead(lead)}
                     className={`border-t border-[var(--border)] cursor-pointer transition-colors ${
                       selectedLead?.id === lead.id
-                        ? "bg-[var(--accent)]/20"
-                        : "hover:bg-[var(--background-tertiary)]"
+                        ? "bg-[var(--accent-muted)]"
+                        : "hover:bg-[var(--bg-tertiary)]/50"
                     }`}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <div>
-                        <p className="text-white font-medium">{lead.name}</p>
-                        <p className="text-xs text-[var(--foreground-muted)]">{lead.category}</p>
+                        <p className="text-sm font-medium text-[var(--fg-primary)]">{lead.name}</p>
+                        <p className="text-[11px] text-[var(--fg-muted)]">{lead.category}</p>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-[var(--foreground-muted)]">
+                    <td className="px-4 py-2.5 text-xs text-[var(--fg-muted)]">
                       {lead.city}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-white">
+                    <td className="px-4 py-2.5">
+                      <span className="text-xs text-[var(--fg-primary)]">
                         {lead.rating}★ ({lead.reviews})
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-2 bg-[var(--background-tertiary)] rounded-full overflow-hidden">
+                        <div className="w-14 h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
                           <div
                             className={`h-full ${getScoreColor(lead.lead_score)}`}
                             style={{ width: `${lead.lead_score}%` }}
                           />
                         </div>
-                        <span className="text-xs text-[var(--foreground-muted)]">
+                        <span className="text-[11px] text-[var(--fg-muted)] w-6">
                           {lead.lead_score}
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <select
                         value={lead.status}
                         onChange={(e) => {
@@ -188,7 +185,7 @@ export default function LeadsCRM() {
                           handleStatusChange(lead.id, e.target.value);
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className="px-2 py-1 bg-[var(--background-tertiary)] border border-[var(--border)] rounded text-xs text-white focus:outline-none"
+                        className="px-2 py-1 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-lg text-[11px] text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)]"
                       >
                         {statusOptions.map((s) => (
                           <option key={s.value} value={s.value}>
@@ -205,87 +202,87 @@ export default function LeadsCRM() {
         </div>
       </div>
 
-      {/* Lead Detail Panel */}
       {selectedLead && (
-        <div className="w-96 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl p-5 overflow-auto">
-          <div className="flex items-start justify-between mb-4">
+        <div className="w-80 card-static p-5 overflow-auto shrink-0">
+          <div className="flex items-start justify-between mb-5">
             <div>
-              <h2 className="text-lg font-bold text-white">{selectedLead.name}</h2>
-              <p className="text-sm text-[var(--foreground-muted)]">{selectedLead.category}</p>
+              <h2 className="text-sm font-semibold text-[var(--fg-primary)]">{selectedLead.name}</h2>
+              <p className="text-xs text-[var(--fg-muted)]">{selectedLead.category}</p>
             </div>
             <button
               onClick={() => setSelectedLead(null)}
-              className="text-[var(--foreground-muted)] hover:text-white"
+              className="text-[var(--fg-muted)] hover:text-[var(--fg-primary)] text-xs px-1.5 py-0.5 rounded-lg bg-[var(--bg-tertiary)] transition-colors"
             >
               ✕
             </button>
           </div>
 
-          <div className="space-y-4">
-            {/* Score */}
+          <div className="space-y-5">
             <div>
-              <p className="text-sm text-[var(--foreground-muted)] mb-1">Lead Score</p>
+              <p className="text-[11px] font-medium text-[var(--fg-muted)] uppercase tracking-wider mb-2">Score</p>
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-3 bg-[var(--background-tertiary)] rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
                   <div
                     className={`h-full ${getScoreColor(selectedLead.lead_score)}`}
                     style={{ width: `${selectedLead.lead_score}%` }}
                   />
                 </div>
-                <span className="text-xl font-bold text-white">{selectedLead.lead_score}</span>
+                <span className="text-lg font-bold text-[var(--fg-primary)]">{selectedLead.lead_score}</span>
               </div>
               {selectedLead.reason && (
-                <p className="text-xs text-[var(--foreground-muted)] mt-1">{selectedLead.reason}</p>
+                <p className="text-[11px] text-[var(--fg-muted)] mt-1.5">{selectedLead.reason}</p>
               )}
             </div>
 
-            {/* Contact Info */}
             <div>
-              <p className="text-sm text-[var(--foreground-muted)] mb-2">Contact</p>
-              {selectedLead.phone && (
-                <button
-                  onClick={() => copyToClipboard(selectedLead.phone!)}
-                  className="flex items-center gap-2 text-sm text-white hover:text-[var(--accent)] transition-colors"
-                >
-                  📞 {selectedLead.phone}
-                  <span className="text-xs text-[var(--foreground-muted)]">(click to copy)</span>
-                </button>
-              )}
-              {selectedLead.website && (
-                <a
-                  href={selectedLead.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-sm text-[var(--accent)] hover:underline mt-1"
-                >
-                  🌐 {selectedLead.website}
-                </a>
-              )}
-              {selectedLead.instagram && (
-                <a
-                  href={`https://instagram.com/${selectedLead.instagram}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-sm text-[var(--accent)] hover:underline mt-1"
-                >
-                  📸 @{selectedLead.instagram}
-                </a>
-              )}
+              <p className="text-[11px] font-medium text-[var(--fg-muted)] uppercase tracking-wider mb-2">Contact</p>
+              <div className="space-y-2">
+                {selectedLead.phone && (
+                  <button
+                    onClick={() => copyToClipboard(selectedLead.phone!)}
+                    className="flex items-center gap-2 text-xs text-[var(--fg-primary)] hover:text-[var(--accent-hover)] transition-colors rounded-xl px-3 py-2 bg-[var(--bg-tertiary)] w-full text-left"
+                  >
+                    <span className="text-[var(--fg-muted)]">Phone</span>
+                    <span className="ml-auto">{selectedLead.phone}</span>
+                  </button>
+                )}
+                {selectedLead.website && (
+                  <a
+                    href={selectedLead.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-xs text-[var(--accent-hover)] hover:underline px-3 py-2 bg-[var(--bg-tertiary)] rounded-xl"
+                  >
+                    <span className="text-[var(--fg-muted)]">Web</span>
+                    <span className="ml-auto truncate max-w-[180px]">{selectedLead.website}</span>
+                  </a>
+                )}
+                {selectedLead.instagram && (
+                  <a
+                    href={`https://instagram.com/${selectedLead.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-xs text-[var(--accent-hover)] hover:underline px-3 py-2 bg-[var(--bg-tertiary)] rounded-xl"
+                  >
+                    <span className="text-[var(--fg-muted)]">IG</span>
+                    <span className="ml-auto">@{selectedLead.instagram}</span>
+                  </a>
+                )}
+              </div>
             </div>
 
-            {/* AI Outreach */}
             {selectedLead.ai_outreach && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-[var(--foreground-muted)]">AI Outreach Message</p>
+                  <p className="text-[11px] font-medium text-[var(--fg-muted)] uppercase tracking-wider">Outreach</p>
                   <button
                     onClick={() => copyToClipboard(selectedLead.ai_outreach!)}
-                    className="text-xs text-[var(--accent)] hover:underline"
+                    className="text-[11px] text-[var(--accent-hover)] hover:underline"
                   >
                     Copy
                   </button>
                 </div>
-                <div className="p-3 bg-[var(--background-tertiary)] rounded-lg text-sm text-white whitespace-pre-wrap">
+                <div className="p-3 bg-[var(--bg-tertiary)] rounded-xl text-xs text-[var(--fg-primary)] whitespace-pre-wrap leading-relaxed">
                   {selectedLead.ai_outreach}
                 </div>
               </div>
