@@ -16,6 +16,46 @@ def load_batch_config(config_path: str = "batch_config.json") -> dict:
         return json.load(f)
 
 
+def process_batch_targets(targets: list) -> list:
+    """
+    Process batch targets and return leads as list of dicts.
+    Used by the API for programmatic access.
+    
+    Args:
+        targets: List of dicts with 'city', 'category', 'limit' keys
+        
+    Returns:
+        List of lead dictionaries
+    """
+    import pandas as pd
+    
+    all_leads = []
+    
+    for target in targets:
+        city = target.get("city")
+        category = target.get("category")
+        limit = target.get("limit", 50)
+        
+        try:
+            df = run_pipeline(
+                city=city,
+                category=category,
+                limit=limit,
+                dry_run=target.get("dry_run", False),
+                agent_mode=target.get("agent_mode", True)
+            )
+            
+            if not df.empty:
+                leads = df.to_dict('records')
+                all_leads.extend(leads)
+                
+        except Exception as e:
+            print(f"Error processing {city} - {category}: {e}")
+            continue
+    
+    return all_leads
+
+
 def run_batch(batch_config: dict):
     """
     Run pipeline for multiple city/category combinations.

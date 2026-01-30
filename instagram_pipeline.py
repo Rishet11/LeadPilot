@@ -100,6 +100,50 @@ def score_profile(profile: dict, target_city: str = None) -> int:
 from lead_agent import generate_instagram_dms_batch
 
 
+def process_instagram_targets(targets: list) -> list:
+    """
+    Process Instagram targets and return leads as list of dicts.
+    Used by the API for programmatic access.
+    
+    Args:
+        targets: List of dicts with 'keyword', 'limit' keys
+        
+    Returns:
+        List of lead dictionaries
+    """
+    model = get_gemini()
+    all_leads = []
+    
+    for target in targets:
+        leads = process_target(target, model)
+        all_leads.extend(leads)
+    
+    if not all_leads:
+        return []
+    
+    # Batch DM Generation
+    batch_size = 10
+    final_leads = []
+    
+    for i in range(0, len(all_leads), batch_size):
+        chunk_leads = all_leads[i:i+batch_size]
+        chunk_input = [{"username": l["username"], "bio": l["bio"]} for l in chunk_leads]
+        
+        ai_responses = generate_instagram_dms_batch(chunk_input)
+        chunk_map = {r['id']: r['dm_message'] for r in ai_responses if 'id' in r}
+        
+        for local_id, lead in enumerate(chunk_leads):
+            msg = chunk_map.get(local_id, "Check manually")
+            lead['dm_message'] = msg
+            lead['ai_outreach'] = msg  # Also set ai_outreach for consistency
+            lead['lead_score'] = lead.get('score', 0)
+            lead['name'] = lead.get('username', '')
+            lead['category'] = 'Instagram'
+            final_leads.append(lead)
+    
+    return final_leads
+
+
 def process_target(target: dict, model) -> list:
     """Process a single keyword target."""
     keyword = target.get("keyword")
