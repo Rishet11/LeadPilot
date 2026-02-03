@@ -9,12 +9,16 @@ API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 def verify_api_key(api_key: str = Security(API_KEY_HEADER)) -> str:
+    environment = os.getenv("ENVIRONMENT", "").lower()
+    
+    # In development mode, skip all API key validation
+    if environment in ("development", "dev"):
+        logger.warning("Running in development mode - API key validation skipped")
+        return "dev-mode"
+    
     expected_key = os.getenv("LEADPILOT_API_KEY")
 
     if not expected_key:
-        if os.getenv("ENVIRONMENT") == "development":
-            logger.warning("LEADPILOT_API_KEY not set - running in dev mode")
-            return "dev-mode"
         raise HTTPException(
             status_code=500,
             detail="Server misconfiguration: API key not set"
@@ -35,3 +39,4 @@ def verify_api_key(api_key: str = Security(API_KEY_HEADER)) -> str:
         )
 
     return api_key
+

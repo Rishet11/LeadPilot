@@ -1,4 +1,15 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env file from project root
+env_path = Path(__file__).resolve().parent.parent / ".env"
+print(f"[DEBUG] Loading .env from: {env_path}")
+print(f"[DEBUG] .env exists: {env_path.exists()}")
+load_dotenv(env_path)
+print(f"[DEBUG] ENVIRONMENT = {os.getenv('ENVIRONMENT')}")
+print(f"[DEBUG] LEADPILOT_API_KEY = {os.getenv('LEADPILOT_API_KEY', 'NOT SET')[:20]}...")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
