@@ -1,238 +1,249 @@
-"use client";
+import Link from "next/link";
 
-import { useState, useEffect } from "react";
-import MetricCard from "@/components/MetricCard";
-import QuickScrape from "@/components/QuickScrape";
-import { getLeadStats, getJobs, scrapeSingle, LeadStats, Job } from "@/lib/api";
-
-const POLL_INTERVAL_MS = 5000;
-const REVENUE_PER_HIGH_PRIORITY_LEAD = 5000;
-
-export default function Dashboard() {
-  const [stats, setStats] = useState<LeadStats | null>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadData();
-
-    const interval = setInterval(loadData, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [statsData, jobsData] = await Promise.all([
-        getLeadStats(),
-        getJobs(10),
-      ]);
-      setStats(statsData);
-      setJobs(jobsData);
-    } catch (err) {
-      console.error("Failed to load dashboard data:", err);
-      setStats({
-        total_leads: 0,
-        high_priority_leads: 0,
-        leads_by_status: { new: 0, contacted: 0, closed: 0 },
-        leads_by_source: { google_maps: 0, instagram: 0 },
-      });
-      setJobs([]);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleScrape = async (city: string, category: string, limit: number) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await scrapeSingle(city, category, limit);
-      setTimeout(loadData, 2000);
-    } catch (err) {
-      setError("Failed to start scrape. Make sure the API is running.");
-      console.error("Failed to start scrape:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    // Backend stores UTC — append Z if missing so the browser converts to local time
-    const utcStr = dateStr.endsWith("Z") ? dateStr : dateStr + "Z";
-    const date = new Date(utcStr);
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
-
-  const getStatusDot = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-[var(--success)]";
-      case "running":
-        return "bg-[var(--accent)]";
-      case "failed":
-        return "bg-[var(--error)]";
-      default:
-        return "bg-[var(--warning)]";
-    }
-  };
-
-  const getStatusPill = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-[var(--success-muted)] text-[var(--success)]";
-      case "running":
-        return "bg-[var(--accent-muted)] text-[var(--accent-hover)]";
-      case "failed":
-        return "bg-[var(--error-muted)] text-[var(--error)]";
-      default:
-        return "bg-[var(--warning-muted)] text-[var(--warning)]";
-    }
-  };
-
+export default function LandingPage() {
   return (
-    <div className="max-w-6xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-semibold text-[var(--fg-primary)] tracking-[-0.025em]">Dashboard</h1>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--success-muted)] border border-[var(--success)]/15 rounded-full">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--success)] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--success)]"></span>
-          </span>
-          <span className="text-[11px] font-medium text-[var(--success)]">Live</span>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-3.5 bg-[var(--error-muted)] border border-[var(--error)]/15 rounded-xl text-[var(--error)] text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <MetricCard
-          title="Total Leads"
-          value={stats?.total_leads ?? 0}
-          icon={
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 3v18h18" />
-              <path d="M7 16l4-8 4 4 5-6" />
-            </svg>
-          }
-        />
-        <MetricCard
-          title="High Priority"
-          value={stats?.high_priority_leads ?? 0}
-          icon={
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="6" />
-              <circle cx="12" cy="12" r="2" />
-            </svg>
-          }
-        />
-        <MetricCard
-          title="Potential Revenue"
-          value={`$${((stats?.high_priority_leads ?? 0) * REVENUE_PER_HIGH_PRIORITY_LEAD).toLocaleString()}`}
-          icon={
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          }
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 card p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-sm font-semibold text-[var(--fg-primary)]">Recent Activity</h3>
-            {isRefreshing && (
-              <svg className="animate-spin h-3.5 w-3.5 text-[var(--fg-muted)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    <div className="min-h-screen flex flex-col vignette">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border-subtle)] bg-[var(--surface-base)]/80 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)] group-hover:shadow-[0_0_30px_var(--accent-glow)] transition-shadow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
               </svg>
-            )}
-          </div>
-          {jobs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-[var(--fg-muted)] text-sm">
-                No recent jobs. Run a scrape to get started.
-              </p>
             </div>
-          ) : (
-            <div className="space-y-1.5">
-              {jobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-tertiary)]/50 hover:bg-[var(--bg-tertiary)] transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDot(job.status)}`} />
-                    <div>
-                      <p className="text-sm font-medium text-[var(--fg-primary)]">
-                        {job.job_type === "google_maps" ? "Google Maps" : "Instagram"}
-                      </p>
-                      <p className="text-xs text-[var(--fg-muted)]">
-                        {job.leads_found} leads
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium ${getStatusPill(job.status)}`}>
-                      {job.status}
-                    </span>
-                    <span className="text-[11px] text-[var(--fg-muted)] min-w-[55px] text-right">
-                      {formatDate(job.created_at)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            <span className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">LeadPilot</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+          >
+            Open Dashboard
+          </Link>
         </div>
+      </header>
 
-        <QuickScrape onScrape={handleScrape} isLoading={isLoading} />
-      </div>
-
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card p-6">
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-4">Leads by Source</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--fg-muted)]">Google Maps</span>
-              <span className="text-sm font-semibold text-[var(--fg-primary)]">
-                {stats?.leads_by_source?.google_maps ?? 0}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--fg-muted)]">Instagram</span>
-              <span className="text-sm font-semibold text-[var(--fg-primary)]">
-                {stats?.leads_by_source?.instagram ?? 0}
-              </span>
+      {/* Hero */}
+      <main className="flex-1 pt-16">
+        <section className="max-w-6xl mx-auto px-6 pt-32 pb-24">
+          <div className="max-w-3xl stagger-children">
+            <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-6">
+              B2B Lead Generation
+            </p>
+            <h1 className="font-display text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-8">
+              Find businesses that <em className="italic text-[var(--text-secondary)]">need</em> what you sell
+            </h1>
+            <p className="text-lg text-[var(--text-secondary)] leading-relaxed mb-12 max-w-xl">
+              LeadPilot scrapes Google Maps and Instagram to find local businesses
+              with weak digital presence. Then scores and qualifies each lead
+              so you reach out to the <span className="text-[var(--text-primary)]">right prospects</span>.
+            </p>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/dashboard"
+                className="btn-primary inline-flex items-center gap-3 px-7 py-3.5 text-sm"
+              >
+                Go to Dashboard
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </Link>
+              <span className="text-[var(--text-dim)] text-sm">No signup required</span>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="card p-6">
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-4">Leads by Status</h3>
-          <div className="space-y-3">
-            {Object.entries(stats?.leads_by_status ?? {}).slice(0, 4).map(([status, count]) => (
-              <div key={status} className="flex items-center justify-between">
-                <span className="text-sm text-[var(--fg-muted)] capitalize">
-                  {status.replace("_", " ")}
-                </span>
-                <span className="text-sm font-semibold text-[var(--fg-primary)]">{count}</span>
+        {/* Stats row */}
+        <section className="border-y border-[var(--border-subtle)]">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="grid grid-cols-3 divide-x divide-[var(--border-subtle)]">
+              <div className="py-12 text-center">
+                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">2</p>
+                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Data Sources</p>
               </div>
-            ))}
+              <div className="py-12 text-center">
+                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">AI</p>
+                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Outreach Gen</p>
+              </div>
+              <div className="py-12 text-center">
+                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">0-100</p>
+                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Lead Scoring</p>
+              </div>
+            </div>
           </div>
+        </section>
+
+        {/* Features - Bento grid */}
+        <section className="py-24">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="mb-16">
+              <p className="font-mono text-xs text-[var(--text-muted)] tracking-[0.2em] uppercase mb-4">
+                How it works
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-[-0.02em]">
+                Three steps to <em className="italic">qualified</em> leads
+              </h2>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-5 stagger-children">
+              {/* Step 1 */}
+              <div className="card card-glow p-8 group">
+                <div className="w-12 h-12 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-6 group-hover:border-[var(--accent)] transition-colors">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[var(--accent)] transition-colors">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.3-4.3"/>
+                  </svg>
+                </div>
+                <p className="font-mono text-[10px] text-[var(--accent)] tracking-wider uppercase mb-3">Step 01</p>
+                <h3 className="font-display text-xl text-[var(--text-primary)] mb-3">
+                  Discover
+                </h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                  Enter a city and industry. LeadPilot pulls business listings from
+                  Google Maps or searches Instagram for niche keywords.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="card card-glow p-8 group">
+                <div className="w-12 h-12 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-6 group-hover:border-[var(--accent)] transition-colors">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[var(--accent)] transition-colors">
+                    <path d="M3 3v18h18"/>
+                    <path d="M7 16l4-8 4 4 5-6"/>
+                  </svg>
+                </div>
+                <p className="font-mono text-[10px] text-[var(--accent)] tracking-wider uppercase mb-3">Step 02</p>
+                <h3 className="font-display text-xl text-[var(--text-primary)] mb-3">
+                  Score
+                </h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                  Each lead gets a score based on reviews, ratings, and whether
+                  they have a website. High scores mean high conversion potential.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="card card-glow p-8 group">
+                <div className="w-12 h-12 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-6 group-hover:border-[var(--accent)] transition-colors">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[var(--accent)] transition-colors">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <p className="font-mono text-[10px] text-[var(--accent)] tracking-wider uppercase mb-3">Step 03</p>
+                <h3 className="font-display text-xl text-[var(--text-primary)] mb-3">
+                  Outreach
+                </h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                  AI writes a personalized message for each lead using their
+                  actual business data. Copy it and send.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Data Sources */}
+        <section className="py-24 border-t border-[var(--border-subtle)]">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="mb-16">
+              <p className="font-mono text-xs text-[var(--text-muted)] tracking-[0.2em] uppercase mb-4">
+                Data Sources
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-[-0.02em]">
+                Pull leads from <em className="italic">multiple</em> channels
+              </h2>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-5">
+              {/* Google Maps */}
+              <div className="card-static p-8">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-[var(--accent-dim)] border border-[var(--accent)]/20 flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </div>
+                  <span className="tag tag-gold font-mono text-[10px]">Primary</span>
+                </div>
+                <h3 className="font-display text-2xl text-[var(--text-primary)] mb-4">Google Maps</h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
+                  Search by location and category. Get business name, phone,
+                  website, rating, and review count for every listing.
+                </p>
+                <div className="impact-box">
+                  <p className="text-xs text-[var(--text-muted)]">
+                    <span className="text-[var(--text-primary)]">Best for:</span> Local service businesses, retail, restaurants
+                  </p>
+                </div>
+              </div>
+
+              {/* Instagram */}
+              <div className="card-static p-8">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-[var(--accent-dim)] border border-[var(--accent)]/20 flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                    </svg>
+                  </div>
+                  <span className="tag font-mono text-[10px]">Social</span>
+                </div>
+                <h3 className="font-display text-2xl text-[var(--text-primary)] mb-4">Instagram</h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
+                  Search by keyword. Find small business accounts based on
+                  follower count and bio content.
+                </p>
+                <div className="impact-box">
+                  <p className="text-xs text-[var(--text-muted)]">
+                    <span className="text-[var(--text-primary)]">Best for:</span> Creators, freelancers, niche service providers
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="py-24 border-t border-[var(--border-subtle)]">
+          <div className="max-w-6xl mx-auto px-6 text-center">
+            <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-6">
+              Get Started
+            </p>
+            <h2 className="font-display text-4xl md:text-5xl font-medium text-[var(--text-primary)] tracking-[-0.02em] mb-6">
+              Start finding <em className="italic">leads</em>
+            </h2>
+            <p className="text-[var(--text-secondary)] mb-10 max-w-md mx-auto">
+              Configure your API keys and run your first batch.
+              Results in minutes, not days.
+            </p>
+            <Link
+              href="/dashboard"
+              className="btn-primary inline-flex items-center gap-3 px-8 py-4 text-sm"
+            >
+              Open Dashboard
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-[var(--border-subtle)]">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
+          <p className="font-mono text-xs text-[var(--text-dim)]">
+            LeadPilot
+          </p>
+          <p className="font-mono text-xs text-[var(--text-dim)]">
+            Built for agencies
+          </p>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
