@@ -28,29 +28,42 @@ export default function LandingPage() {
       {/* Hero */}
       <main className="flex-1 pt-16">
         <section className="max-w-6xl mx-auto px-6 pt-32 pb-24">
-          <div className="max-w-3xl stagger-children">
-            <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-6">
-              B2B Lead Generation
-            </p>
-            <h1 className="font-display text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-8">
-              Find businesses that <em className="italic text-[var(--text-secondary)]">need</em> what you sell
-            </h1>
-            <p className="text-lg text-[var(--text-secondary)] leading-relaxed mb-12 max-w-xl">
-              LeadPilot scrapes Google Maps and Instagram to find local businesses
-              with weak digital presence. Then scores and qualifies each lead
-              so you reach out to the <span className="text-[var(--text-primary)]">right prospects</span>.
-            </p>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/dashboard"
-                className="btn-primary inline-flex items-center gap-3 px-7 py-3.5 text-sm"
-              >
-                Go to Dashboard
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </Link>
-              <span className="text-[var(--text-dim)] text-sm">No signup required</span>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Left - Text Content */}
+            <div className="stagger-children">
+              <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-6">
+                B2B Lead Generation
+              </p>
+              <h1 className="font-display text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-8">
+                Find businesses that <em className="italic text-[var(--text-secondary)]">need</em> what you sell
+              </h1>
+              <p className="text-lg text-[var(--text-secondary)] leading-relaxed mb-12 max-w-xl">
+                LeadPilot scrapes Google Maps and Instagram to find local businesses
+                with weak digital presence. Then scores and qualifies each lead
+                so you reach out to the <span className="text-[var(--text-primary)]">right prospects</span>.
+              </p>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/dashboard"
+                  className="btn-primary inline-flex items-center gap-3 px-7 py-3.5 text-sm"
+                >
+                  Go to Dashboard
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+                <span className="text-[var(--text-dim)] text-sm">No signup required</span>
+              </div>
+            </div>
+
+            {/* Right - Hero Image */}
+            <div className="relative hidden md:block">
+              <div className="absolute inset-0 bg-[var(--accent)]/20 blur-3xl rounded-full transform scale-90 translate-x-4" />
+              <img
+                src="/hero-dashboard.png"
+                alt="LeadPilot Dashboard Preview"
+                className="relative w-full h-auto drop-shadow-2xl"
+              />
             </div>
           </div>
         </section>
@@ -92,8 +105,8 @@ export default function LandingPage() {
               <div className="card card-glow p-8 group">
                 <div className="w-12 h-12 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-6 group-hover:border-[var(--accent)] transition-colors">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[var(--accent)] transition-colors">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.3-4.3"/>
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
                   </svg>
                 </div>
                 <p className="font-mono text-[10px] text-[var(--accent)] tracking-wider uppercase mb-3">Step 01</p>
@@ -110,8 +123,8 @@ export default function LandingPage() {
               <div className="card card-glow p-8 group">
                 <div className="w-12 h-12 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-6 group-hover:border-[var(--accent)] transition-colors">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[var(--accent)] transition-colors">
-                    <path d="M3 3v18h18"/>
-                    <path d="M7 16l4-8 4 4 5-6"/>
+                    <path d="M3 3v18h18" />
+                    <path d="M7 16l4-8 4 4 5-6" />
                   </svg>
                 </div>
                 <p className="font-mono text-[10px] text-[var(--accent)] tracking-wider uppercase mb-3">Step 02</p>
@@ -128,7 +141,7 @@ export default function LandingPage() {
               <div className="card card-glow p-8 group">
                 <div className="w-12 h-12 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center mb-6 group-hover:border-[var(--accent)] transition-colors">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:stroke-[var(--accent)] transition-colors">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 </div>
                 <p className="font-mono text-[10px] text-[var(--accent)] tracking-wider uppercase mb-3">Step 03</p>
@@ -162,8 +175,8 @@ export default function LandingPage() {
                 <div className="flex items-start justify-between mb-6">
                   <div className="w-12 h-12 rounded-xl bg-[var(--accent-dim)] border border-[var(--accent)]/20 flex items-center justify-center">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                      <circle cx="12" cy="10" r="3"/>
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
                     </svg>
                   </div>
                   <span className="tag tag-gold font-mono text-[10px]">Primary</span>
@@ -185,9 +198,9 @@ export default function LandingPage() {
                 <div className="flex items-start justify-between mb-6">
                   <div className="w-12 h-12 rounded-xl bg-[var(--accent-dim)] border border-[var(--accent)]/20 flex items-center justify-center">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                     </svg>
                   </div>
                   <span className="tag font-mono text-[10px]">Social</span>
@@ -226,7 +239,7 @@ export default function LandingPage() {
             >
               Open Dashboard
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
+                <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
