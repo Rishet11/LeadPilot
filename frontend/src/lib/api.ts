@@ -115,6 +115,15 @@ export async function deleteLead(id: number): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete lead");
 }
 
+export async function batchDeleteLeads(ids: number[]): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/leads/batch-delete`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ lead_ids: ids }),
+  });
+  if (!res.ok) throw new Error("Failed to delete leads");
+}
+
 // Scrape API
 export async function scrapeSingle(city: string, category: string, limit: number): Promise<{ job_id: number }> {
   const res = await fetch(`${API_BASE}/api/scrape/single`, {
