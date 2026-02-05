@@ -322,6 +322,15 @@ export default function LeadsCRM() {
                     <span className="ml-auto">@{selectedLead.instagram}</span>
                   </a>
                 )}
+                {selectedLead.email && (
+                  <a
+                    href={`mailto:${selectedLead.email}`}
+                    className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline px-3 py-2.5 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]"
+                  >
+                    <span className="text-[var(--text-muted)]">Email</span>
+                    <span className="ml-auto truncate max-w-[180px]">{selectedLead.email}</span>
+                  </a>
+                )}
               </div>
             </div>
 

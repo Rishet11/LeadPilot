@@ -42,7 +42,7 @@ def clean_dataframe(data: list) -> pd.DataFrame:
     # Select and order columns we care about
     required_columns = [
         'name', 'category', 'address', 'phone', 'website', 
-        'instagram', 'rating', 'reviews', 'url'
+        'instagram', 'email', 'rating', 'reviews', 'url'
     ]
     
     # Add missing columns with empty values
@@ -53,7 +53,7 @@ def clean_dataframe(data: list) -> pd.DataFrame:
     df = df[required_columns]
     
     # Clean string columns
-    string_cols = ['name', 'category', 'address', 'phone', 'website', 'instagram', 'url']
+    string_cols = ['name', 'category', 'address', 'phone', 'website', 'instagram', 'email', 'url']
     for col in string_cols:
         df[col] = df[col].fillna('').astype(str).str.strip()
     

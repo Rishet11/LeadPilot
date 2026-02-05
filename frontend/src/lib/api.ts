@@ -22,6 +22,7 @@ export interface Lead {
   reviews: number | null;
   website: string | null;
   instagram: string | null;
+  email: string | null;
   maps_url: string | null;
   lead_score: number;
   reason: string | null;
