@@ -13,7 +13,7 @@ import time
 import logging
 from dotenv import load_dotenv
 
-from constants import DEFAULT_AI_SYSTEM_PROMPT
+from constants import DEFAULT_AI_SYSTEM_PROMPT, CATEGORY_HOOKS, CATEGORY_VALUES
 
 load_dotenv()
 
@@ -70,6 +70,16 @@ def _call_with_retry(agent, prompt: str) -> str:
                 raise last_error
 
 
+def get_currency_symbol(city: str) -> str:
+    """Infer currency symbol from city name."""
+    city = (city or "").lower()
+    if any(c in city for c in ['london', 'manchester', 'leeds', 'liverpool', 'birmingham', 'uk', 'england']):
+        return "£"
+    if any(c in city for c in ['delhi', 'mumbai', 'bangalore', 'pune', 'chennai', 'india']):
+        return "₹"
+    return "$"
+
+
 def analyze_leads_batch(leads: list, max_leads: int = 25) -> list:
     """
     Analyze multiple leads in a SINGLE API call for cost efficiency.
@@ -90,15 +100,56 @@ def analyze_leads_batch(leads: list, max_leads: int = 25) -> list:
     # Build rich context for each lead
     leads_context = []
     for i, lead in enumerate(batch_leads):
+        category = (lead.get('category') or '').lower()
+        city = lead.get('city', 'Unknown')
+        
+        # Find matching hooks and ticket value
+        hooks = {}
+        ticket_value = CATEGORY_VALUES['default']
+        
+        for cat_key, cat_data in CATEGORY_HOOKS.items():
+            if cat_key in category:
+                hooks = cat_data
+                break
+        
+        for cat_key, val in CATEGORY_VALUES.items():
+            if cat_key in category:
+                ticket_value = val
+                break
+        
         parts = [
             f"ID: {i}",
             f"Name: {lead.get('name')}",
             f"Category: {lead.get('category')}",
-            f"City: {lead.get('city', 'Unknown')}",
+            f"City: {city}",
             f"Rating: {lead.get('rating')}/5 ({lead.get('reviews', 0)} reviews)",
             f"Website: {lead.get('website') or 'NONE'}",
             f"Phone: {lead.get('phone') or 'Unknown'}",
         ]
+        
+        # Calculate Potential Missed Opportunities (Phase 3 - Safe Version)
+        # Rule of thumb: Reviews * 0.5 = Est. monthly missed searches. 
+        # Focus on VOLUME of people, not $ value, to avoid being wrong about pricing.
+        reviews = lead.get('reviews', 0) or 0
+        est_missed_customers = int(reviews * 0.5)
+        
+        if est_missed_customers > 5:
+            # Use specific term per category
+            customer_term = "customers"
+            if 'gym' in category or 'fitness' in category: customer_term = "members"
+            elif 'restaurant' in category or 'cafe' in category: customer_term = "diners"
+            elif 'salon' in category: customer_term = "clients"
+            elif 'dentist' in category: customer_term = "patients"
+            
+            parts.append(f"Est. Monthly Missed: {est_missed_customers} {customer_term} (conservative est.)")
+        
+        if hooks:
+            parts.append(f"--- CATEGORY INSIGHTS ---")
+            parts.append(f"Pain Point: {hooks['pain_point']}")
+            parts.append(f"Quick Win: {hooks['quick_win']}")
+            parts.append(f"Urgency Trigger: {hooks['urgency']}")
+            parts.append(f"-------------------------")
+
         if lead.get('instagram'):
             parts.append(f"Instagram: @{lead.get('instagram')}")
         if lead.get('address'):
@@ -115,19 +166,43 @@ LEAD DATA:
 FOR EACH LEAD, provide:
 1. priority (1-5): How likely they are to convert. 5 = hot lead (high ratings, no website, many reviews). 1 = cold (has website, average metrics).
 2. reasoning: One sentence on WHY this lead is worth pursuing or not.
-3. outreach_angle: A 4-5 line WhatsApp message following this structure:
+3. outreach_angle: A WhatsApp message using ONE of these 3 patterns (randomly vary per lead).
+   CRITICAL: If "CATEGORY INSIGHTS" are provided for a lead, YOU MUST USE THEM in the message logic.
 
-LINE 1 - PERSONALIZED HOOK: Reference their exact data (name, rating, review count). Make them feel seen.
-LINE 2 - THE GAP: Point out their missing or weak website directly.
-LINE 3 - THE COST: Make the lost revenue tangible. "People searching '[their category] near me' are finding competitors instead."
-LINE 4 - SOFT OFFER: "I can help with that if you're interested" — position as solving their problem, not selling.
-LINE 5 - CLOSE: Sound like a friend giving real advice. Reference their specific strength.
+PATTERN A - "QUICK WIN" (for busy decision-makers, 3-4 lines):
+LINE 1: Hook with specific data point about their success
+LINE 2: State the provided "Pain Point" or general gap
+LINE 3: Offer the "Quick Win" or solution in one sentence
+LINE 4: Ultra-low friction CTA ("Want to see examples? Yes/No")
+
+Example: "Hey [Name], 68 reviews at 4.5 stars is solid for [category] in [city]. But [insert pain point]. I can help you [insert quick win]. Want to see examples?"
+
+PATTERN B - "COMPETITOR TRIGGER" (for competitive categories, 4 lines):
+LINE 1: Compliment their strength
+LINE 2: Name competitor or mention "others in [city]" ranking higher.
+LINE 3: What you've done for similar businesses
+LINE 4: Specific CTA with proof offer
+
+Example: "Saw you're at [rating] with [X] reviews — better than most [category] spots in [city]. But [competitor or 'others in area'] show up first in search ([associated pain point]). Fixed this for 3 [category] businesses here. Can I send you their before/after?"
+
+PATTERN C - "URGENCY HOOK" (for seasonal/time-sensitive leads, 4-5 lines):
+LINE 1: Industry stat or use the "Urgency Trigger" provided
+LINE 2: Their specific volume loss calculation (Reference "Est. Monthly Missed" if available)
+LINE 3: Credibility signal (how many you've helped, results)
+LINE 4: Specific offer
+LINE 5: Low-pressure close
+
+Example: "[Insert urgency trigger]. You're at [X] reviews with no site = roughly [calculation] missed [customers/diners/clients] per month. I've built sites for 7 [category] businesses. Want a quick mockup of what yours could look like? No pressure either way."
 
 RULES:
-- Use their ACTUAL business name, rating, and review count in the message.
-- Lowercase, conversational tone. No "Dear" or "Hello sir".
-- Each message must be UNIQUE — no copy-paste templates with swapped names.
-- If a lead already HAS a website, focus on improving it or their online presence instead.
+- NO EMOJIS in WhatsApp messages (keep it professional-casual)
+- Use their ACTUAL business name, rating, and review count
+- If CATEGORY INSIGHTS exist, incorporate the 'pain_point', 'quick_win', or 'urgency' naturally
+- PROFESSIONAL GRAMMAR: Use correct capitalization (Sentence case) and punctuation. NEVER use all lowercase.
+- Each message must be UNIQUE — randomize which pattern you use per lead (A, B, or C)
+- If a lead HAS a website, pivot to improvement: "Your site could be pulling more customers" or "Noticed it's not mobile-optimized"
+- Better CTAs: "Want to see examples?", "Can I send you a mockup?", "5-min call this week?" — specific and low-friction
+- Add credibility: "Built sites for X [category] businesses", "Work with a lot of [category] in [city]"
 
 RESPOND WITH A JSON ARRAY:
 [
@@ -135,7 +210,8 @@ RESPOND WITH A JSON ARRAY:
         "id": <id>,
         "priority": <1-5>,
         "reasoning": "<one sentence>",
-        "outreach_angle": "<the 4-5 line message>"
+        "pattern_used": "<Pattern A/B/C>",
+        "outreach_angle": "<the message using the pattern matching the rules>"
     }}
 ]
 """
@@ -146,7 +222,8 @@ RESPOND WITH A JSON ARRAY:
         analysis_list = json.loads(text)
 
         results = []
-        analysis_map = {item['id']: item for item in analysis_list if 'id' in item}
+        # Support both old and new format (if unexpected fields appear)
+        analysis_map = {item.get('id', -1): item for item in analysis_list}
 
         for i, lead in enumerate(batch_leads):
             analysis = analysis_map.get(i, {
@@ -204,6 +281,9 @@ def run_agent_pipeline(df, max_leads: int = 25):
         result_df['ai_reasoning'] = result_df['ai_analysis'].apply(
             lambda x: x.get('reasoning', '') if isinstance(x, dict) else ''
         )
+        result_df['pattern_used'] = result_df['ai_analysis'].apply(
+            lambda x: x.get('pattern_used', 'Unknown') if isinstance(x, dict) else 'Unknown'
+        )
         result_df = result_df.drop(columns=['ai_analysis'])
 
     # Re-sort by AI priority
@@ -244,25 +324,27 @@ PROFILE DATA:
 {chr(10).join(f"[Profile {i}]{chr(10)}{ctx}" for i, ctx in enumerate(profiles_context))}
 {"=" * 30}
 
-DM STRUCTURE (4-5 lines max):
-LINE 1 - COMPLIMENT: Reference something SPECIFIC from their bio or niche. Show you looked at their page.
-LINE 2 - OBSERVATION: Point out missing website/portfolio directly. "noticed you don't have a site linked"
-LINE 3 - CONSEQUENCE: Make it tangible. "clients check your site before booking" or "you're losing inquiries to others who have one"
-LINE 4 - OFFER: "I can help with that" — solve their problem, don't pitch services.
-LINE 5 - CLOSE: Sound like a peer. Reference their specific talent or niche.
+DM STRUCTURE (3-4 lines max, Instagram is shorter):
+LINE 1 - SPECIFIC COMPLIMENT: Reference something from their bio, posts, or niche. Show you looked.
+LINE 2 - OBSERVATION: Point out missing site/portfolio. "Noticed you don't have a site" or "Saw you're using Linktree"
+LINE 3 - TANGIBLE CONSEQUENCE: Make it real for their niche. "Clients check sites before booking" or "Losing inquiries to others with portfolios"
+LINE 4 - LOW-FRICTION CTA: "Want to see what I built for [similar niche]?" or "Can I show you examples?"
 
 RULES:
 - Use their actual username and bio details. Each message MUST be unique.
-- Lowercase, casual. 1-2 emojis max.
-- If their bio mentions a specialty (bridal, fitness, baking), reference it directly.
-- If they have a linktree/bio link but no real site, mention upgrading from linktree.
-- Sound genuine, not scripted.
+- Casual but PROFESSIONAL GRAMMAR (Sentence case). 1-2 emojis MAX.
+- **STRICTLY CAPITALIZE the first letter of sentences.** Do not use all lowercase.
+- If bio mentions specialty (bridal, fitness, baking, etc.), reference it directly.
+- If they have linktree but no real site: "Upgrading from Linktree to a real site would change your game"
+- Sound genuine, like a peer who works in digital. Not salesy.
+- Better CTAs: "Want examples?", "Can I send you what I built for [niche]?", "DM me if curious" — specific and easy
+- Add credibility if natural: "Work with a lot of [niche] creators", "Helped 5+ [niche] accounts with this"
 
 RESPOND WITH A JSON ARRAY:
 [
     {{
         "id": <id>,
-        "dm_message": "<the 4-5 line DM>"
+        "dm_message": "<the 3-4 line DM>"
     }}
 ]
 """
