@@ -12,23 +12,23 @@ interface MetricCardProps {
 
 export default function MetricCard({ title, value, icon, trend }: MetricCardProps) {
   return (
-    <div className="card p-5">
+    <div className="card card-glow p-6 group">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-medium text-[var(--fg-muted)] uppercase tracking-wider mb-3">{title}</p>
-          <p className="text-[28px] font-semibold text-[var(--fg-primary)] tracking-[-0.03em] leading-none">{value}</p>
+          <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-3">{title}</p>
+          <p className="font-display text-3xl text-[var(--text-primary)] tracking-[-0.02em] leading-none">{value}</p>
           {trend && (
-            <span className={`inline-flex items-center gap-1 mt-3 px-2 py-0.5 rounded-md text-[11px] font-medium ${
+            <span className={`inline-flex items-center gap-1 mt-3 px-2 py-0.5 rounded-md text-[11px] font-mono ${
               trend.isPositive
-                ? 'bg-[var(--success-muted)] text-[var(--success)]'
-                : 'bg-[var(--error-muted)] text-[var(--error)]'
+                ? 'bg-[var(--success-dim)] text-[var(--success)]'
+                : 'bg-[var(--error-dim)] text-[var(--error)]'
             }`}>
               {trend.isPositive ? '+' : '-'}{Math.abs(trend.value)}%
             </span>
           )}
         </div>
         {icon && (
-          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-[var(--bg-tertiary)] text-[var(--fg-muted)]">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] group-hover:border-[var(--accent)] group-hover:text-[var(--accent)] transition-all">
             {icon}
           </span>
         )}

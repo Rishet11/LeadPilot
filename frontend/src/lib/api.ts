@@ -84,21 +84,21 @@ export async function getLeads(params?: {
       if (value !== undefined) searchParams.set(key, String(value));
     });
   }
-  const res = await fetch(`${API_BASE}/api/leads/?${searchParams}`, {
+  const res = await fetch(`${API_BASE}/api/leads?${searchParams}`, {
     headers: getHeaders(),
   });
   return handleResponse<Lead[]>(res);
 }
 
 export async function getLeadStats(): Promise<LeadStats> {
-  const res = await fetch(`${API_BASE}/api/leads/stats/`, {
+  const res = await fetch(`${API_BASE}/api/leads/stats`, {
     headers: getHeaders(),
   });
   return handleResponse<LeadStats>(res);
 }
 
 export async function updateLeadStatus(id: number, status: string): Promise<Lead> {
-  const res = await fetch(`${API_BASE}/api/leads/${id}/status/`, {
+  const res = await fetch(`${API_BASE}/api/leads/${id}/status`, {
     method: "PATCH",
     headers: getHeaders(),
     body: JSON.stringify({ status }),
@@ -107,7 +107,7 @@ export async function updateLeadStatus(id: number, status: string): Promise<Lead
 }
 
 export async function deleteLead(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/leads/${id}/`, {
+  const res = await fetch(`${API_BASE}/api/leads/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
   });
@@ -116,7 +116,7 @@ export async function deleteLead(id: number): Promise<void> {
 
 // Scrape API
 export async function scrapeSingle(city: string, category: string, limit: number): Promise<{ job_id: number }> {
-  const res = await fetch(`${API_BASE}/api/scrape/single/`, {
+  const res = await fetch(`${API_BASE}/api/scrape/single`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({ city, category, limit }),
@@ -125,7 +125,7 @@ export async function scrapeSingle(city: string, category: string, limit: number
 }
 
 export async function scrapeBatch(targets: { city: string; category: string; limit: number }[]): Promise<{ job_id: number }> {
-  const res = await fetch(`${API_BASE}/api/scrape/google-maps/`, {
+  const res = await fetch(`${API_BASE}/api/scrape/google-maps`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({ targets }),
@@ -140,7 +140,7 @@ export async function scrapeInstagram(targets: {
   followers_max?: number;
   score_threshold?: number;
 }[]): Promise<{ job_id: number }> {
-  const res = await fetch(`${API_BASE}/api/scrape/instagram/`, {
+  const res = await fetch(`${API_BASE}/api/scrape/instagram`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({ targets }),
@@ -157,7 +157,7 @@ export async function getJobs(limit = 20): Promise<Job[]> {
 }
 
 export async function getJob(id: number): Promise<Job> {
-  const res = await fetch(`${API_BASE}/api/jobs/${id}/`, {
+  const res = await fetch(`${API_BASE}/api/jobs/${id}`, {
     headers: getHeaders(),
   });
   return handleResponse<Job>(res);
@@ -165,14 +165,14 @@ export async function getJob(id: number): Promise<Job> {
 
 // Settings API
 export async function getSettings(): Promise<Setting[]> {
-  const res = await fetch(`${API_BASE}/api/settings/`, {
+  const res = await fetch(`${API_BASE}/api/settings`, {
     headers: getHeaders(),
   });
   return handleResponse<Setting[]>(res);
 }
 
 export async function updateSetting(key: string, value: string): Promise<Setting> {
-  const res = await fetch(`${API_BASE}/api/settings/${key}/`, {
+  const res = await fetch(`${API_BASE}/api/settings/${key}`, {
     method: "PUT",
     headers: getHeaders(),
     body: JSON.stringify({ key, value }),
@@ -181,7 +181,7 @@ export async function updateSetting(key: string, value: string): Promise<Setting
 }
 
 export async function resetSettings(): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/settings/reset/`, {
+  const res = await fetch(`${API_BASE}/api/settings/reset`, {
     method: "POST",
     headers: getHeaders(),
   });

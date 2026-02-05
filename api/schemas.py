@@ -15,20 +15,20 @@ class LeadStatus(str, Enum):
 
 
 class LeadBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
-    phone: Optional[str] = Field(None, max_length=50)
-    city: Optional[str] = Field(None, max_length=100)
-    category: Optional[str] = Field(None, max_length=100)
-    rating: Optional[float] = Field(None, ge=0, le=5)
-    reviews: Optional[int] = Field(None, ge=0)
-    website: Optional[str] = Field(None, max_length=500)
-    instagram: Optional[str] = Field(None, max_length=255)
+    name: str
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    category: Optional[str] = None
+    rating: Optional[float] = None
+    reviews: Optional[int] = None
+    website: Optional[str] = None
+    instagram: Optional[str] = None
     maps_url: Optional[str] = Field(None, max_length=500)
-    lead_score: Optional[int] = Field(0, ge=0, le=100)
-    reason: Optional[str] = Field(None, max_length=1000)
-    ai_outreach: Optional[str] = Field(None, max_length=5000)
-    source: Optional[str] = Field("google_maps", max_length=50)
-    country: Optional[str] = Field(None, max_length=100)
+    lead_score: Optional[int] = 0
+    reason: Optional[str] = None
+    ai_outreach: Optional[str] = None
+    source: Optional[str] = "google_maps"
+    country: Optional[str] = None
 
 
 class LeadCreate(LeadBase):

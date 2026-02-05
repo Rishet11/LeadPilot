@@ -20,46 +20,46 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
   };
 
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--accent)]">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <div className="card-static p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)]">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
           </svg>
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] tracking-[-0.025em]">Quick Scrape</h3>
-          <p className="text-[11px] text-[var(--fg-muted)]">Single target scan</p>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Quick Scrape</h3>
+          <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Single target</p>
         </div>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">City</label>
+          <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">City</label>
           <input
             type="text"
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="e.g., London, UK"
-            className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+            className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">Industry</label>
+          <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Industry</label>
           <input
             type="text"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder="e.g., Dentist"
-            className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+            className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">Limit</label>
+          <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Limit</label>
           <select
             value={limit}
             onChange={(e) => setLimit(Number(e.target.value))}
-            className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+            className="field w-full px-4 py-3 text-sm focus:outline-none"
           >
             <option value={10}>10 leads</option>
             <option value={20}>20 leads</option>
@@ -70,7 +70,7 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
         <button
           type="submit"
           disabled={isLoading || !city || !category}
-          className="w-full flex items-center justify-center gap-2 py-3 px-5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all duration-150"
+          className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 px-5 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         >
           {isLoading ? (
             <>

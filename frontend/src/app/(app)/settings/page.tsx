@@ -175,7 +175,7 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-[var(--fg-muted)] text-sm">Loading settings...</p>
+        <p className="text-[var(--text-muted)] text-sm">Loading settings...</p>
       </div>
     );
   }
@@ -191,20 +191,23 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div>
+    <div className="stagger-children">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-semibold text-[var(--fg-primary)] tracking-[-0.025em]">Settings</h1>
-        <div className="flex gap-2.5">
+        <div>
+          <p className="font-mono text-[10px] text-[var(--accent)] tracking-[0.2em] uppercase mb-1">Configuration</p>
+          <h1 className="font-display text-2xl text-[var(--text-primary)] tracking-[-0.02em]">Settings</h1>
+        </div>
+        <div className="flex gap-3">
           <button
             onClick={handleReset}
-            className="px-3.5 py-1.5 text-xs rounded-xl text-[var(--fg-muted)] hover:text-[var(--fg-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
+            className="btn-secondary px-4 py-2 text-xs"
           >
             Reset to Defaults
           </button>
           <button
             onClick={saveSettings}
             disabled={isSaving}
-            className="px-4 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none text-white text-xs font-semibold rounded-xl transition-all duration-150"
+            className="btn-primary px-5 py-2 text-xs font-medium disabled:opacity-50"
           >
             {isSaving ? "Saving..." : "Save All"}
           </button>
@@ -213,10 +216,10 @@ export default function SettingsPage() {
 
       {message && (
         <div
-          className={`mb-6 p-3.5 rounded-xl text-sm ${
+          className={`mb-6 p-4 rounded-xl text-sm ${
             message.type === "success"
-              ? "bg-[var(--success-muted)] border border-[var(--success)]/15 text-[var(--success)]"
-              : "bg-[var(--error-muted)] border border-[var(--error)]/15 text-[var(--error)]"
+              ? "bg-[var(--success-dim)] border border-[var(--success)]/20 text-[var(--success)]"
+              : "bg-[var(--error-dim)] border border-[var(--error)]/20 text-[var(--error)]"
           }`}
         >
           {message.text}
@@ -224,30 +227,41 @@ export default function SettingsPage() {
       )}
 
       <div className="space-y-6">
-        <div className="card p-6">
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">AI System Prompt</h3>
-          <p className="text-xs text-[var(--fg-muted)] mb-4">
-            Controls how the AI qualifies leads and writes outreach messages. Defines qualification tiers, scoring logic, and message tone.
-          </p>
+        <div className="card-static p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+                <path d="M12 2a10 10 0 0 1 10 10"/>
+                <circle cx="12" cy="12" r="6"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">AI System Prompt</h3>
+              <p className="text-xs text-[var(--text-muted)]">
+                Controls how the AI qualifies leads and writes outreach messages
+              </p>
+            </div>
+          </div>
           <textarea
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
             rows={16}
-            className="field-inset w-full px-4 py-2.5 text-[13px] leading-relaxed text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all font-mono resize-y"
+            className="field w-full px-4 py-3 text-[13px] leading-relaxed placeholder:text-[var(--text-dim)] focus:outline-none font-mono resize-y"
           />
-          <p className="text-[11px] text-[var(--fg-muted)] mt-2 tabular-nums">{aiPrompt.length} characters</p>
+          <p className="font-mono text-[10px] text-[var(--text-dim)] mt-2 tabular-nums">{aiPrompt.length} characters</p>
           {hasAiChanges && (
-            <div className="flex justify-end gap-2.5 mt-3">
+            <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={cancelAiPrompt}
-                className="px-3 py-1.5 text-xs rounded-xl text-[var(--fg-muted)] hover:text-[var(--fg-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
+                className="btn-secondary px-4 py-2 text-xs"
               >
                 Cancel
               </button>
               <button
                 onClick={saveAiPrompt}
                 disabled={savingSection === "ai"}
-                className="px-4 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none text-white text-xs font-semibold rounded-xl transition-all duration-150"
+                className="btn-primary px-5 py-2 text-xs font-medium disabled:opacity-50"
               >
                 {savingSection === "ai" ? "Saving..." : "Save"}
               </button>
@@ -255,20 +269,30 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <div className="card p-6">
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">Scoring</h3>
-          <p className="text-xs text-[var(--fg-muted)] mb-5">
-            Points added to lead score per condition. Leads are scored 0-100 — higher score means higher conversion likelihood.
-          </p>
+        <div className="card-static p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18"/>
+                <path d="M7 16l4-8 4 4 5-6"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Scoring</h3>
+              <p className="text-xs text-[var(--text-muted)]">
+                Points added to lead score per condition (0-100 scale)
+              </p>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {scoringFields.map(({ key, label, desc }) => (
-              <div key={key}>
-                <div className="flex items-center justify-between mb-0.5">
-                  <label className="text-xs text-[var(--fg-muted)]">{label}</label>
-                  <span className="text-xs font-medium text-[var(--fg-primary)] tabular-nums">+{scoringConfig[key]}</span>
+              <div key={key} className="p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-[var(--text-primary)]">{label}</label>
+                  <span className="font-mono text-xs text-[var(--accent)] tabular-nums">+{scoringConfig[key]}</span>
                 </div>
-                <p className="text-[11px] text-[var(--fg-muted)]/60 mb-1.5">{desc}</p>
+                <p className="text-[11px] text-[var(--text-dim)] mb-3">{desc}</p>
                 <input
                   type="range"
                   min="0"
@@ -283,17 +307,17 @@ export default function SettingsPage() {
             ))}
           </div>
           {hasScoringChanges && (
-            <div className="flex justify-end gap-2.5 mt-4 pt-4 border-t border-[var(--border)]">
+            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-[var(--border-subtle)]">
               <button
                 onClick={cancelScoringConfig}
-                className="px-3 py-1.5 text-xs rounded-xl text-[var(--fg-muted)] hover:text-[var(--fg-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
+                className="btn-secondary px-4 py-2 text-xs"
               >
                 Cancel
               </button>
               <button
                 onClick={saveScoringConfig}
                 disabled={savingSection === "scoring"}
-                className="px-4 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none text-white text-xs font-semibold rounded-xl transition-all duration-150"
+                className="btn-primary px-5 py-2 text-xs font-medium disabled:opacity-50"
               >
                 {savingSection === "scoring" ? "Saving..." : "Save"}
               </button>
@@ -301,42 +325,53 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <div className="card p-6">
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">Instagram</h3>
-          <p className="text-xs text-[var(--fg-muted)] mb-5">
-            Filters for Instagram lead discovery. Targets micro-businesses in the sweet spot — big enough to pay, small enough to need you.
-          </p>
+        <div className="card-static p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Instagram</h3>
+              <p className="text-xs text-[var(--text-muted)]">
+                Filters for Instagram lead discovery
+              </p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs text-[var(--fg-muted)] mb-1">Min Followers</label>
-              <p className="text-[11px] text-[var(--fg-muted)]/60 mb-2">Below this = too small to convert</p>
+            <div className="p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
+              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Min Followers</label>
+              <p className="text-[11px] text-[var(--text-dim)] mb-3">Below this = too small to convert</p>
               <input
                 type="number"
                 value={instagramConfig.followers_min}
                 onChange={(e) =>
                   setInstagramConfig({ ...instagramConfig, followers_min: parseInt(e.target.value) || 0 })
                 }
-                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+                className="field w-full px-4 py-3 text-sm focus:outline-none"
               />
             </div>
 
-            <div>
-              <label className="block text-xs text-[var(--fg-muted)] mb-1">Max Followers</label>
-              <p className="text-[11px] text-[var(--fg-muted)]/60 mb-2">Above this = already has agency or in-house</p>
+            <div className="p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
+              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Max Followers</label>
+              <p className="text-[11px] text-[var(--text-dim)] mb-3">Above this = already has agency or in-house</p>
               <input
                 type="number"
                 value={instagramConfig.followers_max}
                 onChange={(e) =>
                   setInstagramConfig({ ...instagramConfig, followers_max: parseInt(e.target.value) || 0 })
                 }
-                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+                className="field w-full px-4 py-3 text-sm focus:outline-none"
               />
             </div>
 
-            <div>
-              <label className="block text-xs text-[var(--fg-muted)] mb-1">Score Threshold</label>
-              <p className="text-[11px] text-[var(--fg-muted)]/60 mb-2">Minimum score to qualify as a lead</p>
+            <div className="p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
+              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Score Threshold</label>
+              <p className="text-[11px] text-[var(--text-dim)] mb-3">Minimum score to qualify as a lead</p>
               <input
                 type="number"
                 value={instagramConfig.score_threshold}
@@ -345,26 +380,29 @@ export default function SettingsPage() {
                 }
                 min="0"
                 max="100"
-                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+                className="field w-full px-4 py-3 text-sm focus:outline-none"
               />
             </div>
           </div>
 
-          <p className="text-[11px] text-[var(--fg-muted)] mt-3">
-            Only profiles with {instagramConfig.followers_min}-{instagramConfig.followers_max} followers and score ≥ {instagramConfig.score_threshold} will be included.
-          </p>
+          <div className="impact-box mt-4">
+            <p className="text-[11px] text-[var(--text-secondary)]">
+              Only profiles with <span className="text-[var(--text-primary)] font-medium">{instagramConfig.followers_min}-{instagramConfig.followers_max}</span> followers and score ≥ <span className="text-[var(--text-primary)] font-medium">{instagramConfig.score_threshold}</span> will be included.
+            </p>
+          </div>
+
           {hasInstagramChanges && (
-            <div className="flex justify-end gap-2.5 mt-4 pt-4 border-t border-[var(--border)]">
+            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-[var(--border-subtle)]">
               <button
                 onClick={cancelInstagramConfig}
-                className="px-3 py-1.5 text-xs rounded-xl text-[var(--fg-muted)] hover:text-[var(--fg-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
+                className="btn-secondary px-4 py-2 text-xs"
               >
                 Cancel
               </button>
               <button
                 onClick={saveInstagramConfig}
                 disabled={savingSection === "instagram"}
-                className="px-4 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none text-white text-xs font-semibold rounded-xl transition-all duration-150"
+                className="btn-primary px-5 py-2 text-xs font-medium disabled:opacity-50"
               >
                 {savingSection === "instagram" ? "Saving..." : "Save"}
               </button>
@@ -373,18 +411,29 @@ export default function SettingsPage() {
         </div>
 
         <div className="card-static p-6">
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-1">API</h3>
-          <p className="text-xs text-[var(--fg-muted)] mb-4">
-            Configured via server environment variables.
-          </p>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs">
-              <code className="px-2.5 py-1 bg-[var(--bg-tertiary)] rounded-lg text-[var(--fg-primary)] font-mono">APIFY_API_TOKEN</code>
-              <span className="text-[var(--fg-muted)]">Google Maps & Instagram</span>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 2H3v16h5v4l4-4h5l4-4V2z"/>
+                <path d="M10 8h4"/>
+                <path d="M10 12h4"/>
+              </svg>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <code className="px-2.5 py-1 bg-[var(--bg-tertiary)] rounded-lg text-[var(--fg-primary)] font-mono">GEMINI_API_KEY</code>
-              <span className="text-[var(--fg-muted)]">AI outreach generation</span>
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">API Keys</h3>
+              <p className="text-xs text-[var(--text-muted)]">
+                Configured via server environment variables
+              </p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
+              <code className="px-3 py-1.5 bg-[var(--surface-card)] rounded-lg text-[var(--text-primary)] font-mono text-xs">APIFY_API_TOKEN</code>
+              <span className="text-xs text-[var(--text-muted)]">Google Maps & Instagram scraping</span>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
+              <code className="px-3 py-1.5 bg-[var(--surface-card)] rounded-lg text-[var(--text-primary)] font-mono text-xs">GEMINI_API_KEY</code>
+              <span className="text-xs text-[var(--text-muted)]">AI outreach generation</span>
             </div>
           </div>
         </div>

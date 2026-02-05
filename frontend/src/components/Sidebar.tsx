@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   {
-    href: "/",
+    href: "/dashboard",
     label: "Dashboard",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1" />
         <rect x="14" y="3" width="7" height="7" rx="1" />
         <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -20,7 +20,7 @@ const navItems = [
     href: "/batch",
     label: "Batch Queue",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 3h5v5" />
         <path d="M8 3H3v5" />
         <path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3" />
@@ -32,7 +32,7 @@ const navItems = [
     href: "/leads",
     label: "Leads",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
@@ -44,7 +44,7 @@ const navItems = [
     href: "/instagram",
     label: "Instagram",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
@@ -55,9 +55,9 @@ const navItems = [
     href: "/settings",
     label: "Settings",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
       </svg>
     ),
   },
@@ -67,41 +67,45 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 bg-[var(--bg-secondary)] border-r border-[var(--border)] flex flex-col">
-      <div className="flex items-center gap-3 px-5 h-[68px]">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--accent)]">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <aside className="sidebar w-60 flex flex-col h-screen sticky top-0">
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 h-16 border-b border-[var(--border-subtle)]">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)]">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5z" />
             <path d="M2 17l10 5 10-5" />
             <path d="M2 12l10 5 10-5" />
           </svg>
         </div>
         <div>
-          <span className="text-sm font-semibold text-[var(--fg-primary)] tracking-[-0.02em]">LeadPilot</span>
-          <p className="text-[9px] font-medium text-[var(--fg-muted)] tracking-[0.08em] uppercase">Lead Engine</p>
+          <span className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">LeadPilot</span>
+          <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider">v1.0</p>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 pt-1 pb-4">
-        <p className="text-[9px] font-medium text-[var(--fg-muted)] tracking-[0.08em] uppercase px-3 mb-2">Menu</p>
-        <ul className="space-y-0.5">
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        <p className="text-[10px] font-mono text-[var(--text-dim)] uppercase tracking-wider px-3 mb-3">Navigation</p>
+        <ul className="space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 ${
+                  className={`sidebar-item relative flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium transition-all ${
                     isActive
-                      ? "bg-[var(--bg-tertiary)] text-[var(--accent-hover)] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
-                      : "text-[var(--fg-muted)] hover:text-[var(--fg-secondary)] hover:bg-[var(--bg-tertiary)]/50"
+                      ? "sidebar-item-active"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   }`}
                 >
                   {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3.5 bg-[var(--accent)] rounded-r-full" />
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-[var(--accent)] rounded-r-full shadow-[0_0_8px_var(--accent)]" />
                   )}
-                  <span className={`flex items-center justify-center w-7 h-7 rounded-lg ${
-                    isActive ? "bg-[var(--accent-muted)]" : ""
+                  <span className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-[var(--accent-dim)]"
+                      : "bg-[var(--surface-elevated)]"
                   }`}>
                     {item.icon}
                   </span>
@@ -113,11 +117,19 @@ export default function Sidebar() {
         </ul>
       </nav>
 
+      {/* Footer */}
       <div className="px-3 pb-4">
-        <div className="px-3 py-2.5 rounded-xl bg-[var(--bg-tertiary)] shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)]">
-          <p className="text-[10px] font-medium text-[var(--fg-muted)]">LeadPilot v1.0</p>
-          <p className="text-[9px] text-[var(--fg-muted)]/40 mt-0.5">Lead Generation</p>
-        </div>
+        <Link
+          href="/"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-all group"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <polyline points="10 17 15 12 10 7" />
+            <line x1="15" y1="12" x2="3" y2="12" />
+          </svg>
+          <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">Back to Home</span>
+        </Link>
       </div>
     </aside>
   );

@@ -1,72 +1,74 @@
-# LeadPilot 🚀
-**The Autonomous B2B Lead Generation Engine**
+# LeadPilot
 
-LeadPilot is an AI-powered sales sniper that finds, filters, and personalizes outreach for high-ticket clients. It automates the tedious parts of lead generation so you can focus on closing deals.
+**Autonomous B2B Lead Generation Engine**
 
-![LeadPilot Dashboard](https://via.placeholder.com/1200x600?text=LeadPilot+Dashboard+Preview)
-
----
-
-## ✨ Features
-
-*   **🕵️‍♂️ Multi-Source Scraping:**
-    *   **Google Maps:** Finds businesses by city & category (e.g., "Dentists in London").
-    *   **Instagram:** Finds specialized niches via hashtags/keywords (e.g., "interior designer dubai").
-*   **🧠 Intelligent Filtering:**
-    *   Automatically discards low-value leads (perfect rating + website = ignore).
-    *   Prioritizes "Digital Misfits": Businesses with money but poor online presence.
-*   **🤖 AI Outreach Agent:**
-    *   Generates **hyper-personalized** DMs for every single lead.
-    *   Uses real data (rating, review count, missing website) to write a hook that *actually* converts.
-*   **⚡ Real-Time Dashboard:**
-    *   Live progress tracking of scraping jobs.
-    *   "Leads CRM" to manage status (New -> Contacted -> Closed).
-    *   Batch processing queue for bulk operations.
+LeadPilot is an AI-powered lead generation platform that automates prospecting, filtering, and personalized outreach for B2B sales teams. It identifies high-value leads with poor digital presence and generates hyper-personalized messages to maximize conversion rates.
 
 ---
 
-## 🏗️ Architecture
+## Features
 
-LeadPilot uses a modern, decoupled architecture designed for scale.
+### Multi-Source Prospecting
+- **Google Maps Integration** - Find businesses by location and category (e.g., "Dentists in London")
+- **Instagram Discovery** - Discover niche businesses via hashtags and keywords (e.g., "interior designer dubai")
 
-```mermaid
-graph TD
-    User(👤 User) --> Frontend(Next.js Dashboard)
-    Frontend -->|API Requests| Backend(FastAPI Server)
-    
-    subgraph "Backend Infrastructure"
-        Backend --> DB[(SQLite / Postgres)]
-        Backend -->|Queue| BgTasks[Background Workers]
-    end
-    
-    subgraph "External Services"
-        BgTasks -->|Scrape| Apify(Apify Actors)
-        BgTasks -->|Enrich| Gemini(Google Gemini AI)
-    end
+### Intelligent Lead Scoring
+- Automatically filters out low-value prospects (perfect ratings with established websites)
+- Prioritizes "Digital Misfits" - businesses with revenue potential but weak online presence
+
+### AI-Powered Outreach
+- Generates personalized direct messages for each lead
+- Leverages real business data (ratings, reviews, website status) to craft compelling hooks
+
+### Real-Time Dashboard
+- Live progress tracking for scraping jobs
+- Lead CRM with status management (New → Contacted → Closed)
+- Batch processing queue for bulk operations
+
+---
+
+## Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   Next.js UI    │────▶│  FastAPI Server  │────▶│    Database     │
+│   (Frontend)    │     │    (Backend)     │     │ SQLite/Postgres │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    ▼                     ▼
+            ┌──────────────┐      ┌──────────────┐
+            │    Apify     │      │ Google Gemini│
+            │  (Scraping)  │      │     (AI)     │
+            └──────────────┘      └──────────────┘
 ```
 
-*   **Frontend:** Next.js 14, TypeScript, Tailwind CSS
-*   **Backend:** FastAPI (Python), SQLAlchemy, Pydantic
-*   **Database:** SQLite (Local) / PostgreSQL (Production)
-*   **AI Engine:** Google Gemini Pro
-*   **Scraping Provider:** Apify
+### Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
+| Backend | FastAPI, SQLAlchemy, Pydantic |
+| Database | SQLite (development) / PostgreSQL (production) |
+| AI Engine | Google Gemini Pro |
+| Scraping | Apify Actors |
 
 ---
 
-## 🛠️ Local Setup
+## Installation
 
 ### Prerequisites
-*   Node.js 18+
-*   Python 3.9+
-*   Git
+- Node.js 18+
+- Python 3.9+
+- Git
 
-### 1. Clone the Repository
+### Clone Repository
 ```bash
 git clone https://github.com/Rishet11/LeadPilot.git
 cd LeadPilot
 ```
 
-### 2. Backend Setup
+### Backend Setup
 ```bash
 # Create virtual environment
 python -m venv venv
@@ -75,83 +77,82 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Create .env file
+# Configure environment
 cp .env.example .env
-# Edit .env and add your API keys (Apify, Gemini)
+# Add your API keys (APIFY_API_TOKEN, GEMINI_API_KEY)
 ```
 
-### 3. Frontend Setup
+### Frontend Setup
 ```bash
 cd frontend
 
 # Install dependencies
 npm install
 
-# Create local env file
+# Configure environment
 cp .env.example .env.local
 # Set NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-### 4. Run It 🚀
-You need two terminals:
+### Run Development Server
 
-**Terminal 1 (Backend):**
+**Terminal 1 - Backend:**
 ```bash
-# Run from root directory
 uvicorn api.main:app --reload
 ```
 
-**Terminal 2 (Frontend):**
+**Terminal 2 - Frontend:**
 ```bash
 cd frontend
 npm run dev
 ```
 
-Visit **http://localhost:3000** to see the dashboard!
+Access the dashboard at `http://localhost:3000`
 
 ---
 
-## 🚢 Production Deployment
+## Deployment
 
-LeadPilot is optimized for **Railway** (Backend) and **Vercel** (Frontend).
+### Backend (Railway)
+1. Create a new project on [Railway](https://railway.app) from your GitHub repository
+2. Configure environment variables:
+   - `LEADPILOT_API_KEY` - Secure random string for API authentication
+   - `APIFY_API_TOKEN` - Your Apify API key
+   - `GEMINI_API_KEY` - Your Google AI API key
+   - `ALLOWED_ORIGINS` - Your Vercel frontend URL
+3. Railway auto-deploys using `railway.toml`
 
-### Phase 1: Backend (Railway)
-1. Fork this repo.
-2. Login to [Railway.app](https://railway.app).
-3. Create new project from GitHub repo.
-4. Add Environment Variables:
-    *   `LEADPILOT_API_KEY`: (Generate a secure random string)
-    *   `APIFY_API_TOKEN`: Your Apify key
-    *   `GEMINI_API_KEY`: Your Google AI key
-    *   `ALLOWED_ORIGINS`: `https://your-vercel-app.vercel.app`
-5. Railway will auto-deploy using `railway.toml`.
-
-### Phase 2: Frontend (Vercel)
-1. Login to [Vercel.com](https://vercel.com).
-2. Create new project from GitHub repo.
-3. Set **Root Directory** to `frontend`.
-4. Add Environment Variables:
-    *   `NEXT_PUBLIC_API_URL`: Your Railway URL (e.g., `https://web-production.up.railway.app`)
-    *   `NEXT_PUBLIC_API_KEY`: The same key from Phase 1.
-5. Deploy!
+### Frontend (Vercel)
+1. Create a new project on [Vercel](https://vercel.com) from your GitHub repository
+2. Set root directory to `frontend`
+3. Configure environment variables:
+   - `NEXT_PUBLIC_API_URL` - Your Railway backend URL
+   - `NEXT_PUBLIC_API_KEY` - Same key as `LEADPILOT_API_KEY`
+4. Deploy
 
 ---
 
-## 🔒 Security
+## Security
 
-*   **API Key Auth:** All backend endpoints are protected by `X-API-Key`.
-*   **Rate Limiting:** Built-in throttling to prevent abuse and save API credits.
-*   **CORS:** Strict origin policies in production.
-
----
-
-## 🤝 Contributing
-
-1. Fork the repo.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes.
-4. Open a Pull Request.
+- **API Key Authentication** - All backend endpoints require `X-API-Key` header
+- **Rate Limiting** - Built-in throttling to prevent abuse
+- **CORS Protection** - Strict origin policies in production
 
 ---
 
-**Built by [Rishet Mehra](https://github.com/Rishet11)**
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes
+4. Open a Pull Request
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+**Author:** [Rishet Mehra](https://github.com/Rishet11)

@@ -210,13 +210,13 @@ export default function InstagramPage() {
   const getStatusPill = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-[var(--success-muted)] text-[var(--success)]";
+        return "bg-[var(--success-dim)] text-[var(--success)]";
       case "running":
-        return "bg-[var(--accent-muted)] text-[var(--accent-hover)]";
+        return "bg-[var(--accent-dim)] text-[var(--accent)]";
       case "failed":
-        return "bg-[var(--error-muted)] text-[var(--error)]";
+        return "bg-[var(--error-dim)] text-[var(--error)]";
       default:
-        return "bg-[var(--warning-muted)] text-[var(--warning)]";
+        return "bg-[var(--warning-dim)] text-[var(--warning)]";
     }
   };
 
@@ -236,21 +236,24 @@ export default function InstagramPage() {
   const getScoreColor = (score: number) => {
     if (score >= 80) return "bg-[var(--success)]";
     if (score >= 50) return "bg-[var(--warning)]";
-    return "bg-[var(--fg-muted)]";
+    return "bg-[var(--text-muted)]";
   };
 
   return (
-    <div>
+    <div className="stagger-children">
       {/* Title + Live running indicator */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-semibold text-[var(--fg-primary)] tracking-[-0.025em]">Instagram</h1>
+        <div>
+          <p className="font-mono text-[10px] text-[var(--accent)] tracking-[0.2em] uppercase mb-1">Social</p>
+          <h1 className="font-display text-2xl text-[var(--text-primary)] tracking-[-0.02em]">Instagram</h1>
+        </div>
         {hasRunningJob && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--accent-muted)] border border-[var(--accent)]/15 rounded-full">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--accent-dim)] border border-[var(--accent)]/20 rounded-full">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]"></span>
             </span>
-            <span className="text-[11px] font-medium text-[var(--accent-hover)]">Running</span>
+            <span className="font-mono text-[10px] text-[var(--accent)]">Running</span>
           </div>
         )}
       </div>
@@ -258,10 +261,10 @@ export default function InstagramPage() {
       {/* Message alert */}
       {message && (
         <div
-          className={`mb-6 p-3.5 rounded-xl text-sm ${
+          className={`mb-6 p-4 rounded-xl text-sm ${
             message.type === "success"
-              ? "bg-[var(--success-muted)] border border-[var(--success)]/15 text-[var(--success)]"
-              : "bg-[var(--error-muted)] border border-[var(--error)]/15 text-[var(--error)]"
+              ? "bg-[var(--success-dim)] border border-[var(--success)]/20 text-[var(--success)]"
+              : "bg-[var(--error-dim)] border border-[var(--error)]/20 text-[var(--error)]"
           }`}
         >
           {message.text}
@@ -269,8 +272,8 @@ export default function InstagramPage() {
       )}
 
       {/* Niche Templates Grid */}
-      <div className="mb-5 card p-5">
-        <h3 className="text-xs font-semibold text-[var(--fg-muted)] uppercase tracking-wider mb-3">Quick Niches</h3>
+      <div className="mb-5 card-static p-5">
+        <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-3">Quick Niches</p>
         <div className="flex flex-wrap gap-2">
           {NICHES.map((niche) => (
             <button
@@ -278,8 +281,8 @@ export default function InstagramPage() {
               onClick={() => handleNicheClick(niche)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
                 activeNiche === niche
-                  ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                  : "bg-[var(--bg-tertiary)] text-[var(--fg-primary)] border-[var(--border)] hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)]"
+                  ? "bg-[var(--accent)] text-black border-[var(--accent)]"
+                  : "bg-[var(--surface-elevated)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)]"
               }`}
             >
               {niche}
@@ -290,11 +293,11 @@ export default function InstagramPage() {
 
       {/* Bio-Optimized Keywords (visible when niche is selected) */}
       {activeNiche && BIO_KEYWORDS[activeNiche] && (
-        <div className="mb-5 card p-5">
-          <h3 className="text-xs font-semibold text-[var(--fg-muted)] uppercase tracking-wider mb-3">
+        <div className="mb-5 card-static p-5">
+          <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
             Bio keywords for {activeNiche}
-          </h3>
-          <p className="text-[11px] text-[var(--fg-muted)] mb-3">Terms businesses use in their Instagram bios — click to use instead</p>
+          </p>
+          <p className="text-[11px] text-[var(--text-dim)] mb-3">Terms businesses use in their Instagram bios</p>
           <div className="flex flex-wrap gap-2">
             {BIO_KEYWORDS[activeNiche].map((term) => {
               const termWithCity = city ? `${term} ${city}`.trim() : term;
@@ -309,10 +312,10 @@ export default function InstagramPage() {
                   disabled={alreadyQueued}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
                     keyword === term
-                      ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                      ? "bg-[var(--accent)] text-black border-[var(--accent)]"
                       : alreadyQueued
-                        ? "opacity-40 cursor-not-allowed bg-[var(--bg-tertiary)] text-[var(--fg-muted)] border-[var(--border)]"
-                        : "bg-[var(--bg-tertiary)] text-[var(--fg-primary)] border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]"
+                        ? "opacity-40 cursor-not-allowed bg-[var(--surface-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"
+                        : "bg-[var(--surface-elevated)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)]"
                   }`}
                 >
                   {term}
@@ -336,7 +339,7 @@ export default function InstagramPage() {
                 }
                 if (newTargets.length > 0) setTargets([...targets, ...newTargets]);
               }}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all border border-dashed border-[var(--accent)] text-[var(--accent-hover)] hover:bg-[var(--accent-muted)]"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all border border-dashed border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-dim)]"
             >
               + Add all
             </button>
@@ -346,10 +349,10 @@ export default function InstagramPage() {
 
       {/* Suggested Combos (visible when city is entered) */}
       {city.trim() && (
-        <div className="mb-5 card p-5">
-          <h3 className="text-xs font-semibold text-[var(--fg-muted)] uppercase tracking-wider mb-3">
+        <div className="mb-5 card-static p-5">
+          <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-3">
             Suggested for {city}
-          </h3>
+          </p>
           <div className="flex flex-wrap gap-2">
             {SUGGESTED_NICHES.map((niche) => {
               const queued = isComboQueued(niche);
@@ -360,8 +363,8 @@ export default function InstagramPage() {
                   disabled={queued}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
                     queued
-                      ? "opacity-40 cursor-not-allowed bg-[var(--bg-tertiary)] text-[var(--fg-muted)] border-[var(--border)]"
-                      : "bg-[var(--bg-tertiary)] text-[var(--fg-primary)] border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]"
+                      ? "opacity-40 cursor-not-allowed bg-[var(--surface-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"
+                      : "bg-[var(--surface-elevated)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)]"
                   }`}
                 >
                   {niche} + {city}
@@ -374,11 +377,23 @@ export default function InstagramPage() {
 
       {/* Add Keyword + Quick Paste */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="card p-6">
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-4">Add Keyword</h3>
-          <div className="space-y-3">
+        <div className="card-static p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">Niche</label>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Add Keyword</h3>
+              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Single entry</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Niche</label>
               <input
                 type="text"
                 value={keyword}
@@ -387,25 +402,25 @@ export default function InstagramPage() {
                   setActiveNiche(null);
                 }}
                 placeholder="e.g., makeup artist"
-                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+                className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">City <span className="text-[var(--fg-muted)] font-normal">(optional)</span></label>
+              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">City <span className="text-[var(--text-dim)] font-normal normal-case">(optional)</span></label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="e.g., london"
-                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+                className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--fg-muted)] mb-2">Limit</label>
+              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Limit</label>
               <select
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value))}
-                className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+                className="field w-full px-4 py-3 text-sm focus:outline-none"
               >
                 <option value={10}>10 profiles</option>
                 <option value={20}>20 profiles</option>
@@ -414,7 +429,7 @@ export default function InstagramPage() {
               </select>
             </div>
 
-            <div className="pt-3 border-t border-[var(--border)]">
+            <div className="pt-4 border-t border-[var(--border-subtle)]">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -422,29 +437,29 @@ export default function InstagramPage() {
                   onChange={(e) => setUseCustomRange(e.target.checked)}
                   className="w-3.5 h-3.5 rounded accent-[var(--accent)]"
                 />
-                <span className="text-xs text-[var(--fg-muted)]">Custom follower range</span>
+                <span className="text-xs text-[var(--text-muted)]">Custom follower range</span>
               </label>
 
               {useCustomRange && (
-                <div className="grid grid-cols-2 gap-2.5 mt-3">
+                <div className="grid grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label className="block text-[11px] text-[var(--fg-muted)] mb-1">Min</label>
+                    <label className="block font-mono text-[10px] text-[var(--text-dim)] mb-1">Min</label>
                     <input
                       type="number"
                       value={followersMin ?? ""}
                       onChange={(e) => setFollowersMin(e.target.value ? parseInt(e.target.value) : undefined)}
                       placeholder={String(globalDefaults.min)}
-                      className="field-inset w-full px-3 py-2 text-[var(--fg-primary)] text-xs placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+                      className="field w-full px-3 py-2 text-xs placeholder:text-[var(--text-dim)] focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-[var(--fg-muted)] mb-1">Max</label>
+                    <label className="block font-mono text-[10px] text-[var(--text-dim)] mb-1">Max</label>
                     <input
                       type="number"
                       value={followersMax ?? ""}
                       onChange={(e) => setFollowersMax(e.target.value ? parseInt(e.target.value) : undefined)}
                       placeholder={String(globalDefaults.max)}
-                      className="field-inset w-full px-3 py-2 text-[var(--fg-primary)] text-xs placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all"
+                      className="field w-full px-3 py-2 text-xs placeholder:text-[var(--text-dim)] focus:outline-none"
                     />
                   </div>
                 </div>
@@ -454,29 +469,40 @@ export default function InstagramPage() {
             <button
               onClick={addTarget}
               disabled={!keyword.trim()}
-              className="w-full py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-elevated)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--fg-primary)] text-sm font-medium rounded-xl transition-all border border-[var(--border)] hover:border-[var(--border-hover)]"
+              className="btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             >
               + Add to Queue
             </button>
           </div>
         </div>
 
-        <div className="card p-6">
-          <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-4">Quick Paste</h3>
-          <p className="text-xs text-[var(--fg-muted)] mb-3">
-            Format: <code className="text-[var(--fg-primary)]">keyword, limit, min, max</code>
+        <div className="card-static p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Quick Paste</h3>
+              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Bulk import</p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--text-secondary)] mb-4">
+            Format: <code className="text-[var(--text-primary)] bg-[var(--surface-elevated)] px-1.5 py-0.5 rounded">keyword, limit, min, max</code>
           </p>
           <textarea
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
             placeholder={`makeup artist london, 50\nhome baker mumbai, 30, ${globalDefaults.min}, ${globalDefaults.max}\npersonal trainer sydney, 20, 1000, 10000`}
             rows={6}
-            className="field-inset w-full px-4 py-2.5 text-sm text-[var(--fg-primary)] placeholder:text-[var(--fg-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] transition-all resize-none font-mono"
+            className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none resize-none font-mono"
           />
           <button
             onClick={parseAndAdd}
             disabled={!pasteText.trim()}
-            className="mt-3 w-full py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-elevated)] disabled:opacity-40 disabled:cursor-not-allowed text-[var(--fg-primary)] text-sm font-medium rounded-xl transition-all border border-[var(--border)] hover:border-[var(--border-hover)]"
+            className="mt-4 btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Parse & Add
           </button>
@@ -484,36 +510,51 @@ export default function InstagramPage() {
       </div>
 
       {/* Queue + Run button */}
-      <div className="mt-6 card p-6">
-        <h3 className="text-sm font-semibold text-[var(--fg-primary)] mb-4">
-          Queue ({targets.length} keywords)
-        </h3>
+      <div className="mt-6 card-static p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Queue</h3>
+              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{targets.length} keywords</p>
+            </div>
+          </div>
+          {targets.length > 0 && (
+            <span className="tag tag-gold font-mono text-[10px]">Ready</span>
+          )}
+        </div>
 
         {targets.length === 0 ? (
-          <p className="text-[var(--fg-muted)] text-sm">
-            No keywords in queue. Add some above.
-          </p>
+          <div className="text-center py-8">
+            <p className="text-[var(--text-muted)] text-sm mb-1">No keywords in queue</p>
+            <p className="text-[var(--text-dim)] text-xs">Add keywords above to get started</p>
+          </div>
         ) : (
-          <div className="space-y-1.5 mb-4">
+          <div className="space-y-2 mb-6">
             {targets.map((target, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-tertiary)]/50"
+                className="flex items-center justify-between p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]"
               >
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-sm font-medium text-[var(--fg-primary)]">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="font-mono text-[10px] text-[var(--text-dim)] w-6">#{index + 1}</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">
                     {target.keyword}
                   </span>
-                  <span className="text-[11px] text-[var(--accent-hover)] font-medium">{target.limit} profiles</span>
+                  <span className="tag tag-gold font-mono text-[10px]">{target.limit} profiles</span>
                   {(target.followers_min || target.followers_max) && (
-                    <span className="text-[11px] text-[var(--fg-muted)]">
+                    <span className="font-mono text-[10px] text-[var(--text-muted)]">
                       {target.followers_min ?? globalDefaults.min}-{target.followers_max ?? globalDefaults.max}
                     </span>
                   )}
                 </div>
                 <button
                   onClick={() => removeTarget(index)}
-                  className="text-[var(--error)] hover:text-[var(--fg-primary)] transition-colors text-xs"
+                  className="text-[var(--text-muted)] hover:text-[var(--error)] transition-colors text-xs font-medium"
                 >
                   Remove
                 </button>
@@ -525,21 +566,36 @@ export default function InstagramPage() {
         <button
           onClick={runBatch}
           disabled={targets.length === 0 || isLoading}
-          className="w-full flex items-center justify-center gap-2 py-3 px-5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--accent-glow)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all duration-150"
+          className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         >
-          {isLoading ? "Running..." : `Run All (${targets.length} keywords)`}
+          {isLoading ? (
+            <>
+              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Processing...</span>
+            </>
+          ) : (
+            <>
+              <span>Run Batch ({targets.length} keywords)</span>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </>
+          )}
         </button>
       </div>
 
       {/* Tabs: Jobs | Top Results */}
-      <div className="mt-6 card p-6">
-        <div className="flex items-center gap-1 mb-5 border-b border-[var(--border)]">
+      <div className="mt-6 card-static p-6">
+        <div className="flex items-center gap-1 mb-5 border-b border-[var(--border-subtle)]">
           <button
             onClick={() => setActiveTab("jobs")}
             className={`px-4 py-2 text-sm font-medium transition-colors relative ${
               activeTab === "jobs"
-                ? "text-[var(--fg-primary)]"
-                : "text-[var(--fg-muted)] hover:text-[var(--fg-primary)]"
+                ? "text-[var(--text-primary)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             Jobs
@@ -551,8 +607,8 @@ export default function InstagramPage() {
             onClick={() => setActiveTab("results")}
             className={`px-4 py-2 text-sm font-medium transition-colors relative ${
               activeTab === "results"
-                ? "text-[var(--fg-primary)]"
-                : "text-[var(--fg-muted)] hover:text-[var(--fg-primary)]"
+                ? "text-[var(--text-primary)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             Top Results
@@ -565,32 +621,32 @@ export default function InstagramPage() {
         {activeTab === "jobs" && (
           <>
             {jobsLoading ? (
-              <p className="text-[var(--fg-muted)] text-sm py-6 text-center">Loading jobs...</p>
+              <p className="text-[var(--text-muted)] text-sm py-6 text-center">Loading jobs...</p>
             ) : jobs.length === 0 ? (
-              <p className="text-[var(--fg-muted)] text-sm py-6 text-center">No Instagram jobs yet. Run a batch to get started.</p>
+              <p className="text-[var(--text-muted)] text-sm py-6 text-center">No Instagram jobs yet. Run a batch to get started.</p>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {jobs.map((job) => (
                   <div
                     key={job.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-tertiary)]/50 hover:bg-[var(--bg-tertiary)] transition-colors"
+                    className="flex items-center justify-between p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDot(job.status)} ${job.status === "running" ? "animate-pulse" : ""}`} />
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(job.status)} ${job.status === "running" ? "animate-pulse" : ""}`} />
                       <div>
-                        <p className="text-sm font-medium text-[var(--fg-primary)]">
+                        <p className="text-sm font-medium text-[var(--text-primary)]">
                           Job #{job.id}
                         </p>
-                        <p className="text-xs text-[var(--fg-muted)]">
+                        <p className="font-mono text-[10px] text-[var(--text-muted)]">
                           {job.leads_found} leads found
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium ${getStatusPill(job.status)}`}>
+                      <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-medium ${getStatusPill(job.status)}`}>
                         {job.status}
                       </span>
-                      <span className="text-[11px] text-[var(--fg-muted)] min-w-[55px] text-right">
+                      <span className="font-mono text-[10px] text-[var(--text-dim)] min-w-[55px] text-right">
                         {formatDate(job.created_at)}
                       </span>
                     </div>
@@ -604,55 +660,55 @@ export default function InstagramPage() {
         {activeTab === "results" && (
           <>
             {resultsLoading ? (
-              <p className="text-[var(--fg-muted)] text-sm py-6 text-center">Loading results...</p>
+              <p className="text-[var(--text-muted)] text-sm py-6 text-center">Loading results...</p>
             ) : previewLeads.length === 0 ? (
-              <p className="text-[var(--fg-muted)] text-sm py-6 text-center">No Instagram leads yet.</p>
+              <p className="text-[var(--text-muted)] text-sm py-6 text-center">No Instagram leads yet.</p>
             ) : (
               <div className="space-y-2">
                 {previewLeads.map((lead) => (
                   <div
                     key={lead.id}
-                    className="p-3 rounded-xl bg-[var(--bg-tertiary)]/50 hover:bg-[var(--bg-tertiary)] transition-colors"
+                    className="p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         {lead.instagram && (
                           <a
                             href={`https://instagram.com/${lead.instagram}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm font-medium text-[var(--accent-hover)] hover:underline"
+                            className="text-sm font-medium text-[var(--accent)] hover:underline"
                           >
                             @{lead.instagram}
                           </a>
                         )}
                         {!lead.instagram && (
-                          <span className="text-sm font-medium text-[var(--fg-primary)]">{lead.name}</span>
+                          <span className="text-sm font-medium text-[var(--text-primary)]">{lead.name}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-14 h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+                        <div className="w-14 h-1.5 bg-[var(--surface-card)] rounded-full overflow-hidden">
                           <div
                             className={`h-full ${getScoreColor(lead.lead_score)}`}
                             style={{ width: `${lead.lead_score}%` }}
                           />
                         </div>
-                        <span className="text-[11px] text-[var(--fg-muted)] w-6">{lead.lead_score}</span>
+                        <span className="font-mono text-[10px] text-[var(--text-muted)] w-6">{lead.lead_score}</span>
                       </div>
                     </div>
                     {lead.reason && (
-                      <p className="text-[11px] text-[var(--fg-muted)] mb-1">{lead.reason}</p>
+                      <p className="text-[11px] text-[var(--text-muted)] mb-1">{lead.reason}</p>
                     )}
                     {lead.ai_outreach && (
-                      <p className="text-[11px] text-[var(--fg-muted)] truncate">
-                        <span className="text-[var(--fg-primary)] font-medium">DM:</span> {lead.ai_outreach}
+                      <p className="text-[11px] text-[var(--text-dim)] truncate">
+                        <span className="text-[var(--text-primary)] font-medium">DM:</span> {lead.ai_outreach}
                       </p>
                     )}
                   </div>
                 ))}
                 <Link
                   href="/leads"
-                  className="block text-center text-xs text-[var(--accent-hover)] hover:underline py-2"
+                  className="block text-center text-xs text-[var(--accent)] hover:underline py-2"
                 >
                   View all leads →
                 </Link>
@@ -664,10 +720,10 @@ export default function InstagramPage() {
 
       {/* Tips */}
       <div className="mt-6 card-static p-5">
-        <h4 className="text-xs font-semibold text-[var(--fg-primary)] mb-2.5 uppercase tracking-wider">
+        <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-wider mb-3">
           Tips
-        </h4>
-        <ul className="text-xs text-[var(--fg-muted)] space-y-1.5 leading-relaxed">
+        </p>
+        <ul className="text-xs text-[var(--text-secondary)] space-y-2 leading-relaxed">
           <li>Click a niche above to quickly fill the keyword field</li>
           <li>Enter a city to see suggested niche + city combos</li>
           <li>Use location + profession: &quot;makeup artist london&quot;</li>

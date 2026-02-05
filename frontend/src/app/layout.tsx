@@ -1,18 +1,28 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Newsreader, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
 
-const inter = Inter({ subsets: ["latin"] });
-const playfair = Playfair_Display({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-sans",
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-serif",
   style: ["normal", "italic"],
+  weight: ["400", "500", "600"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "LeadPilot - Lead Generation Dashboard",
-  description: "AI-powered lead generation system for agencies",
+  title: "LeadPilot - B2B Lead Generation Platform",
+  description: "Automate prospecting, filtering, and personalized outreach for B2B sales teams",
 };
 
 export default function RootLayout({
@@ -21,16 +31,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} ${playfair.variable}`}>
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 overflow-auto">
-            <div className="max-w-[1100px] mx-auto px-8 py-8 lg:px-10 lg:py-10 animate-page-in">
-              {children}
-            </div>
-          </main>
-        </div>
+    <html lang="en" className={`${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}>
+      <body className={inter.className} suppressHydrationWarning>
+        <div className="noise-overlay" />
+        {children}
       </body>
     </html>
   );
