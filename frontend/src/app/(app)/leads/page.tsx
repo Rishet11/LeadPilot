@@ -64,6 +64,12 @@ export default function LeadsCRM() {
     navigator.clipboard.writeText(text);
   };
 
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // Remove all non-numeric characters
+    return phone.replace(/\D/g, "");
+  };
+
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return "bg-[var(--success)]";
     if (score >= 50) return "bg-[var(--warning)]";
@@ -282,6 +288,17 @@ export default function LeadsCRM() {
                     <span className="text-[var(--text-muted)]">Phone</span>
                     <span className="ml-auto font-mono">{selectedLead.phone}</span>
                   </button>
+                )}
+                {selectedLead.phone && (
+                  <a
+                    href={`https://wa.me/${formatPhoneForWhatsApp(selectedLead.phone)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline px-3 py-2.5 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]"
+                  >
+                    <span className="text-[var(--text-muted)]">WhatsApp</span>
+                    <span className="ml-auto font-mono">{selectedLead.phone}</span>
+                  </a>
                 )}
                 {selectedLead.website && (
                   <a

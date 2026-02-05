@@ -83,18 +83,20 @@ def standardize_phone(phone: str) -> str:
     """
     Standardize phone number format.
     
-    Removes non-digit characters except +, 
-    ensures Indian format if applicable.
+    Preserves original country code from source.
+    Only removes spaces, dashes, and parentheses.
     """
     if not phone or phone == 'nan':
         return ''
     
-    # Remove all non-digit characters except +
-    cleaned = re.sub(r'[^\d+]', '', str(phone))
+    # Remove only spaces, dashes, and parentheses, but keep + and digits
+    cleaned = re.sub(r'[\s\-()]', '', str(phone))
     
-    # If it's an Indian number without country code
-    if len(cleaned) == 10 and cleaned.isdigit():
-        cleaned = '+91' + cleaned
+    # Ensure it starts with + for international format
+    if cleaned and not cleaned.startswith('+'):
+        # If it's a 10-digit number without country code, assume it's Indian
+        if len(cleaned) == 10 and cleaned.isdigit():
+            cleaned = '+91' + cleaned
     
     return cleaned
 
