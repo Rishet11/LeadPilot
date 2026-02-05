@@ -125,9 +125,9 @@ export default function LeadsCRM() {
   };
 
   return (
-    <div className="flex gap-5 h-[calc(100vh-120px)]">
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center justify-between mb-6">
+    <div className="flex gap-5 h-[calc(100vh-140px)]">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <div className="flex items-center justify-between mb-6 shrink-0">
           <div>
             <p className="font-mono text-[10px] text-[var(--accent)] tracking-[0.2em] uppercase mb-1">CRM</p>
             <h1 className="font-display text-2xl text-[var(--text-primary)] tracking-[-0.02em]">Leads</h1>
@@ -152,7 +152,7 @@ export default function LeadsCRM() {
           </div>
         </div>
 
-        <div className="flex gap-2.5 mb-5 overflow-x-auto pb-2">
+        <div className="flex gap-2.5 mb-5 overflow-x-auto pb-2 shrink-0">
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -202,7 +202,7 @@ export default function LeadsCRM() {
           </label>
         </div>
 
-        <div className="flex-1 overflow-auto card-static">
+        <div className="flex-1 overflow-auto bg-[var(--surface-card)] border border-[var(--border-subtle)] rounded-2xl relative">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <p className="text-[var(--text-muted)] text-sm">Loading...</p>
@@ -370,7 +370,7 @@ export default function LeadsCRM() {
                 )}
                 {selectedLead.phone && (
                   <a
-                    href={`https://wa.me/${formatPhoneForWhatsApp(selectedLead.phone)}`}
+                    href={`https://wa.me/${formatPhoneForWhatsApp(selectedLead.phone)}?text=${encodeURIComponent(selectedLead.ai_outreach || "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline px-3 py-2.5 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]"
@@ -403,7 +403,7 @@ export default function LeadsCRM() {
                 )}
                 {selectedLead.email && (
                   <a
-                    href={`mailto:${selectedLead.email}`}
+                    href={`mailto:${selectedLead.email}?subject=${encodeURIComponent(`Quick question regarding ${selectedLead.name}`)}&body=${encodeURIComponent(selectedLead.ai_outreach || "")}`}
                     className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline px-3 py-2.5 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]"
                   >
                     <span className="text-[var(--text-muted)]">Email</span>
