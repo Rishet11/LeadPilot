@@ -22,6 +22,7 @@ export interface Lead {
   reviews: number | null;
   website: string | null;
   instagram: string | null;
+  maps_url: string | null;
   lead_score: number;
   reason: string | null;
   ai_outreach: string | null;
@@ -75,6 +76,7 @@ export async function getLeads(params?: {
   min_score?: number;
   city?: string;
   category?: string;
+  no_website?: boolean;
 }): Promise<Lead[]> {
   const searchParams = new URLSearchParams();
   if (params) {

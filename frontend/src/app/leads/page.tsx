@@ -21,6 +21,7 @@ export default function LeadsCRM() {
     source: "",
     minScore: 0,
     city: "",
+    noWebsite: false,
   });
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function LeadsCRM() {
         source: filters.source || undefined,
         min_score: filters.minScore || undefined,
         city: filters.city || undefined,
+        no_website: filters.noWebsite || undefined,
         limit: 100,
       });
       setLeads(data);
@@ -117,6 +119,15 @@ export default function LeadsCRM() {
             <option value={70}>70+</option>
             <option value={80}>80+</option>
           </select>
+          <label className="flex items-center gap-1.5 px-3 py-1.5 field-inset cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filters.noWebsite}
+              onChange={(e) => setFilters({ ...filters, noWebsite: e.target.checked })}
+              className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--accent)] focus:ring-[var(--accent-muted)] focus:ring-1"
+            />
+            <span className="text-xs text-[var(--fg-primary)]">No Website</span>
+          </label>
         </div>
 
         <div className="flex-1 overflow-auto card-static">
@@ -152,7 +163,19 @@ export default function LeadsCRM() {
                   >
                     <td className="px-4 py-2.5">
                       <div>
-                        <p className="text-sm font-medium text-[var(--fg-primary)]">{lead.name}</p>
+                        {lead.maps_url ? (
+                          <a
+                            href={lead.maps_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-sm font-medium text-[var(--accent-hover)] hover:underline"
+                          >
+                            {lead.name}
+                          </a>
+                        ) : (
+                          <p className="text-sm font-medium text-[var(--fg-primary)]">{lead.name}</p>
+                        )}
                         <p className="text-[11px] text-[var(--fg-muted)]">{lead.category}</p>
                       </div>
                     </td>
@@ -206,7 +229,18 @@ export default function LeadsCRM() {
         <div className="w-80 card-static p-5 overflow-auto shrink-0">
           <div className="flex items-start justify-between mb-5">
             <div>
-              <h2 className="text-sm font-semibold text-[var(--fg-primary)]">{selectedLead.name}</h2>
+              {selectedLead.maps_url ? (
+                <a
+                  href={selectedLead.maps_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold text-[var(--accent-hover)] hover:underline"
+                >
+                  {selectedLead.name}
+                </a>
+              ) : (
+                <h2 className="text-sm font-semibold text-[var(--fg-primary)]">{selectedLead.name}</h2>
+              )}
               <p className="text-xs text-[var(--fg-muted)]">{selectedLead.category}</p>
             </div>
             <button

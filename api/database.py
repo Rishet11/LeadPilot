@@ -40,6 +40,7 @@ class Lead(Base):
     reviews = Column(Integer)
     website = Column(String(500))
     instagram = Column(String(255))
+    maps_url = Column(String(500))  # Google Maps profile link
     lead_score = Column(Integer, default=0)
     reason = Column(Text)
     ai_outreach = Column(Text)

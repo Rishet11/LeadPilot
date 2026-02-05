@@ -22,6 +22,7 @@ def get_leads(
     min_score: Optional[int] = Query(None, ge=0, le=100),
     city: Optional[str] = Query(None, max_length=100),
     category: Optional[str] = Query(None, max_length=100),
+    no_website: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
     api_key: str = Depends(verify_api_key)
 ):
@@ -37,6 +38,8 @@ def get_leads(
         query = query.filter(Lead.city.ilike(f"%{city[:100]}%"))
     if category:
         query = query.filter(Lead.category.ilike(f"%{category[:100]}%"))
+    if no_website:
+        query = query.filter((Lead.website == None) | (Lead.website == ""))
     
     return query.order_by(desc(Lead.lead_score)).offset(skip).limit(limit).all()
 

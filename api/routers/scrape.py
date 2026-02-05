@@ -84,6 +84,7 @@ def run_google_maps_batch(job_id: int, targets: list, db_path: str):
                         rating=lead_dict.get('rating'),
                         reviews=lead_dict.get('reviews'),
                         website=lead_dict.get('website'),
+                        maps_url=lead_dict.get('maps_url') or lead_dict.get('url'),
                         lead_score=lead_dict.get('lead_score', 0),
                         reason=lead_dict.get('reason'),
                         ai_outreach=lead_dict.get('ai_outreach'),

@@ -23,6 +23,7 @@ class LeadBase(BaseModel):
     reviews: Optional[int] = Field(None, ge=0)
     website: Optional[str] = Field(None, max_length=500)
     instagram: Optional[str] = Field(None, max_length=255)
+    maps_url: Optional[str] = Field(None, max_length=500)
     lead_score: Optional[int] = Field(0, ge=0, le=100)
     reason: Optional[str] = Field(None, max_length=1000)
     ai_outreach: Optional[str] = Field(None, max_length=5000)

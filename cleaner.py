@@ -42,7 +42,7 @@ def clean_dataframe(data: list) -> pd.DataFrame:
     # Select and order columns we care about
     required_columns = [
         'name', 'category', 'address', 'phone', 'website', 
-        'instagram', 'rating', 'reviews'
+        'instagram', 'rating', 'reviews', 'url'
     ]
     
     # Add missing columns with empty values
@@ -53,7 +53,7 @@ def clean_dataframe(data: list) -> pd.DataFrame:
     df = df[required_columns]
     
     # Clean string columns
-    string_cols = ['name', 'category', 'address', 'phone', 'website', 'instagram']
+    string_cols = ['name', 'category', 'address', 'phone', 'website', 'instagram', 'url']
     for col in string_cols:
         df[col] = df[col].fillna('').astype(str).str.strip()
     
@@ -69,6 +69,9 @@ def clean_dataframe(data: list) -> pd.DataFrame:
     
     # Remove duplicates based on name and phone
     df = df.drop_duplicates(subset=['name', 'phone'], keep='first')
+    
+    # Rename url to maps_url for database consistency
+    df = df.rename(columns={'url': 'maps_url'})
     
     # Reset index
     df = df.reset_index(drop=True)
