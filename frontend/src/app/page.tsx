@@ -283,20 +283,20 @@ export default function LandingPage() {
                 {/* Score Breakdown */}
                 <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="text-red-400">✗</span>
-                    <span className="text-[var(--text-secondary)]">No SSL certificate</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-400">✗</span>
-                    <span className="text-[var(--text-secondary)]">Slow mobile (4.2s)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <span className="text-[var(--accent)]">✓</span>
                     <span className="text-[var(--text-secondary)]">3.8★ on Google (42 reviews)</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <span className="text-[var(--accent)]">✓</span>
+                    <span className="text-[var(--text-secondary)]">Active business listing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="text-red-400">✗</span>
-                    <span className="text-[var(--text-secondary)]">No social presence</span>
+                    <span className="text-[var(--text-secondary)]">Low social engagement</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--accent)]">✓</span>
+                    <span className="text-[var(--text-secondary)]">High growth potential</span>
                   </div>
                 </div>
 
@@ -310,9 +310,9 @@ export default function LandingPage() {
                 <div className="p-3 rounded-lg border border-dashed border-[var(--border-subtle)]">
                   <p className="text-xs text-[var(--accent)] font-mono uppercase tracking-wider mb-2">AI-Generated Outreach</p>
                   <p className="text-sm text-[var(--text-secondary)] italic">
-                    &quot;Hi Mike, I noticed Austin Plumbing&apos;s site takes 4+ seconds to load on mobile. 
-                    With 70% of customers searching on phones, you might be losing leads. 
-                    Would a quick audit be helpful?&quot;
+                    &quot;Hi Mike, I saw Austin Plumbing has great reviews but low social presence. 
+                    I help businesses like yours get more visibility and customers. 
+                    Worth a quick chat?&quot;
                   </p>
                 </div>
               </div>
@@ -367,8 +367,8 @@ export default function LandingPage() {
                   Score
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  AI checks 15+ signals: website speed, mobile-friendliness, SSL, social presence, 
-                  reviews, and more. Each lead gets a 0-100 score — high scores = likely to convert.
+                  AI scores each lead based on business signals: reviews, growth potential, digital presence. 
+                  Focus on leads most likely to convert.
                 </p>
               </div>
 
