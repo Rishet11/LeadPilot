@@ -98,14 +98,16 @@ export default function LandingPage() {
             {/* Left - Text Content */}
             <div className="stagger-children">
               <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-6">
-                B2B Lead Generation Tool
+                Find Clients Faster
               </p>
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-6">
-                Get 50+ qualified leads in 10 minutes — <em className="italic text-[var(--text-secondary)]">without manual prospecting</em>
+              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-4">
+                Get 50+ qualified leads in 10 minutes
               </h1>
-              <p className="text-lg text-[var(--text-secondary)] leading-relaxed mb-8 max-w-xl">
-                Enter a city + industry. Get qualified leads with contact info, 
-                AI scores, and ready-to-send outreach messages — in under 10 minutes.
+              <p className="text-2xl text-[var(--text-secondary)] mb-6">
+                No manual prospecting. No guesswork.
+              </p>
+              <p className="text-lg text-[var(--text-muted)] leading-relaxed mb-8 max-w-xl">
+                Enter city + industry → Get scored leads + AI-written outreach messages instantly.
               </p>
               
               {/* Email Form / Success State */}
@@ -163,7 +165,7 @@ export default function LandingPage() {
               )}
               
               <p className="text-[var(--text-dim)] text-sm">
-                🔥 Join 127 founders & sales teams on the waitlist
+                🔥 127 people already on the waitlist
               </p>
             </div>
 
