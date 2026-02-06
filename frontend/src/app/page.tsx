@@ -1,6 +1,34 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 export default function LandingPage() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus("loading");
+
+    try {
+      const res = await fetch("https://formspree.io/f/xgolwjvy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        setStatus("success");
+        setEmail("");
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col vignette">
       {/* Header */}
@@ -16,12 +44,7 @@ export default function LandingPage() {
             </div>
             <span className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">LeadPilot</span>
           </Link>
-          <Link
-            href="/dashboard"
-            className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-          >
-            Open Dashboard
-          </Link>
+
         </div>
       </header>
 
@@ -37,23 +60,49 @@ export default function LandingPage() {
               <h1 className="font-display text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-8">
                 Find businesses that <em className="italic text-[var(--text-secondary)]">need</em> what you sell
               </h1>
-              <p className="text-lg text-[var(--text-secondary)] leading-relaxed mb-12 max-w-xl">
+              <p className="text-lg text-[var(--text-secondary)] leading-relaxed mb-8 max-w-xl">
                 LeadPilot scrapes Google Maps and Instagram to find local businesses
                 with weak digital presence. Then scores and qualifies each lead
                 so you reach out to the <span className="text-[var(--text-primary)]">right prospects</span>.
               </p>
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/dashboard"
-                  className="btn-primary inline-flex items-center gap-3 px-7 py-3.5 text-sm"
-                >
-                  Go to Dashboard
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-                <span className="text-[var(--text-dim)] text-sm">No signup required</span>
-              </div>
+              
+              {/* Email Form */}
+              <form onSubmit={handleSubmit} className="mb-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    disabled={status === "loading" || status === "success"}
+                    className="flex-1 px-5 py-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={status === "loading" || status === "success"}
+                    className="btn-primary inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-medium whitespace-nowrap disabled:opacity-50"
+                  >
+                    {status === "loading" ? (
+                      "Joining..."
+                    ) : status === "success" ? (
+                      "You're in! ✓"
+                    ) : (
+                      <>
+                        Join Waitlist
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
+                {status === "error" && (
+                  <p className="mt-2 text-sm text-red-400">Something went wrong. Please try again.</p>
+                )}
+              </form>
+              
+              <span className="text-[var(--text-dim)] text-sm">Join 100+ builders on the waitlist</span>
             </div>
 
             {/* Right - Hero Image */}
@@ -230,18 +279,41 @@ export default function LandingPage() {
               Start finding <em className="italic">leads</em>
             </h2>
             <p className="text-[var(--text-secondary)] mb-10 max-w-md mx-auto">
-              Configure your API keys and run your first batch.
-              Results in minutes, not days.
+              Join the waitlist to get early access. Results in minutes, not days.
             </p>
-            <Link
-              href="/dashboard"
-              className="btn-primary inline-flex items-center gap-3 px-8 py-4 text-sm"
-            >
-              Open Dashboard
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
+            
+            {/* Bottom Email Form */}
+            <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  disabled={status === "loading" || status === "success"}
+                  className="flex-1 px-5 py-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={status === "loading" || status === "success"}
+                  className="btn-primary inline-flex items-center justify-center gap-3 px-8 py-4 text-base whitespace-nowrap disabled:opacity-50"
+                >
+                  {status === "loading" ? (
+                    "Joining..."
+                  ) : status === "success" ? (
+                    "You're in! ✓"
+                  ) : (
+                    <>
+                      Join Waitlist
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </section>
       </main>
@@ -252,9 +324,14 @@ export default function LandingPage() {
           <p className="font-mono text-xs text-[var(--text-dim)]">
             LeadPilot
           </p>
-          <p className="font-mono text-xs text-[var(--text-dim)]">
-            Built for agencies
-          </p>
+          <a
+            href="https://twitter.com/MehraRishe90311"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-xs text-[var(--text-dim)] hover:text-[var(--accent)] transition-colors"
+          >
+            Building in public by Rishet Mehra
+          </a>
         </div>
       </footer>
     </div>

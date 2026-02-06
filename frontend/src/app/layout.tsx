@@ -21,8 +21,24 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LeadPilot - B2B Lead Generation Platform",
-  description: "Automate prospecting, filtering, and personalized outreach for B2B sales teams",
+  title: "LeadPilot - Automated Lead Generation for Agencies",
+  description: "Find businesses with weak digital presence on Google Maps and Instagram. AI-powered scoring and personalized outreach for agencies that want to scale.",
+  keywords: ["lead generation", "B2B sales", "agency tools", "Google Maps scraper", "Instagram leads", "AI outreach"],
+  authors: [{ name: "Rishet Mehra", url: "https://twitter.com/rishetmehra" }],
+  openGraph: {
+    title: "LeadPilot - Automated Lead Generation for Agencies",
+    description: "Find businesses with weak digital presence on Google Maps and Instagram. Stop hunting, start closing.",
+    url: "https://leadpilot.vercel.app",
+    siteName: "LeadPilot",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LeadPilot - Automated Lead Generation for Agencies",
+    description: "Find businesses with weak digital presence on Google Maps and Instagram. AI-powered scoring and personalized outreach.",
+    creator: "@rishetmehra",
+  },
 };
 
 export default function RootLayout({
@@ -35,6 +51,8 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <div className="noise-overlay" />
         {children}
+        {/* Tally Popup Widget */}
+        <script async src="https://tally.so/widgets/embed.js"></script>
       </body>
     </html>
   );
