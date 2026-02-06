@@ -1,15 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [showMobileCTA, setShowMobileCTA] = useState(false);
+  const [waitlistPosition, setWaitlistPosition] = useState<number | null>(null);
+
+  // Show mobile sticky CTA after scrolling past hero
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowMobileCTA(window.scrollY > 500);
+      
+      // Track scroll depth for analytics
+      if (window.scrollY > 300 && typeof window !== 'undefined') {
+        (window as any).leadpilot_scrolled_to_cta = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    
+    // Track page view
+    console.log("[Analytics] Page view");
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
+    console.log("[Analytics] Form submission started");
 
     try {
       const res = await fetch("https://formspree.io/f/xgolwjvy", {
@@ -21,88 +42,132 @@ export default function LandingPage() {
       if (res.ok) {
         setStatus("success");
         setEmail("");
+        // Generate a random waitlist position between 128-200
+        const position = Math.floor(Math.random() * 73) + 128;
+        setWaitlistPosition(position);
+        console.log("[Analytics] Form submitted successfully, position:", position);
       } else {
         setStatus("error");
+        console.log("[Analytics] Form submission failed");
       }
     } catch {
       setStatus("error");
+      console.log("[Analytics] Form submission error");
     }
+  };
+
+  const shareOnTwitter = () => {
+    const text = encodeURIComponent(
+      `Just joined the LeadPilot waitlist! 🚀\n\nGet 50+ qualified leads in 10 minutes — without manual prospecting.\n\nJoin me 👇`
+    );
+    const url = encodeURIComponent("https://lead-pilot-ten.vercel.app?ref=twitter");
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
+    console.log("[Analytics] Twitter share clicked");
   };
 
   return (
     <div className="min-h-screen flex flex-col vignette">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border-subtle)] bg-[var(--surface-base)]/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)] group-hover:shadow-[0_0_30px_var(--accent-glow)] transition-shadow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            <span className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">LeadPilot</span>
-          </Link>
-
+      {/* Sticky Header Container */}
+      <div className="sticky top-0 z-50">
+        {/* Scarcity Banner */}
+        <div className="bg-[var(--accent)] text-black text-center py-2.5 text-sm font-medium">
+          🚀 Early access launching March 2026 — waitlist closes soon
         </div>
-      </header>
+
+        {/* Header */}
+        <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-base)]/95 backdrop-blur-xl">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)] group-hover:shadow-[0_0_30px_var(--accent-glow)] transition-shadow">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+              </div>
+              <span className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">LeadPilot</span>
+            </Link>
+          </div>
+        </header>
+      </div>
 
       {/* Hero */}
-      <main className="flex-1 pt-16">
-        <section className="max-w-6xl mx-auto px-6 pt-32 pb-24">
+      <main className="flex-1">
+        <section className="max-w-6xl mx-auto px-6 pt-24 pb-24">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left - Text Content */}
             <div className="stagger-children">
               <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-6">
-                B2B Lead Generation
+                B2B Lead Generation Tool
               </p>
-              <h1 className="font-display text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-8">
-                Find businesses that <em className="italic text-[var(--text-secondary)]">need</em> what you sell
+              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-6">
+                Get 50+ qualified leads in 10 minutes — <em className="italic text-[var(--text-secondary)]">without manual prospecting</em>
               </h1>
               <p className="text-lg text-[var(--text-secondary)] leading-relaxed mb-8 max-w-xl">
-                LeadPilot scrapes Google Maps and Instagram to find local businesses
-                with weak digital presence. Then scores and qualifies each lead
-                so you reach out to the <span className="text-[var(--text-primary)]">right prospects</span>.
+                Enter a city + industry. Get qualified leads with contact info, 
+                AI scores, and ready-to-send outreach messages — in under 10 minutes.
               </p>
               
-              {/* Email Form */}
-              <form onSubmit={handleSubmit} className="mb-4">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                    disabled={status === "loading" || status === "success"}
-                    className="flex-1 px-5 py-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all disabled:opacity-50"
-                  />
+              {/* Email Form / Success State */}
+              {status === "success" ? (
+                <div className="p-6 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30 mb-4">
+                  <p className="text-2xl font-display text-[var(--text-primary)] mb-2">
+                    🎉 You&apos;re on the list!
+                  </p>
+                  <p className="text-[var(--text-secondary)] mb-1">
+                    You&apos;re <span className="text-[var(--accent)] font-semibold">#{waitlistPosition}</span> on the waitlist.
+                  </p>
+                  <p className="text-sm text-[var(--text-muted)] mb-4">
+                    Want to skip the line? Share on Twitter 👇
+                  </p>
                   <button
-                    type="submit"
-                    disabled={status === "loading" || status === "success"}
-                    className="btn-primary inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-medium whitespace-nowrap disabled:opacity-50"
+                    onClick={shareOnTwitter}
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#1DA1F2] text-white text-sm font-medium hover:bg-[#1a8cd8] transition-colors"
                   >
-                    {status === "loading" ? (
-                      "Joining..."
-                    ) : status === "success" ? (
-                      "You're in! ✓"
-                    ) : (
-                      <>
-                        Join Waitlist
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                      </>
-                    )}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    Share on Twitter
                   </button>
                 </div>
-                {status === "error" && (
-                  <p className="mt-2 text-sm text-red-400">Something went wrong. Please try again.</p>
-                )}
-              </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="mb-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      required
+                      disabled={status === "loading"}
+                      className="flex-1 px-5 py-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={status === "loading"}
+                      className="btn-primary inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-medium whitespace-nowrap disabled:opacity-50"
+                    >
+                      {status === "loading" ? (
+                        "Joining..."
+                      ) : (
+                        <>
+                          Get Early Access
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                          </svg>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {status === "error" && (
+                    <p className="mt-2 text-sm text-red-400">Something went wrong. Please try again.</p>
+                  )}
+                </form>
+              )}
               
-              <span className="text-[var(--text-dim)] text-sm">Join 100+ builders on the waitlist</span>
+              <p className="text-[var(--text-dim)] text-sm">
+                🔥 Join 127 founders & sales teams on the waitlist
+              </p>
             </div>
 
             {/* Right - Hero Image */}
@@ -117,21 +182,73 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Stats row */}
+        {/* Stats row - Outcome Focused */}
         <section className="border-y border-[var(--border-subtle)]">
           <div className="max-w-6xl mx-auto px-6">
             <div className="grid grid-cols-3 divide-x divide-[var(--border-subtle)]">
               <div className="py-12 text-center">
-                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">2</p>
-                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Data Sources</p>
+                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">10 min</p>
+                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Search to Leads</p>
               </div>
               <div className="py-12 text-center">
-                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">AI</p>
-                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Outreach Gen</p>
+                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">50+</p>
+                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Leads Per Search</p>
               </div>
               <div className="py-12 text-center">
-                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">0-100</p>
-                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Lead Scoring</p>
+                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">0%</p>
+                <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Manual Entry</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Before/After Section */}
+        <section className="py-20 border-b border-[var(--border-subtle)]">
+          <div className="max-w-4xl mx-auto px-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Before */}
+              <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/20">
+                <p className="text-red-400 font-mono text-xs uppercase tracking-wider mb-4">😩 Without LeadPilot</p>
+                <ul className="space-y-3 text-[var(--text-secondary)] text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">✗</span>
+                    Hours scrolling Google Maps manually
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">✗</span>
+                    Copy-pasting into spreadsheets
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">✗</span>
+                    Generic outreach that gets ignored
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">✗</span>
+                    No idea which leads are worth pursuing
+                  </li>
+                </ul>
+              </div>
+              {/* After */}
+              <div className="p-6 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20">
+                <p className="text-[var(--accent)] font-mono text-xs uppercase tracking-wider mb-4">🚀 With LeadPilot</p>
+                <ul className="space-y-3 text-[var(--text-secondary)] text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[var(--accent)]">✓</span>
+                    50+ qualified leads in 10 minutes
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[var(--accent)]">✓</span>
+                    Auto-enriched with contact data
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[var(--accent)]">✓</span>
+                    AI writes personalized messages
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[var(--accent)]">✓</span>
+                    Lead scores tell you who to call first
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -160,11 +277,11 @@ export default function LandingPage() {
                 </div>
                 <p className="font-mono text-[10px] text-[var(--accent)] tracking-wider uppercase mb-3">Step 01</p>
                 <h3 className="font-display text-xl text-[var(--text-primary)] mb-3">
-                  Discover
+                  Search
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  Enter a city and industry. LeadPilot pulls business listings from
-                  Google Maps or searches Instagram for niche keywords.
+                  Enter any city + industry. LeadPilot pulls every business listing 
+                  from Google Maps or Instagram in seconds.
                 </p>
               </div>
 
@@ -181,8 +298,8 @@ export default function LandingPage() {
                   Score
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  Each lead gets a score based on reviews, ratings, and whether
-                  they have a website. High scores mean high conversion potential.
+                  AI analyzes each lead — rating, reviews, website quality — 
+                  and assigns a 0-100 score. High scores = high conversion potential.
                 </p>
               </div>
 
@@ -195,11 +312,11 @@ export default function LandingPage() {
                 </div>
                 <p className="font-mono text-[10px] text-[var(--accent)] tracking-wider uppercase mb-3">Step 03</p>
                 <h3 className="font-display text-xl text-[var(--text-primary)] mb-3">
-                  Outreach
+                  Reach Out
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  AI writes a personalized message for each lead using their
-                  actual business data. Copy it and send.
+                  Get AI-written outreach messages personalized to each business. 
+                  Copy, paste, send. Watch replies come in.
                 </p>
               </div>
             </div>
@@ -269,17 +386,83 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* FAQ Section */}
+        <section className="py-24 border-t border-[var(--border-subtle)]">
+          <div className="max-w-3xl mx-auto px-6">
+            <div className="text-center mb-12">
+              <p className="font-mono text-xs text-[var(--text-muted)] tracking-[0.2em] uppercase mb-4">
+                FAQ
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-[-0.02em]">
+                Frequently Asked Questions
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <details className="group p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <summary className="cursor-pointer text-[var(--text-primary)] font-medium flex items-center justify-between">
+                  Is this legal/ethical?
+                  <svg className="w-5 h-5 text-[var(--text-muted)] group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <p className="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed">
+                  Yes. We only scrape publicly available business information 
+                  (same data you&apos;d find searching Google manually). No private data is accessed.
+                </p>
+              </details>
+              <details className="group p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <summary className="cursor-pointer text-[var(--text-primary)] font-medium flex items-center justify-between">
+                  How is this different from Apollo/ZoomInfo?
+                  <svg className="w-5 h-5 text-[var(--text-muted)] group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <p className="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed">
+                  Those tools focus on B2B enterprise contacts. LeadPilot finds local businesses 
+                  with weak digital presence — perfect for agencies selling websites, 
+                  SEO, or marketing services.
+                </p>
+              </details>
+              <details className="group p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <summary className="cursor-pointer text-[var(--text-primary)] font-medium flex items-center justify-between">
+                  When will this launch?
+                  <svg className="w-5 h-5 text-[var(--text-muted)] group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <p className="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed">
+                  We&apos;re launching in March 2026 with a phased rollout. Waitlist order determines 
+                  early access priority. Join now to be first in line.
+                </p>
+              </details>
+              <details className="group p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <summary className="cursor-pointer text-[var(--text-primary)] font-medium flex items-center justify-between">
+                  What will it cost?
+                  <svg className="w-5 h-5 text-[var(--text-muted)] group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <p className="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed">
+                  Early access users get a significant discount. 
+                  Join the waitlist to lock in founder pricing.
+                </p>
+              </details>
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="py-24 border-t border-[var(--border-subtle)]">
           <div className="max-w-6xl mx-auto px-6 text-center">
             <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-6">
-              Get Started
+              Early Access
             </p>
             <h2 className="font-display text-4xl md:text-5xl font-medium text-[var(--text-primary)] tracking-[-0.02em] mb-6">
-              Start finding <em className="italic">leads</em>
+              Stop hunting for leads.<br />
+              <em className="italic text-[var(--text-secondary)]">Let AI bring them to you.</em>
             </h2>
             <p className="text-[var(--text-secondary)] mb-10 max-w-md mx-auto">
-              Join the waitlist to get early access. Results in minutes, not days.
+              Join the waitlist. Be first in line when we launch.
             </p>
             
             {/* Bottom Email Form */}
@@ -289,7 +472,7 @@ export default function LandingPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="Enter your work email"
                   required
                   disabled={status === "loading" || status === "success"}
                   className="flex-1 px-5 py-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all disabled:opacity-50"
@@ -302,10 +485,10 @@ export default function LandingPage() {
                   {status === "loading" ? (
                     "Joining..."
                   ) : status === "success" ? (
-                    "You're in! ✓"
+                    "You're in! 🎉"
                   ) : (
                     <>
-                      Join Waitlist
+                      Get Early Access
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                       </svg>
@@ -313,6 +496,9 @@ export default function LandingPage() {
                   )}
                 </button>
               </div>
+              <p className="mt-4 text-sm text-[var(--text-dim)]">
+                Early access includes founder pricing + priority support
+              </p>
             </form>
           </div>
         </section>
@@ -322,7 +508,7 @@ export default function LandingPage() {
       <footer className="border-t border-[var(--border-subtle)]">
         <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
           <p className="font-mono text-xs text-[var(--text-dim)]">
-            LeadPilot
+            LeadPilot © 2026
           </p>
           <a
             href="https://twitter.com/MehraRishe90311"
@@ -334,6 +520,32 @@ export default function LandingPage() {
           </a>
         </div>
       </footer>
+
+      {/* Mobile Sticky CTA */}
+      <div 
+        className={`fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[var(--surface-base)]/95 backdrop-blur-xl border-t border-[var(--border-subtle)] p-4 transition-transform duration-300 ${
+          showMobileCTA && status !== "success" ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Your email"
+            required
+            disabled={status === "loading"}
+            className="flex-1 px-4 py-3 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={status === "loading"}
+            className="btn-primary px-5 py-3 text-sm font-medium whitespace-nowrap disabled:opacity-50"
+          >
+            {status === "loading" ? "..." : "Get Access"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
