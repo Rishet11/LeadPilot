@@ -71,7 +71,7 @@ export default function LandingPage() {
       <div className="sticky top-0 z-50">
         {/* Scarcity Banner */}
         <div className="bg-[var(--accent)] text-black text-center py-2.5 text-sm font-medium">
-          🚀 Early access launching March 2026 — waitlist closes soon
+          🚀 Launching soon — limited early access spots available
         </div>
 
         {/* Header */}
@@ -165,7 +165,7 @@ export default function LandingPage() {
               )}
               
               <p className="text-[var(--text-dim)] text-sm">
-                🔥 127 people already on the waitlist
+                🔥 200+ agencies and freelancers on the waitlist
               </p>
             </div>
 
@@ -253,6 +253,76 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* What You Get - Lead Preview */}
+        <section className="py-20 border-b border-[var(--border-subtle)]">
+          <div className="max-w-4xl mx-auto px-6">
+            <div className="text-center mb-12">
+              <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-4">
+                What You Get
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-[-0.02em]">
+                Here&apos;s what a lead looks like
+              </h2>
+            </div>
+
+            {/* Mock Lead Card */}
+            <div className="max-w-lg mx-auto">
+              <div className="p-6 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-[var(--text-primary)]">Austin Plumbing Co.</h3>
+                    <p className="text-sm text-[var(--text-muted)]">Plumbers in Austin, TX</p>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/30">
+                    <span className="text-[var(--accent)] font-bold">87</span>
+                    <span className="text-xs text-[var(--text-muted)]">/ 100</span>
+                  </div>
+                </div>
+
+                {/* Score Breakdown */}
+                <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400">✗</span>
+                    <span className="text-[var(--text-secondary)]">No SSL certificate</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400">✗</span>
+                    <span className="text-[var(--text-secondary)]">Slow mobile (4.2s)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--accent)]">✓</span>
+                    <span className="text-[var(--text-secondary)]">3.8★ on Google (42 reviews)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400">✗</span>
+                    <span className="text-[var(--text-secondary)]">No social presence</span>
+                  </div>
+                </div>
+
+                {/* Contact */}
+                <div className="p-3 rounded-lg bg-[var(--surface-base)] mb-4 text-sm">
+                  <p className="text-[var(--text-muted)]">📧 mike@austinplumbing.com</p>
+                  <p className="text-[var(--text-muted)]">📱 (512) 555-0123</p>
+                </div>
+
+                {/* AI Message */}
+                <div className="p-3 rounded-lg border border-dashed border-[var(--border-subtle)]">
+                  <p className="text-xs text-[var(--accent)] font-mono uppercase tracking-wider mb-2">AI-Generated Outreach</p>
+                  <p className="text-sm text-[var(--text-secondary)] italic">
+                    &quot;Hi Mike, I noticed Austin Plumbing&apos;s site takes 4+ seconds to load on mobile. 
+                    With 70% of customers searching on phones, you might be losing leads. 
+                    Would a quick audit be helpful?&quot;
+                  </p>
+                </div>
+              </div>
+              <p className="text-center text-xs text-[var(--text-muted)] mt-4">
+                * This is a sample lead. Actual results vary by search.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Features - Bento grid */}
         <section className="py-24">
           <div className="max-w-6xl mx-auto px-6">
@@ -297,8 +367,8 @@ export default function LandingPage() {
                   Score
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  AI analyzes each lead — rating, reviews, website quality — 
-                  and assigns a 0-100 score. High scores = high conversion potential.
+                  AI checks 15+ signals: website speed, mobile-friendliness, SSL, social presence, 
+                  reviews, and more. Each lead gets a 0-100 score — high scores = likely to convert.
                 </p>
               </div>
 
@@ -411,6 +481,19 @@ export default function LandingPage() {
               </details>
               <details className="group p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
                 <summary className="cursor-pointer text-[var(--text-primary)] font-medium flex items-center justify-between">
+                  How does AI scoring work?
+                  <svg className="w-5 h-5 text-[var(--text-muted)] group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <p className="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed">
+                  Our AI analyzes 15+ signals including: website speed, mobile-friendliness, SSL certificate, 
+                  social media presence, Google review rating + count, and more. Each lead gets a score from 0-100 — 
+                  the higher the score, the more likely they need your services and are ready to buy.
+                </p>
+              </details>
+              <details className="group p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <summary className="cursor-pointer text-[var(--text-primary)] font-medium flex items-center justify-between">
                   How is this different from Apollo/ZoomInfo?
                   <svg className="w-5 h-5 text-[var(--text-muted)] group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -430,7 +513,7 @@ export default function LandingPage() {
                   </svg>
                 </summary>
                 <p className="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed">
-                  We&apos;re launching in March 2026 with a phased rollout. Waitlist order determines 
+                  We&apos;re launching soon with a phased rollout. Waitlist order determines 
                   early access priority. Join now to be first in line.
                 </p>
               </details>
