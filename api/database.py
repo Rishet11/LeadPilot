@@ -6,8 +6,7 @@ Uses SQLite for persistent storage of leads, jobs, and settings.
 import os
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import enum
 
 from .schemas import LeadStatus
@@ -19,7 +18,11 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 # SQLAlchemy setup
 engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
+
+class Base(DeclarativeBase):
+    """SQLAlchemy 2.0 declarative base class."""
+    pass
 
 
 class LeadSource(str, enum.Enum):

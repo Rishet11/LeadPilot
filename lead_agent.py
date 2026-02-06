@@ -26,25 +26,42 @@ RETRY_DELAY = 3
 def get_agent(temperature: float = 0.9):
     """Initialize Gemini agent with generation config."""
     try:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types
     except ImportError:
-        raise ImportError("Please install google-generativeai: pip install google-generativeai")
+        raise ImportError("Please install google-genai: pip install google-genai")
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-    genai.configure(api_key=api_key)
-
-    generation_config = genai.GenerationConfig(
-        temperature=temperature,
-        response_mime_type="application/json",
-    )
-
-    return genai.GenerativeModel(
-        'gemini-2.0-flash',
+    client = genai.Client(api_key=api_key)
+    
+    # Return a wrapper that matches the old API pattern
+    class GeminiAgent:
+        def __init__(self, client, model_name, system_instruction, temperature):
+            self.client = client
+            self.model_name = model_name
+            self.system_instruction = system_instruction
+            self.temperature = temperature
+        
+        def generate_content(self, prompt: str):
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.system_instruction,
+                    temperature=self.temperature,
+                    response_mime_type="application/json",
+                )
+            )
+            return response
+    
+    return GeminiAgent(
+        client=client,
+        model_name='gemini-2.0-flash',
         system_instruction=DEFAULT_AI_SYSTEM_PROMPT,
-        generation_config=generation_config,
+        temperature=temperature,
     )
 
 

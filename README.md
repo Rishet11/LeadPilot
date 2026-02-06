@@ -94,7 +94,21 @@ cp .env.example .env.local
 # Set NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
+
 ### Run Development Server
+
+**Option 1: Docker Compose (Recommended)**
+```bash
+# One-command startup
+make docker-up
+
+# Or manually
+docker-compose up --build
+```
+
+Access the dashboard at `http://localhost:3000`
+
+**Option 2: Manual (Two terminals)**
 
 **Terminal 1 - Backend:**
 ```bash
@@ -108,6 +122,29 @@ npm run dev
 ```
 
 Access the dashboard at `http://localhost:3000`
+
+---
+
+## Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+make test
+
+# Run with coverage
+make test-cov
+
+# Run specific test file
+pytest tests/test_api.py -v
+```
+
+**Code quality:**
+```bash
+make lint    # Check code style
+make format  # Auto-format code
+```
 
 ---
 
@@ -137,6 +174,13 @@ Access the dashboard at `http://localhost:3000`
 - **API Key Authentication** - All backend endpoints require `X-API-Key` header
 - **Rate Limiting** - Built-in throttling to prevent abuse
 - **CORS Protection** - Strict origin policies in production
+
+---
+
+## Documentation
+
+- **[API Reference](docs/API.md)** - Complete API endpoint documentation
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
 
 ---
 
