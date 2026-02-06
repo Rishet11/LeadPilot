@@ -28,16 +28,25 @@ export const metadata: Metadata = {
   openGraph: {
     title: "LeadPilot - Automated Lead Generation for Agencies",
     description: "Find businesses with weak digital presence on Google Maps and Instagram. Stop hunting, start closing.",
-    url: "https://leadpilot.vercel.app",
+    url: "https://lead-pilot-ten.vercel.app",
     siteName: "LeadPilot",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "https://lead-pilot-ten.vercel.app/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "LeadPilot - Find businesses that need what you sell",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "LeadPilot - Automated Lead Generation for Agencies",
     description: "Find businesses with weak digital presence on Google Maps and Instagram. AI-powered scoring and personalized outreach.",
-    creator: "@rishetmehra",
+    creator: "@MehraRishe90311",
+    images: ["https://lead-pilot-ten.vercel.app/og-image.png"],
   },
 };
 
