@@ -50,7 +50,7 @@ def run_google_maps_scraper(city: str, category: str, limit: int = 100) -> dict:
         "searchStringsArray": [f"{category} in {city}"],
         "maxCrawledPlacesPerSearch": limit,
         "language": "en",
-        "includeWebResults": False,
+        "includeWebResults": True,
         "deeperCityScrape": False
     }
     

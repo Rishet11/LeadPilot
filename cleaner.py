@@ -39,6 +39,21 @@ def clean_dataframe(data: list) -> pd.DataFrame:
     }
     df = df.rename(columns=column_mapping)
     
+    # Handle 'emails' list if present (common in Apify results)
+    if 'emails' in df.columns:
+        # If 'email' column exists, fill missing with first item from 'emails'
+        if 'email' in df.columns:
+            df['email'] = df.apply(
+                lambda row: row['email'] if row['email'] else (
+                    row['emails'][0] if isinstance(row['emails'], list) and row['emails'] else ''
+                ), axis=1
+            )
+        else:
+            # Create 'email' from 'emails'
+            df['email'] = df['emails'].apply(
+                lambda x: x[0] if isinstance(x, list) and x else ''
+            )
+
     # Select and order columns we care about
     required_columns = [
         'name', 'category', 'address', 'phone', 'website', 
