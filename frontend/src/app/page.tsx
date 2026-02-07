@@ -106,8 +106,13 @@ export default function LandingPage() {
               <p className="text-2xl text-[var(--text-secondary)] mb-6">
                 No manual prospecting. No guesswork.
               </p>
-              <p className="text-lg text-[var(--text-muted)] leading-relaxed mb-8 max-w-xl">
+              <p className="text-lg text-[var(--text-muted)] leading-relaxed mb-6 max-w-xl">
                 Enter city + industry → Get scored leads + AI-written outreach messages instantly.
+              </p>
+              
+              {/* Perfect for */}
+              <p className="text-sm text-[var(--text-muted)] mb-8">
+                Perfect for <span className="text-[var(--accent)]">freelancers</span>, <span className="text-[var(--accent)]">agencies</span>, <span className="text-[var(--accent)]">consultants</span> & <span className="text-[var(--accent)]">sales teams</span>
               </p>
               
               {/* Email Form / Success State */}
