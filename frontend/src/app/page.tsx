@@ -355,16 +355,16 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="text"
-                  placeholder="City (e.g., Austin)"
-                  value={demoCity}
-                  onChange={(e) => setDemoCity(e.target.value)}
+                  placeholder="Industry (e.g., Plumbers)"
+                  value={demoIndustry}
+                  onChange={(e) => setDemoIndustry(e.target.value)}
                   className="flex-1 px-4 py-3 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-all"
                 />
                 <input
                   type="text"
-                  placeholder="Industry (e.g., Plumbers)"
-                  value={demoIndustry}
-                  onChange={(e) => setDemoIndustry(e.target.value)}
+                  placeholder="City (e.g., Austin)"
+                  value={demoCity}
+                  onChange={(e) => setDemoCity(e.target.value)}
                   className="flex-1 px-4 py-3 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-all"
                 />
                 <button
@@ -514,6 +514,14 @@ export default function LandingPage() {
                 </div>
               </div>
             )}
+            
+            {/* Disclaimer */}
+            {demoStatus === "results" && (
+              <p className="text-center text-xs text-[var(--text-muted)] mt-4">
+                * Demo preview with sample data. Real searches return actual business contact info.
+              </p>
+            )}
+            
             
             {/* Empty State */}
             {demoStatus === "idle" && (
