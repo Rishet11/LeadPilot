@@ -150,7 +150,7 @@ export default function LandingPage() {
                         "Joining..."
                       ) : (
                         <>
-                          Get Early Access
+                          Get Early Access Free
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M5 12h14M12 5l7 7-7 7" />
                           </svg>
@@ -158,6 +158,7 @@ export default function LandingPage() {
                       )}
                     </button>
                   </div>
+                  <p className="mt-2 text-xs text-[var(--text-muted)]">No credit card required</p>
                   {status === "error" && (
                     <p className="mt-2 text-sm text-red-400">Something went wrong. Please try again.</p>
                   )}
