@@ -297,39 +297,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Pain Section */}
-        <section className="py-20 bg-red-500/5 border-b border-[var(--border-subtle)]">
-          <div className="max-w-3xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-[var(--text-primary)] mb-8 text-center">
-              You know this feeling...
-            </h2>
-            <div className="space-y-6 text-[var(--text-secondary)] leading-relaxed">
-              <p className="text-lg">
-                It's Sunday afternoon. You need <strong className="text-[var(--text-primary)]">20 qualified leads</strong> by Monday.
-              </p>
-              <p className="text-lg">
-                You open Google Maps. Search "plumbers near Austin." Start scrolling...
-              </p>
-              <p className="text-lg">
-                Copy business name. Open new tab. Search for their email. Find generic <span className="font-mono text-sm">info@...</span>
-              </p>
-              <p className="text-xl font-semibold text-[var(--text-primary)] pt-4">
-                3 hours later: 12 names in a spreadsheet.  
-                <br/>
-                <span className="text-red-400">Half don't even have emails.</span>
-              </p>
-              <div className="pt-8 text-center">
-                <p className="text-2xl font-bold text-[var(--accent)] mb-2">
-                  There's a better way →
-                </p>
-                <p className="text-sm text-[var(--text-muted)]">
-                  Try the demo below
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Interactive Demo Section */}
         <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--surface-base)]">
           <div className="max-w-4xl mx-auto px-6">
@@ -764,7 +731,7 @@ export default function LandingPage() {
                   <tr className="border-b-2 border-[var(--border-subtle)]">
                     <th className="p-4 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider"></th>
                     <th className="p-4 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider">Manual</th>
-                    <th className="p-4 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider">VA ($2K/mo)</th>
+                    <th className="p-4 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider">Outsourced ($2K/mo)</th>
                     <th className="p-4 text-left text-sm font-medium text-[var(--accent)] uppercase tracking-wider bg-[var(--accent)]/5">
                       LeadPilot
                     </th>
