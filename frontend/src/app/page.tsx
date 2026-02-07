@@ -212,11 +212,6 @@ export default function LandingPage() {
                   <p className="text-2xl font-display text-[var(--text-primary)] mb-2">
                     🎉 You&apos;re on the list!
                   </p>
-                  {waitlistPosition && (
-                    <p className="text-lg font-medium text-[var(--accent)] mb-2">
-                      You're #{waitlistPosition} in line!
-                    </p>
-                  )}
                   <p className="text-[var(--text-secondary)] mb-4">
                     We&apos;ll email you when early access opens. Share to spread the word 👇
                   </p>
