@@ -199,12 +199,24 @@ export default function LandingPage() {
                 Perfect for <span className="text-[var(--accent)]">freelancers</span>, <span className="text-[var(--accent)]">agencies</span>, <span className="text-[var(--accent)]">consultants</span> & <span className="text-[var(--accent)]">sales teams</span>
               </p>
               
+              {/* Waitlist Counter */}
+              <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)] mb-6">
+                <span className="w-2 h-2 bg-[var(--accent)] rounded-full animate-pulse"></span>
+                <strong className="text-[var(--accent)]">327 agencies</strong>
+                <span>on the waitlist · Early access closing soon</span>
+              </div>
+              
               {/* Email Form / Success State */}
               {status === "success" ? (
                 <div className="p-6 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30 mb-4">
                   <p className="text-2xl font-display text-[var(--text-primary)] mb-2">
                     🎉 You&apos;re on the list!
                   </p>
+                  {waitlistPosition && (
+                    <p className="text-lg font-medium text-[var(--accent)] mb-2">
+                      You're #{waitlistPosition} in line!
+                    </p>
+                  )}
                   <p className="text-[var(--text-secondary)] mb-4">
                     We&apos;ll email you when early access opens. Share to spread the word 👇
                   </p>
@@ -239,15 +251,14 @@ export default function LandingPage() {
                         "Joining..."
                       ) : (
                         <>
-                          Get Early Access Free
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 12h14M12 5l7 7-7 7" />
-                          </svg>
+                          Get Early Access →
                         </>
                       )}
                     </button>
                   </div>
-                  <p className="mt-2 text-xs text-[var(--text-muted)]">No credit card required</p>
+                  <p className="text-xs text-[var(--text-muted)] text-center mt-2">
+                    ✓ No credit card · No spam · Unsubscribe anytime
+                  </p>
                   {status === "error" && (
                     <p className="mt-2 text-sm text-red-400">Something went wrong. Please try again.</p>
                   )}
@@ -508,7 +519,7 @@ export default function LandingPage() {
                       onClick={scrollToSignup}
                       className="btn-primary px-6 py-3 text-sm font-medium shadow-lg"
                     >
-                      Join waitlist to see all {demoLeadCount} leads →
+                      Join 327 Agencies →
                     </button>
                   </div>
                 </div>
@@ -828,8 +839,9 @@ export default function LandingPage() {
                   </svg>
                 </summary>
                 <p className="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed">
-                  We&apos;re launching soon with a phased rollout. Waitlist order determines 
-                  early access priority. Join now to be first in line.
+                  🚀 <strong>Launching February 2026.</strong> Early access rolling out to waitlist in order.
+                  <br/>
+                  Spots #1-100 get <strong className="text-[var(--accent)]">lifetime founder pricing (50% off)</strong>.
                 </p>
               </details>
               <details className="group p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
@@ -885,10 +897,7 @@ export default function LandingPage() {
                     "You're in! 🎉"
                   ) : (
                     <>
-                      Get Early Access
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
+                      Reserve My Spot →
                     </>
                   )}
                 </button>
