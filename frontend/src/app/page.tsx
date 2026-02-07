@@ -297,6 +297,39 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Pain Section */}
+        <section className="py-20 bg-red-500/5 border-b border-[var(--border-subtle)]">
+          <div className="max-w-3xl mx-auto px-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-[var(--text-primary)] mb-8 text-center">
+              You know this feeling...
+            </h2>
+            <div className="space-y-6 text-[var(--text-secondary)] leading-relaxed">
+              <p className="text-lg">
+                It's Sunday afternoon. You need <strong className="text-[var(--text-primary)]">20 qualified leads</strong> by Monday.
+              </p>
+              <p className="text-lg">
+                You open Google Maps. Search "plumbers near Austin." Start scrolling...
+              </p>
+              <p className="text-lg">
+                Copy business name. Open new tab. Search for their email. Find generic <span className="font-mono text-sm">info@...</span>
+              </p>
+              <p className="text-xl font-semibold text-[var(--text-primary)] pt-4">
+                3 hours later: 12 names in a spreadsheet.  
+                <br/>
+                <span className="text-red-400">Half don't even have emails.</span>
+              </p>
+              <div className="pt-8 text-center">
+                <p className="text-2xl font-bold text-[var(--accent)] mb-2">
+                  There's a better way →
+                </p>
+                <p className="text-sm text-[var(--text-muted)]">
+                  Try the demo below
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Interactive Demo Section */}
         <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--surface-base)]">
           <div className="max-w-4xl mx-auto px-6">
@@ -709,6 +742,79 @@ export default function LandingPage() {
                   Copy, paste, send. Watch replies come in.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Comparison Table */}
+        <section className="py-20 border-t border-[var(--border-subtle)]">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="mb-12 text-center">
+              <p className="font-mono text-xs text-[var(--text-muted)] tracking-[0.2em] uppercase mb-4">
+                Compare
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-[-0.02em]">
+                LeadPilot vs. <em className="italic text-[var(--text-secondary)]">The Old Way</em>
+              </h2>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-[var(--border-subtle)]">
+                    <th className="p-4 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider"></th>
+                    <th className="p-4 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider">Manual</th>
+                    <th className="p-4 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wider">VA ($2K/mo)</th>
+                    <th className="p-4 text-left text-sm font-medium text-[var(--accent)] uppercase tracking-wider bg-[var(--accent)]/5">
+                      LeadPilot
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-subtle)]">
+                  <tr>
+                    <td className="p-4 font-medium text-[var(--text-primary)]">Time to 50 leads</td>
+                    <td className="p-4 text-[var(--text-muted)]">10+ hours</td>
+                    <td className="p-4 text-[var(--text-muted)]">2-3 hours</td>
+                    <td className="p-4 text-[var(--accent)] font-semibold bg-[var(--accent)]/5">2 minutes</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-medium text-[var(--text-primary)]">Cost per month</td>
+                    <td className="p-4 text-[var(--text-muted)]">$0 (your time)</td>
+                    <td className="p-4 text-[var(--text-muted)]">$2,000+</td>
+                    <td className="p-4 text-[var(--accent)] font-semibold bg-[var(--accent)]/5">Coming soon</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-medium text-[var(--text-primary)]">Lead quality scoring</td>
+                    <td className="p-4 text-[var(--text-muted)]">❌ Manual guesswork</td>
+                    <td className="p-4 text-[var(--text-muted)]">❌ Inconsistent</td>
+                    <td className="p-4 text-[var(--accent)] font-semibold bg-[var(--accent)]/5">✅ AI-powered</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-medium text-[var(--text-primary)]">Contact enrichment</td>
+                    <td className="p-4 text-[var(--text-muted)]">❌ Manual search</td>
+                    <td className="p-4 text-[var(--text-muted)]">✅ Manual</td>
+                    <td className="p-4 text-[var(--accent)] font-semibold bg-[var(--accent)]/5">✅ Automatic</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-medium text-[var(--text-primary)]">Personalized outreach</td>
+                    <td className="p-4 text-[var(--text-muted)]">❌ Generic templates</td>
+                    <td className="p-4 text-[var(--text-muted)]">✅ Time-consuming</td>
+                    <td className="p-4 text-[var(--accent)] font-semibold bg-[var(--accent)]/5">✅ AI-generated</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-medium text-[var(--text-primary)]">Local businesses</td>
+                    <td className="p-4 text-[var(--text-muted)]">✅ Yes</td>
+                    <td className="p-4 text-[var(--text-muted)]">✅ Yes</td>
+                    <td className="p-4 text-[var(--accent)] font-semibold bg-[var(--accent)]/5">✅ Optimized</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-[var(--text-muted)]">
+                💡 <strong className="text-[var(--text-primary)]">Pro tip:</strong> Use LeadPilot to find leads, then feed them to your AI SDR tools
+              </p>
             </div>
           </div>
         </section>
