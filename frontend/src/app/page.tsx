@@ -67,7 +67,7 @@ export default function LandingPage() {
 
   const shareOnTwitter = () => {
     const text = encodeURIComponent(
-      `Just joined the LeadPilot waitlist! 🚀\n\nGet 50+ qualified leads in 10 minutes — without manual prospecting.\n\nJoin me 👇`
+      `Just joined the LeadPilot waitlist! 🚀\n\nGet 50+ qualified leads in 2 minutes — without manual prospecting.\n\nJoin me 👇`
     );
     const url = encodeURIComponent("https://lead-pilot-ten.vercel.app?ref=twitter");
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
@@ -185,7 +185,7 @@ export default function LandingPage() {
                 Find Clients Faster
               </p>
               <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-medium text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1] mb-4">
-                Get 50+ qualified leads in 10 minutes
+                Get 50+ qualified leads in 2 minutes
               </h1>
               <p className="text-2xl text-[var(--text-secondary)] mb-6">
                 No manual prospecting. No guesswork.
@@ -276,7 +276,7 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto px-6">
             <div className="grid grid-cols-3 divide-x divide-[var(--border-subtle)]">
               <div className="py-12 text-center">
-                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">10 min</p>
+                <p className="font-display text-4xl text-[var(--text-primary)] mb-2">2 min</p>
                 <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Search to Leads</p>
               </div>
               <div className="py-12 text-center">
@@ -610,7 +610,7 @@ export default function LandingPage() {
                 <ul className="space-y-3 text-[var(--text-secondary)] text-sm">
                   <li className="flex items-start gap-2">
                     <span className="text-[var(--accent)]">✓</span>
-                    50+ qualified leads in 10 minutes
+                    50+ qualified leads in 2 minutes
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[var(--accent)]">✓</span>
