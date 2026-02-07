@@ -8,6 +8,15 @@ export default function LandingPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [showMobileCTA, setShowMobileCTA] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState<number | null>(null);
+  
+  // Demo state
+  const [demoCity, setDemoCity] = useState("");
+  const [demoIndustry, setDemoIndustry] = useState("");
+  const [demoStatus, setDemoStatus] = useState<"idle" | "loading" | "results">("idle");
+  const [demoLeadCount, setDemoLeadCount] = useState(0);
+  const [demoLeads, setDemoLeads] = useState<any[]>([]);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [activeTab, setActiveTab] = useState<"local" | "saas" | "ecommerce" | "b2b">("local");
 
   // Show mobile sticky CTA after scrolling past hero
   useEffect(() => {
@@ -63,6 +72,81 @@ export default function LandingPage() {
     const url = encodeURIComponent("https://lead-pilot-ten.vercel.app?ref=twitter");
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
     console.log("[Analytics] Twitter share clicked");
+  };
+  
+  const generateMockLeads = (city: string, industry: string) => {
+    // Generate realistic business names
+    const prefixes = ["Sunrise", "Metro", "Elite", "Premier", "City", "Professional", "Express", "Quality"];
+    const suffixes = ["Solutions", "Services", "Pros", "Experts", "Care", "Co.", "Group", "Team"];
+    const streets = ["Main St", "Oak Ave", "Elm St", "Cedar Rd", "Maple Dr", "Park Blvd", "1st Ave", "Broadway"];
+    const firstNames = ["Mike", "Sarah", "John", "Lisa", "David", "Maria", "Tom", "Emily"];
+    
+    const leads = [];
+    for (let i = 0; i < 3; i++) {
+      const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+      const street = streets[Math.floor(Math.random() * streets.length)];
+      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+      const score = Math.floor(Math.random() * 30) + 70; // 70-100
+      const reviews = Math.floor(Math.random() * 150) + 10;
+      const rating = (Math.random() * 1.5 + 3.5).toFixed(1); // 3.5-5.0
+      const hasWebsite = Math.random() > 0.3;
+      const hasSocial = Math.random() > 0.5;
+      
+      // Generate realistic AI outreach message
+      let aiMessage = "";
+      if (!hasWebsite) {
+        aiMessage = `Hi ${firstName}, I noticed ${prefix} ${industry} has great reviews but no website. With 70% of local searches happening on mobile, you could be missing leads. Would a quick site audit be helpful?`;
+      } else if (!hasSocial) {
+        aiMessage = `Hi ${firstName}, saw ${prefix} ${industry} has a solid ${rating}★ rating. I help businesses like yours get more visibility through social media. Worth a quick chat?`;
+      } else {
+        aiMessage = `Hi ${firstName}, ${prefix} ${industry} looks well-established with ${reviews} reviews. I specialize in helping top ${industry.toLowerCase()} businesses scale their online presence. Open to discussing growth strategies?`;
+      }
+      
+      const businessName = `${prefix} ${industry} ${suffix}`.replace(/s /g, ' '); // Remove plural 's'
+      const domain = businessName.toLowerCase().replace(/[\s&]/g, '');
+      
+      leads.push({
+        name: businessName,
+        industry,
+        city,
+        score,
+        reviews,
+        rating: parseFloat(rating),
+        address: `${Math.floor(Math.random() * 9000) + 1000} ${street}`,
+        hasWebsite,
+        hasSocial,
+        email: `${firstName.toLowerCase()}@${domain.substring(0, 15)}***.com`,
+        phone: `(${Math.floor(Math.random() * 900) + 100}) ${Math.floor(Math.random() * 900) + 100}-****`,
+        aiMessage,
+        firstName
+      });
+    }
+    return leads;
+  };
+  
+  const handleDemoSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!demoCity.trim() || !demoIndustry.trim()) return;
+    
+    setDemoStatus("loading");
+    setLoadingStep(0);
+    
+    // Progressive loading steps
+    setTimeout(() => setLoadingStep(1), 300);
+    setTimeout(() => setLoadingStep(2), 800);
+    setTimeout(() => setLoadingStep(3), 1400);
+    setTimeout(() => {
+      const leads = generateMockLeads(demoCity, demoIndustry);
+      setDemoLeads(leads);
+      setDemoLeadCount(Math.floor(Math.random() * 30) + 35); // 35-65 leads
+      setLoadingStep(4);
+      setDemoStatus("results");
+    }, 2200);
+  };
+  
+  const scrollToSignup = () => {
+    document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -135,7 +219,7 @@ export default function LandingPage() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="mb-4">
+                <form id="signup-form" onSubmit={handleSubmit} className="mb-4">
                   <div className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="email"
@@ -204,6 +288,293 @@ export default function LandingPage() {
                 <p className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Manual Entry</p>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Interactive Demo Section */}
+        <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--surface-base)]">
+          <div className="max-w-4xl mx-auto px-6">
+            <div className="text-center mb-10">
+              <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-4">
+                Try It Now
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl font-medium text-[var(--text-primary)] tracking-[-0.02em] mb-4">
+                See it in action
+              </h2>
+              <p className="text-[var(--text-secondary)] max-w-xl mx-auto">
+                Enter any city and industry to preview what LeadPilot finds.
+              </p>
+            </div>
+            
+            {/* Tabs */}
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              <button
+                onClick={() => setActiveTab("local")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === "local"
+                    ? "bg-[var(--accent)] text-black"
+                    : "bg-[var(--surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]"
+                }`}
+              >
+                🏪 Local Services
+              </button>
+              <button
+                onClick={() => setActiveTab("saas")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === "saas"
+                    ? "bg-[var(--accent)] text-black"
+                    : "bg-[var(--surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]"
+                }`}
+              >
+                💻 SaaS/Tech
+              </button>
+              <button
+                onClick={() => setActiveTab("ecommerce")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === "ecommerce"
+                    ? "bg-[var(--accent)] text-black"
+                    : "bg-[var(--surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]"
+                }`}
+              >
+                🛍️ E-commerce
+              </button>
+              <button
+                onClick={() => setActiveTab("b2b")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === "b2b"
+                    ? "bg-[var(--accent)] text-black"
+                    : "bg-[var(--surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]"
+                }`}
+              >
+                💼 B2B Services
+              </button>
+            </div>
+            
+            {/* Demo Search Form */}
+            <form onSubmit={handleDemoSearch} className="max-w-xl mx-auto mb-8">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder="City (e.g., Austin)"
+                  value={demoCity}
+                  onChange={(e) => setDemoCity(e.target.value)}
+                  className="flex-1 px-4 py-3 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-all"
+                />
+                <input
+                  type="text"
+                  placeholder="Industry (e.g., Plumbers)"
+                  value={demoIndustry}
+                  onChange={(e) => setDemoIndustry(e.target.value)}
+                  className="flex-1 px-4 py-3 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={demoStatus === "loading"}
+                  className="btn-primary px-6 py-3 text-sm font-medium whitespace-nowrap disabled:opacity-50"
+                >
+                  {demoStatus === "loading" ? "Searching..." : "Search"}
+                </button>
+              </div>
+            </form>
+            
+            {/* Loading State */}
+            {demoStatus === "loading" && (
+              <div className="text-center py-12">
+                <div className="inline-block space-y-3">
+                  <div className={`flex items-center gap-3 px-6 py-3 rounded-xl ${loadingStep >= 1 ? 'bg-[var(--accent)]/10 border border-[var(--accent)]/30' : 'bg-[var(--surface-elevated)] border border-[var(--border-subtle)]'}`}>
+                    {loadingStep >= 1 ? (
+                      <span className="text-[var(--accent)]">✓</span>
+                    ) : (
+                      <svg className="animate-spin h-4 w-4 text-[var(--accent)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                    <span className="text-[var(--text-secondary)] text-sm">Scanning Google Maps...</span>
+                  </div>
+                  <div className={`flex items-center gap-3 px-6 py-3 rounded-xl ${loadingStep >= 2 ? 'bg-[var(--accent)]/10 border border-[var(--accent)]/30' : 'bg-[var(--surface-elevated)] border border-[var(--border-subtle)] opacity-50'}`}>
+                    {loadingStep >= 2 ? (
+                      <span className="text-[var(--accent)]">✓</span>
+                    ) : loadingStep >= 1 ? (
+                      <svg className="animate-spin h-4 w-4 text-[var(--accent)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <span className="text-[var(--text-muted)]">○</span>
+                    )}
+                    <span className="text-[var(--text-secondary)] text-sm">Scoring {demoLeadCount || '50+'} businesses...</span>
+                  </div>
+                  <div className={`flex items-center gap-3 px-6 py-3 rounded-xl ${loadingStep >= 3 ? 'bg-[var(--accent)]/10 border border-[var(--accent)]/30' : 'bg-[var(--surface-elevated)] border border-[var(--border-subtle)] opacity-50'}`}>
+                    {loadingStep >= 3 ? (
+                      <span className="text-[var(--accent)]">✓</span>
+                    ) : loadingStep >= 2 ? (
+                      <svg className="animate-spin h-4 w-4 text-[var(--accent)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <span className="text-[var(--text-muted)]">○</span>
+                    )}
+                    <span className="text-[var(--text-secondary)] text-sm">Generating AI outreach...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Results */}
+            {demoStatus === "results" && (
+              <div>
+                <div className="text-center mb-6">
+                  <p className="text-lg text-[var(--text-primary)]">
+                    Found <span className="text-[var(--accent)] font-bold">{demoLeadCount} leads</span> in {demoCity}
+                  </p>
+                </div>
+                
+                {/* Lead Cards */}
+                <div className="space-y-4 mb-6">
+                  {demoLeads.map((lead, i) => (
+                    <div key={i} className="p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-[var(--text-primary)] mb-1">{lead.name}</h4>
+                          <p className="text-sm text-[var(--text-muted)] mb-1">{lead.address}, {lead.city}</p>
+                          <p className="text-xs text-[var(--text-muted)]">
+                            ⭐ {lead.rating} stars • {lead.reviews} reviews
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/30 ml-4">
+                          <span className="text-[var(--accent)] font-bold text-lg">{lead.score}</span>
+                          <span className="text-xs text-[var(--text-muted)]">/100</span>
+                        </div>
+                      </div>
+                      
+                      {/* Contact Info */}
+                      <div className="flex gap-4 text-xs text-[var(--text-muted)] mb-3 pb-3 border-b border-[var(--border-subtle)]">
+                        <span>📧 {lead.email}</span>
+                        <span>📱 {lead.phone}</span>
+                      </div>
+                      
+                      {/* AI Message */}
+                      <div className="p-3 rounded-lg bg-[var(--surface-base)] border border-dashed border-[var(--border-subtle)]">
+                        <p className="text-xs text-[var(--accent)] font-medium mb-2">💬 AI-Generated Outreach</p>
+                        <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">
+                          &quot;{lead.aiMessage}&quot;
+                        </p>
+                      </div>
+                      
+                      <div className="flex gap-3 text-xs mt-3">
+                        {lead.hasWebsite ? (
+                          <span className="text-[var(--accent)]">✓ Has website</span>
+                        ) : (
+                          <span className="text-red-400">✗ No website</span>
+                        )}
+                        {lead.hasSocial ? (
+                          <span className="text-[var(--accent)]">✓ Social presence</span>
+                        ) : (
+                          <span className="text-[var(--text-muted)]">✗ Low social</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Blurred Cards + CTA */}
+                <div className="relative">
+                  <div className="space-y-4 blur-sm opacity-40 pointer-events-none">
+                    <div className="p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="h-5 bg-[var(--text-primary)]/20 rounded w-48 mb-2"></div>
+                          <div className="h-4 bg-[var(--text-muted)]/20 rounded w-32 mb-1"></div>
+                          <div className="h-3 bg-[var(--text-muted)]/20 rounded w-40"></div>
+                        </div>
+                        <div className="w-16 h-8 bg-[var(--accent)]/20 rounded-full ml-4"></div>
+                      </div>
+                    </div>
+                    <div className="p-5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="h-5 bg-[var(--text-primary)]/20 rounded w-52 mb-2"></div>
+                          <div className="h-4 bg-[var(--text-muted)]/20 rounded w-36 mb-1"></div>
+                          <div className="h-3 bg-[var(--text-muted)]/20 rounded w-44"></div>
+                        </div>
+                        <div className="w-16 h-8 bg-[var(--accent)]/20 rounded-full ml-4"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button
+                      onClick={scrollToSignup}
+                      className="btn-primary px-6 py-3 text-sm font-medium shadow-lg"
+                    >
+                      Join waitlist to see all {demoLeadCount} leads →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Empty State */}
+            {demoStatus === "idle" && (
+              <div className="text-center py-8">
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">Popular searches:</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {activeTab === "local" && (
+                    <>
+                      <button onClick={() => { setDemoCity("Austin"); setDemoIndustry("Plumbers"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Plumbers in Austin
+                      </button>
+                      <button onClick={() => { setDemoCity("Miami"); setDemoIndustry("Dentists"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Dentists in Miami
+                      </button>
+                      <button onClick={() => { setDemoCity("Chicago"); setDemoIndustry("Law firms"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Law firms in Chicago
+                      </button>
+                    </>
+                  )}
+                  {activeTab === "saas" && (
+                    <>
+                      <button onClick={() => { setDemoCity("San Francisco"); setDemoIndustry("Marketing tools"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Marketing tools in SF
+                      </button>
+                      <button onClick={() => { setDemoCity("Austin"); setDemoIndustry("SaaS companies"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        SaaS in Austin
+                      </button>
+                      <button onClick={() => { setDemoCity("NYC"); setDemoIndustry("Fintech startups"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Fintech in NYC
+                      </button>
+                    </>
+                  )}
+                  {activeTab === "ecommerce" && (
+                    <>
+                      <button onClick={() => { setDemoCity("Los Angeles"); setDemoIndustry("Fashion stores"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Fashion stores in LA
+                      </button>
+                      <button onClick={() => { setDemoCity("Portland"); setDemoIndustry("Pet supply shops"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Pet supplies in Portland
+                      </button>
+                      <button onClick={() => { setDemoCity("Seattle"); setDemoIndustry("Home decor stores"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Home decor in Seattle
+                      </button>
+                    </>
+                  )}
+                  {activeTab === "b2b" && (
+                    <>
+                      <button onClick={() => { setDemoCity("Houston"); setDemoIndustry("Manufacturing companies"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Manufacturing in Houston
+                      </button>
+                      <button onClick={() => { setDemoCity("Boston"); setDemoIndustry("Consulting firms"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Consultants in Boston
+                      </button>
+                      <button onClick={() => { setDemoCity("Denver"); setDemoIndustry("Logistics companies"); }} className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30 transition-all">
+                        Logistics in Denver
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
