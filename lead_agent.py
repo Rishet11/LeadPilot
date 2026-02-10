@@ -167,13 +167,26 @@ def analyze_leads_batch(leads: list, max_leads: int = 25) -> list:
             parts.append(f"Urgency Trigger: {hooks['urgency']}")
             parts.append(f"-------------------------")
 
+        # Add recent reviews for sentiment analysis (Week 2 Feature)
+        top_reviews = lead.get('top_reviews')
+        if top_reviews and isinstance(top_reviews, list):
+            review_texts = []
+            for r in top_reviews[:3]:  # Top 3 reviews
+                text = r.get('text')
+                if text:
+                    review_texts.append(f"- \"{text[:150]}...\"")
+            if review_texts:
+                parts.append("--- RECENT REVIEWS (Use for context) ---")
+                parts.extend(review_texts)
+                parts.append("----------------------------------------")
+
         if lead.get('instagram'):
             parts.append(f"Instagram: @{lead.get('instagram')}")
         if lead.get('address'):
             parts.append(f"Address: {lead.get('address')}")
         leads_context.append("\n".join(parts))
 
-    prompt = f"""Analyze these leads and write a WhatsApp outreach message for each.
+    prompt = f"""Analyze these leads and write personalized WhatsApp outreach messages.
 
 LEAD DATA:
 {"=" * 30}
@@ -181,54 +194,43 @@ LEAD DATA:
 {"=" * 30}
 
 FOR EACH LEAD, provide:
-1. priority (1-5): How likely they are to convert. 5 = hot lead (high ratings, no website, many reviews). 1 = cold (has website, average metrics).
-2. reasoning: One sentence on WHY this lead is worth pursuing or not.
-3. outreach_angle: A WhatsApp message using ONE of these 3 patterns (randomly vary per lead).
-   CRITICAL: If "CATEGORY INSIGHTS" are provided for a lead, YOU MUST USE THEM in the message logic.
+1. priority (1-5): 5 = hot lead (high ratings, no website, specific review complaints).
+2. reasoning: Why this lead is worth pursuing.
+3. variants: THREE distinct WhatsApp messages.
 
-PATTERN A - "QUICK WIN" (for busy decision-makers, 3-4 lines):
-LINE 1: Hook with specific data point about their success
-LINE 2: State the provided "Pain Point" or general gap
-LINE 3: Offer the "Quick Win" or solution in one sentence
-LINE 4: Ultra-low friction CTA ("Want to see examples? Yes/No")
+VARIANTS TO GENERATE:
+A. "FRIENDLY / HELP" (Soft approach)
+   - "Saw your great reviews..."
+   - "Noticed you don't have a site..."
+   - "Happy to send a mockup?"
 
-Example: "Hey [Name], 68 reviews at 4.5 stars is solid for [category] in [city]. But [insert pain point]. I can help you [insert quick win]. Want to see examples?"
+B. "VALUE FIRST" (ROI focus)
+   - "You're likely missing X customers/month without a site..."
+   - "I build sites that convert traffic..."
+   - "Worth a 5-min chat?"
 
-PATTERN B - "COMPETITOR TRIGGER" (for competitive categories, 4 lines):
-LINE 1: Compliment their strength
-LINE 2: Name competitor or mention "others in [city]" ranking higher.
-LINE 3: What you've done for similar businesses
-LINE 4: Specific CTA with proof offer
+C. "DIRECT / PROBLEM SOLVER" (Short & punchy)
+   - "Quick question about your Google Maps profile..."
+   - "Fixing the missing website link would boost your ranking."
+   - "Want to see how?"
 
-Example: "Saw you're at [rating] with [X] reviews — better than most [category] spots in [city]. But [competitor or 'others in area'] show up first in search ([associated pain point]). Fixed this for 3 [category] businesses here. Can I send you their before/after?"
-
-PATTERN C - "URGENCY HOOK" (for seasonal/time-sensitive leads, 4-5 lines):
-LINE 1: Industry stat or use the "Urgency Trigger" provided
-LINE 2: Their specific volume loss calculation (Reference "Est. Monthly Missed" if available)
-LINE 3: Credibility signal (how many you've helped, results)
-LINE 4: Specific offer
-LINE 5: Low-pressure close
-
-Example: "[Insert urgency trigger]. You're at [X] reviews with no site = roughly [calculation] missed [customers/diners/clients] per month. I've built sites for 7 [category] businesses. Want a quick mockup of what yours could look like? No pressure either way."
-
-RULES:
-- NO EMOJIS in WhatsApp messages (keep it professional-casual)
-- Use their ACTUAL business name, rating, and review count
-- If CATEGORY INSIGHTS exist, incorporate the 'pain_point', 'quick_win', or 'urgency' naturally
-- PROFESSIONAL GRAMMAR: Use correct capitalization (Sentence case) and punctuation. NEVER use all lowercase.
-- Each message must be UNIQUE — randomize which pattern you use per lead (A, B, or C)
-- If a lead HAS a website, pivot to improvement: "Your site could be pulling more customers" or "Noticed it's not mobile-optimized"
-- Better CTAs: "Want to see examples?", "Can I send you a mockup?", "5-min call this week?" — specific and low-friction
-- Add credibility: "Built sites for X [category] businesses", "Work with a lot of [category] in [city]"
+CRITICAL RULES:
+- If RECENT REVIEWS are provided, reference specific praise or complaints (e.g. "Saw customers love your [product] but complain about [issue]").
+- NO EMOJIS in messages.
+- Use actual business name.
+- Sentence case capitalization.
 
 RESPOND WITH A JSON ARRAY:
 [
     {{
         "id": <id>,
         "priority": <1-5>,
-        "reasoning": "<one sentence>",
-        "pattern_used": "<Pattern A/B/C>",
-        "outreach_angle": "<the message using the pattern matching the rules>"
+        "reasoning": "<text>",
+        "variants": {{
+            "friendly": "<msg>",
+            "value": "<msg>",
+            "direct": "<msg>"
+        }}
     }}
 ]
 """
@@ -246,7 +248,7 @@ RESPOND WITH A JSON ARRAY:
             analysis = analysis_map.get(i, {
                 "priority": 0,
                 "reasoning": "Analysis failed",
-                "outreach_angle": "Check manually"
+                "variants": {}
             })
 
             logger.info("Lead %s → Priority %s",
@@ -287,20 +289,26 @@ def run_agent_pipeline(df, max_leads: int = 25):
 
     result_df = pd.DataFrame(all_enriched)
 
-    # Flatten AI analysis for CSV export
+    # Flatten AI analysis for CSV export (Week 2 Update)
     if 'ai_analysis' in result_df.columns:
         result_df['ai_priority'] = result_df['ai_analysis'].apply(
             lambda x: x.get('priority', 0) if isinstance(x, dict) else 0
         )
-        result_df['ai_outreach'] = result_df['ai_analysis'].apply(
-            lambda x: x.get('outreach_angle', '') if isinstance(x, dict) else ''
-        )
         result_df['ai_reasoning'] = result_df['ai_analysis'].apply(
             lambda x: x.get('reasoning', '') if isinstance(x, dict) else ''
         )
-        result_df['pattern_used'] = result_df['ai_analysis'].apply(
-            lambda x: x.get('pattern_used', 'Unknown') if isinstance(x, dict) else 'Unknown'
+        
+        # Flatten variants
+        result_df['outreach_friendly'] = result_df['ai_analysis'].apply(
+            lambda x: x.get('variants', {}).get('friendly', '') if isinstance(x, dict) else ''
         )
+        result_df['outreach_value'] = result_df['ai_analysis'].apply(
+            lambda x: x.get('variants', {}).get('value', '') if isinstance(x, dict) else ''
+        )
+        result_df['outreach_direct'] = result_df['ai_analysis'].apply(
+            lambda x: x.get('variants', {}).get('direct', '') if isinstance(x, dict) else ''
+        )
+         
         result_df = result_df.drop(columns=['ai_analysis'])
 
     # Re-sort by AI priority

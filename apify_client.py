@@ -136,18 +136,30 @@ def get_demo_data() -> list:
             "title": "FitZone Gym Delhi",
             "phone": "+91 98765 43210",
             "city": "New Delhi, India",
+            "price": None,
             "categoryName": "Gym",
-            "totalScore": 4.5,
-            "reviewsCount": 120,
+            "address": "123 Fitness St, Delhi",
             "website": None,
-            "url": "https://maps.google.com/?cid=123",
+            "phoneUnformatted": "+919876543210",
+            "totalScore": 4.5,
             "permanentlyClosed": False,
             "temporarilyClosed": False,
+            "categories": [
+                "Gym",
+                "Fitness Center"
+            ],
+            "reviewsCount": 120,
+            # Add reviews for AI Analysis testing (Week 2)
+            "reviews": [
+                {"text": "Great equipment but changing rooms are always dirty!", "stars": 4, "createdAt": "2 months ago"},
+                {"text": "Trainers are awesome, love the vibe.", "stars": 5, "createdAt": "1 week ago"},
+                {"text": "Wish they had more squat racks.", "stars": 3, "createdAt": "3 months ago"}
+            ],
             "imagesCount": 15,
             "countryCode": "IN",
             "scrapedAt": "2026-02-05T13:00:42.476Z",
             "claimThisBusiness": True,
-            "price": None,
+            "url": "https://maps.google.com/?cid=123",
             "openingHours": [
                 {"day": "Monday", "hours": "6 AM to 10 PM"},
                 {"day": "Sunday", "hours": "Closed"}
