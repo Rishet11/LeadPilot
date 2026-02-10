@@ -43,8 +43,12 @@ def export_csv(df: pd.DataFrame, path: str = "data/leads.csv", source: str = "go
 
     # Define column order for output (Agency specific)
     output_cols = [
-        'name', 'phone', 'city', 'country', 'category', 'rating',
-        'reviews', 'website', 'email', 'lead_score', 'ai_outreach', 'source'
+        'name', 'phone', 'whatsapp_link', 'city', 'country', 'email', 'website',
+        'lead_score', 'reason',
+        'category', 'rating', 'reviews', 'reviews_link',
+        'outreach_friendly', 'outreach_value', 'outreach_direct', 'ai_reasoning',
+        'opening_hours', 'images_count', 'is_unclaimed',
+        'instagram', 'source', 'scraped_at'
     ]
 
     # Filter for columns that actually exist in the dataframe
