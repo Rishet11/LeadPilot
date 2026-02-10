@@ -1,13 +1,18 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
 
-// Helper to get headers with API key
+// Import auth utilities
+import { getStoredApiKey } from "./auth";
+
+// Helper to get headers with API key from localStorage
 function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
-  if (API_KEY) {
-    headers["X-API-Key"] = API_KEY;
+  
+  // Try localStorage first, then fall back to env var (for SSR/initial load)
+  const apiKey = getStoredApiKey() || process.env.NEXT_PUBLIC_API_KEY || "";
+  if (apiKey) {
+    headers["X-API-Key"] = apiKey;
   }
   return headers;
 }
@@ -66,6 +71,21 @@ async function handleResponse<T>(res: Response): Promise<T> {
     throw new Error(error.detail || `HTTP ${res.status}`);
   }
   return res.json();
+}
+
+// Validate API key by making a test request
+export async function validateApiKey(apiKey: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/leads/stats`, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": apiKey,
+      },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 // Leads API

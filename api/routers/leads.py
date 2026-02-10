@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from ..database import get_db, Lead
 from ..schemas import LeadResponse, LeadStatusUpdate, LeadStatus
-from ..auth import verify_api_key
+from ..auth import get_current_customer
 from ..rate_limit import limiter, READ_LIMIT, WRITE_LIMIT
 
 router = APIRouter(prefix="/leads", tags=["leads"])
@@ -14,6 +14,15 @@ router = APIRouter(prefix="/leads", tags=["leads"])
 
 class BatchDeleteRequest(BaseModel):
     lead_ids: List[int]
+
+
+def _filter_by_customer(query, customer: dict):
+    """Filter query by customer. Admins see all leads."""
+    if customer is None:  # Dev mode
+        return query
+    if customer.get("is_admin"):
+        return query
+    return query.filter(Lead.customer_id == customer["id"])
 
 
 @router.get("/", response_model=List[LeadResponse])
@@ -29,9 +38,10 @@ def get_leads(
     category: Optional[str] = Query(None, max_length=100),
     no_website: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
     query = db.query(Lead)
+    query = _filter_by_customer(query, customer)
     
     if status:
         query = query.filter(Lead.status == status)
@@ -54,18 +64,21 @@ def get_leads(
 def get_lead_stats(
     request: Request,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
-    total = db.query(Lead).count()
-    high_priority = db.query(Lead).filter(Lead.lead_score >= 80).count()
+    base_query = db.query(Lead)
+    base_query = _filter_by_customer(base_query, customer)
+    
+    total = base_query.count()
+    high_priority = base_query.filter(Lead.lead_score >= 80).count()
     
     status_counts = {}
-    for status in LeadStatus:
-        count = db.query(Lead).filter(Lead.status == status.value).count()
-        status_counts[status.value] = count
+    for status_enum in LeadStatus:
+        count = base_query.filter(Lead.status == status_enum.value).count()
+        status_counts[status_enum.value] = count
     
-    google_maps = db.query(Lead).filter(Lead.source == "google_maps").count()
-    instagram = db.query(Lead).filter(Lead.source == "instagram").count()
+    google_maps = base_query.filter(Lead.source == "google_maps").count()
+    instagram = base_query.filter(Lead.source == "instagram").count()
     
     return {
         "total_leads": total,
@@ -84,9 +97,12 @@ def get_lead(
     request: Request,
     lead_id: int,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
-    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    query = db.query(Lead).filter(Lead.id == lead_id)
+    query = _filter_by_customer(query, customer)
+    lead = query.first()
+    
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     return lead
@@ -99,9 +115,12 @@ def update_lead_status(
     lead_id: int,
     status_update: LeadStatusUpdate,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
-    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    query = db.query(Lead).filter(Lead.id == lead_id)
+    query = _filter_by_customer(query, customer)
+    lead = query.first()
+    
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
@@ -117,9 +136,12 @@ def delete_lead(
     request: Request,
     lead_id: int,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
-    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    query = db.query(Lead).filter(Lead.id == lead_id)
+    query = _filter_by_customer(query, customer)
+    lead = query.first()
+    
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
@@ -134,18 +156,17 @@ def delete_leads_batch(
     request: Request,
     batch: BatchDeleteRequest,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
-    """
-    Delete multiple leads by ID.
-    """
+    """Delete multiple leads by ID."""
     if not batch.lead_ids:
         return {"message": "No leads provided", "count": 0}
 
-    # Use query.delete for efficiency
-    # synchronize_session=False is faster for bulk deletes
+    query = db.query(Lead).filter(Lead.id.in_(batch.lead_ids))
+    query = _filter_by_customer(query, customer)
+    
     try:
-        deleted_count = db.query(Lead).filter(Lead.id.in_(batch.lead_ids)).delete(synchronize_session=False)
+        deleted_count = query.delete(synchronize_session=False)
         db.commit()
         return {"message": f"Successfully deleted {deleted_count} leads", "count": deleted_count}
     except Exception as e:

@@ -199,12 +199,6 @@ export default function LandingPage() {
                 Perfect for <span className="text-[var(--accent)]">freelancers</span>, <span className="text-[var(--accent)]">agencies</span>, <span className="text-[var(--accent)]">consultants</span> & <span className="text-[var(--accent)]">sales teams</span>
               </p>
               
-              {/* Waitlist Counter */}
-              <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)] mb-6">
-                <span className="w-2 h-2 bg-[var(--accent)] rounded-full animate-pulse"></span>
-                <strong className="text-[var(--accent)]">327 agencies</strong>
-                <span>on the waitlist · Early access closing soon</span>
-              </div>
               
               {/* Email Form / Success State */}
               {status === "success" ? (

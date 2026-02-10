@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { clearStoredApiKey } from "@/lib/auth";
 
 const navItems = [
   {
@@ -65,6 +66,12 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    clearStoredApiKey();
+    router.push("/login");
+  };
 
   return (
     <aside className="sidebar w-60 flex flex-col h-screen sticky top-0">
@@ -118,19 +125,30 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 pb-4">
+      <div className="px-3 pb-4 space-y-2">
         <Link
           href="/"
           className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-all group"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-            <polyline points="10 17 15 12 10 7" />
-            <line x1="15" y1="12" x2="3" y2="12" />
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
-          <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">Back to Home</span>
+          <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">Home</span>
         </Link>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] hover:border-red-500/50 transition-all group"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--text-muted)] group-hover:text-red-400 transition-colors">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span className="text-xs text-[var(--text-muted)] group-hover:text-red-400 transition-colors">Log Out</span>
+        </button>
       </div>
     </aside>
   );
 }
+

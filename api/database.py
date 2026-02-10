@@ -5,8 +5,8 @@ Uses SQLite for persistent storage of leads, jobs, and settings.
 
 import os
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, relationship
 import enum
 
 from .schemas import LeadStatus
@@ -25,6 +25,22 @@ class Base(DeclarativeBase):
     pass
 
 
+class Customer(Base):
+    """Customer model - stores paying customers with unique API keys."""
+    __tablename__ = "customers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False, unique=True)
+    api_key = Column(String(64), unique=True, nullable=False, index=True)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)  # Admin sees all leads
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    leads = relationship("Lead", back_populates="customer")
+    jobs = relationship("Job", back_populates="customer")
+
+
 class LeadSource(str, enum.Enum):
     GOOGLE_MAPS = "google_maps"
     INSTAGRAM = "instagram"
@@ -35,6 +51,7 @@ class Lead(Base):
     __tablename__ = "leads"
 
     id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     phone = Column(String(50))
     city = Column(String(100))
@@ -54,6 +71,9 @@ class Lead(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    customer = relationship("Customer", back_populates="leads")
+
+
 
 class JobStatus(str, enum.Enum):
     PENDING = "pending"
@@ -67,6 +87,7 @@ class Job(Base):
     __tablename__ = "jobs"
 
     id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True, index=True)
     job_type = Column(String(50))  # "google_maps" or "instagram"
     targets = Column(Text)  # JSON string of targets
     status = Column(String(50), default=JobStatus.PENDING)
@@ -75,6 +96,9 @@ class Job(Base):
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    customer = relationship("Customer", back_populates="jobs")
+
 
 
 class Settings(Base):

@@ -56,7 +56,7 @@ def load_config(config_path: str = "config.json") -> dict:
 
 def run_pipeline(city: str, category: str, limit: int,
                  dry_run: bool = False, check_websites: bool = False,
-                 agent_mode: bool = True):
+                 agent_mode: bool = True, find_emails: bool = False):
     """
     Run the complete lead generation pipeline.
 
@@ -67,6 +67,7 @@ def run_pipeline(city: str, category: str, limit: int,
         dry_run: Use demo data instead of API
         check_websites: Verify website accessibility
         agent_mode: Use agentic AI for autonomous lead evaluation
+        find_emails: Use free email scraper on websites
     """
     from apify_client import (
         run_google_maps_scraper, poll_run_status,
@@ -83,6 +84,8 @@ def run_pipeline(city: str, category: str, limit: int,
     logger.info("Category: %s", category)
     logger.info("Limit: %d", limit)
     logger.info("Mode: %s", "Demo" if dry_run else "Live API")
+    if find_emails:
+        logger.info("Email Scraper: ENABLED")
     logger.info("=" * 50)
 
     # Step 1: Fetch data
@@ -121,6 +124,37 @@ def run_pipeline(city: str, category: str, limit: int,
     df = clean_dataframe(raw_data)
     df = add_derived_columns(df)
     logger.info("Cleaned data: %d unique leads", len(df))
+
+    # Step 3: Find Emails (Free Scraper)
+    if find_emails:
+        logger.info("Running free email scraper on websites...")
+        # Filter leads that have website but no email
+        needs_email = df[
+            (df['has_website']) & 
+            (df['email'] == '') & 
+            (df['website'] != '')
+        ]
+        
+        if not needs_email.empty:
+            logger.info("Scraping %d websites for emails...", len(needs_email))
+            from email_scraper import scrape_emails_concurrently
+            
+            # Run concurrent scraper
+            urls = needs_email['website'].tolist()
+            found_emails = scrape_emails_concurrently(urls, max_workers=10)
+            
+            # Update dataframe
+            match_count = 0
+            # Convert dictionary to match specific rows
+            for url, email in found_emails.items():
+                if email:
+                    mask = df['website'] == url
+                    df.loc[mask, 'email'] = email
+                    match_count += 1
+            
+            logger.info("Found %d new emails!", match_count)
+        else:
+            logger.info("No leads require email scraping (all have emails or no website).")
 
     # Step 4: Score leads
     logger.info("Scoring leads...")
@@ -168,6 +202,7 @@ Examples:
   python main.py --city Mumbai --category Bakery  # Override city/category
   python main.py --dry-run                        # Test with demo data
   python main.py --agent                          # Enable agentic AI mode
+  python main.py --find-emails                    # Enable free email scraping
         """
     )
 
@@ -180,6 +215,8 @@ Examples:
                         help="Verify website accessibility (slower)")
     parser.add_argument("--agent", action="store_true", default=True,
                         help="Enable agentic AI mode (autonomous lead evaluation)")
+    parser.add_argument("--find-emails", action="store_true",
+                        help="Enable free email scraper (crawls websites)")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to config file")
 
@@ -200,7 +237,8 @@ Examples:
         limit=limit,
         dry_run=args.dry_run,
         check_websites=args.check_websites,
-        agent_mode=args.agent
+        agent_mode=args.agent,
+        find_emails=args.find_emails
     )
 
 

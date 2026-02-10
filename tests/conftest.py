@@ -43,13 +43,27 @@ def db_session():
 @pytest.fixture(scope="function")
 def client(db_session):
     """Create a test client with database override."""
+    
+    # Import inside fixture to avoid circular imports or early init
+    from api.auth import get_current_customer
+
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
+
+    def override_get_current_customer():
+        """Mock authenticated customer."""
+        return {
+            "id": 1,
+            "name": "Test Customer",
+            "email": "test@example.com",
+            "is_admin": True
+        }
     
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_customer] = override_get_current_customer
     
     with TestClient(app) as test_client:
         yield test_client

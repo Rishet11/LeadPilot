@@ -2,10 +2,11 @@
 Scrape router - endpoints to trigger scraping jobs.
 
 Security Features:
-- API key authentication required
+- API key authentication required (per-customer)
 - Rate limiting (10/hour for scrape endpoints)
 - Input validation via Pydantic schemas
-- Concurrent job limits
+- Concurrent job limits (per customer)
+- Customer isolation for leads and jobs
 """
 
 import json
@@ -19,23 +20,28 @@ logger = logging.getLogger("leadpilot")
 
 from ..database import get_db, Lead, Job, JobStatus
 from ..schemas import BatchScrapeRequest, InstagramScrapeRequest, ScrapeResponse, ScrapeTarget
-from ..auth import verify_api_key
+from ..auth import get_current_customer
 from ..rate_limit import limiter, SCRAPE_LIMIT
 
 router = APIRouter(prefix="/scrape", tags=["scrape"])
 
-# Maximum concurrent jobs allowed
+# Maximum concurrent jobs allowed per customer
 try:
     MAX_CONCURRENT_JOBS = int(os.getenv("MAX_CONCURRENT_JOBS", "3"))
 except (ValueError, TypeError):
     MAX_CONCURRENT_JOBS = 3
 
 
-def check_concurrent_jobs(db: Session):
-    """Check if we're at the concurrent job limit."""
-    running_jobs = db.query(Job).filter(
+def check_concurrent_jobs(db: Session, customer_id: int = None):
+    """Check if customer is at the concurrent job limit."""
+    query = db.query(Job).filter(
         Job.status.in_([JobStatus.PENDING.value, JobStatus.RUNNING.value])
-    ).count()
+    )
+    
+    if customer_id:
+        query = query.filter(Job.customer_id == customer_id)
+    
+    running_jobs = query.count()
     
     if running_jobs >= MAX_CONCURRENT_JOBS:
         raise HTTPException(
@@ -54,7 +60,7 @@ def _create_background_session(db_path: str):
     return SessionLocal()
 
 
-def run_google_maps_batch(job_id: int, targets: list, db_path: str):
+def run_google_maps_batch(job_id: int, targets: list, db_path: str, customer_id: int = None):
     """Background task to run Google Maps scraping."""
     db = _create_background_session(db_path)
     
@@ -74,9 +80,10 @@ def run_google_maps_batch(job_id: int, targets: list, db_path: str):
                 # Run scraper for each target
                 leads_data = process_batch_targets([target])
                 
-                # Save leads to database
+                # Save leads to database with customer_id
                 for lead_dict in leads_data:
                     lead = Lead(
+                        customer_id=customer_id,
                         name=lead_dict.get('name', ''),
                         phone=lead_dict.get('phone'),
                         city=lead_dict.get('city'),
@@ -116,7 +123,7 @@ def run_google_maps_batch(job_id: int, targets: list, db_path: str):
         db.close()
 
 
-def run_instagram_batch(job_id: int, targets: list, db_path: str):
+def run_instagram_batch(job_id: int, targets: list, db_path: str, customer_id: int = None):
     """Background task to run Instagram scraping."""
     db = _create_background_session(db_path)
     
@@ -135,6 +142,7 @@ def run_instagram_batch(job_id: int, targets: list, db_path: str):
                 
                 for lead_dict in leads_data:
                     lead = Lead(
+                        customer_id=customer_id,
                         name=lead_dict.get('name', lead_dict.get('username', '')),
                         phone=lead_dict.get('phone'),
                         city=lead_dict.get('city'),
@@ -180,7 +188,7 @@ def scrape_google_maps(
     scrape_request: BatchScrapeRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
     """
     Start a Google Maps batch scraping job.
@@ -189,12 +197,15 @@ def scrape_google_maps(
     Rate limit: 10/hour
     Max targets: 50
     """
-    # Check concurrent job limit
-    check_concurrent_jobs(db)
+    customer_id = customer["id"] if customer else None
     
-    # Create job record
+    # Check concurrent job limit
+    check_concurrent_jobs(db, customer_id)
+    
+    # Create job record with customer_id
     targets_json = json.dumps([t.model_dump() for t in scrape_request.targets])
     job = Job(
+        customer_id=customer_id,
         job_type="google_maps",
         targets=targets_json,
         status=JobStatus.PENDING.value
@@ -208,7 +219,7 @@ def scrape_google_maps(
     
     # Start background task
     targets = [t.model_dump() for t in scrape_request.targets]
-    background_tasks.add_task(run_google_maps_batch, job.id, targets, DB_PATH)
+    background_tasks.add_task(run_google_maps_batch, job.id, targets, DB_PATH, customer_id)
     
     return ScrapeResponse(
         job_id=job.id,
@@ -224,7 +235,7 @@ def scrape_instagram(
     scrape_request: InstagramScrapeRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
     """
     Start an Instagram batch scraping job.
@@ -233,11 +244,14 @@ def scrape_instagram(
     Rate limit: 10/hour
     Max keywords: 30
     """
+    customer_id = customer["id"] if customer else None
+    
     # Check concurrent job limit
-    check_concurrent_jobs(db)
+    check_concurrent_jobs(db, customer_id)
     
     targets_json = json.dumps([t.model_dump() for t in scrape_request.targets])
     job = Job(
+        customer_id=customer_id,
         job_type="instagram",
         targets=targets_json,
         status=JobStatus.PENDING.value
@@ -249,7 +263,7 @@ def scrape_instagram(
     from ..database import DB_PATH
     
     targets = [t.model_dump() for t in scrape_request.targets]
-    background_tasks.add_task(run_instagram_batch, job.id, targets, DB_PATH)
+    background_tasks.add_task(run_instagram_batch, job.id, targets, DB_PATH, customer_id)
     
     return ScrapeResponse(
         job_id=job.id,
@@ -265,7 +279,7 @@ def scrape_single(
     target: ScrapeTarget,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    customer: dict = Depends(get_current_customer)
 ):
     """
     Quick single target scrape (for dashboard).
@@ -273,11 +287,14 @@ def scrape_single(
     Requires: X-API-Key header
     Rate limit: 10/hour
     """
+    customer_id = customer["id"] if customer else None
+    
     # Check concurrent job limit
-    check_concurrent_jobs(db)
+    check_concurrent_jobs(db, customer_id)
     
     targets_json = json.dumps([target.model_dump()])
     job = Job(
+        customer_id=customer_id,
         job_type="google_maps",
         targets=targets_json,
         status=JobStatus.PENDING.value
@@ -288,7 +305,7 @@ def scrape_single(
     
     from ..database import DB_PATH
     
-    background_tasks.add_task(run_google_maps_batch, job.id, [target.model_dump()], DB_PATH)
+    background_tasks.add_task(run_google_maps_batch, job.id, [target.model_dump()], DB_PATH, customer_id)
     
     return ScrapeResponse(
         job_id=job.id,

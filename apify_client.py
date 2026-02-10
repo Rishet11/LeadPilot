@@ -140,7 +140,18 @@ def get_demo_data() -> list:
             "totalScore": 4.5,
             "reviewsCount": 120,
             "website": None,
-            "url": "https://maps.google.com/?cid=123"
+            "url": "https://maps.google.com/?cid=123",
+            "permanentlyClosed": False,
+            "temporarilyClosed": False,
+            "imagesCount": 15,
+            "countryCode": "IN",
+            "scrapedAt": "2026-02-05T13:00:42.476Z",
+            "claimThisBusiness": True,
+            "price": None,
+            "openingHours": [
+                {"day": "Monday", "hours": "6 AM to 10 PM"},
+                {"day": "Sunday", "hours": "Closed"}
+            ]
         },
         {
             "title": "Healthy Smiles Dental",
@@ -150,7 +161,17 @@ def get_demo_data() -> list:
             "totalScore": 4.8,
             "reviewsCount": 85,
             "website": None,
-            "url": "https://maps.google.com/?cid=456"
+            "url": "https://maps.google.com/?cid=456",
+            "permanentlyClosed": False,
+            "temporarilyClosed": False,
+            "imagesCount": 8,
+            "countryCode": "IN",
+            "scrapedAt": "2026-02-05T13:00:42.476Z",
+            "claimThisBusiness": False,
+            "price": None,
+            "openingHours": [
+                {"day": "Monday", "hours": "9 AM to 6 PM"}
+            ]
         },
         {
             "title": "Tampa HVAC Pros",
@@ -160,7 +181,35 @@ def get_demo_data() -> list:
             "totalScore": 4.2,
             "reviewsCount": 45,
             "website": "https://example.com",
-            "url": "https://maps.google.com/?cid=789"
+            "url": "https://maps.google.com/?cid=789",
+            "permanentlyClosed": False,
+            "temporarilyClosed": False,
+            "imagesCount": 22,
+            "countryCode": "US",
+            "scrapedAt": "2026-02-05T13:00:42.476Z",
+            "claimThisBusiness": False,
+            "price": "$$",
+            "openingHours": [
+                {"day": "Monday", "hours": "Open 24 hours"}
+            ]
+        },
+        {
+            "title": "Old Cafe - Permanently Closed",
+            "phone": "+91 99999 11111",
+            "city": "Mumbai, India",
+            "categoryName": "Cafe",
+            "totalScore": 3.0,
+            "reviewsCount": 10,
+            "website": None,
+            "url": "https://maps.google.com/?cid=999",
+            "permanentlyClosed": True,
+            "temporarilyClosed": False,
+            "imagesCount": 2,
+            "countryCode": "IN",
+            "scrapedAt": "2026-02-05T13:00:42.476Z",
+            "claimThisBusiness": False,
+            "price": None,
+            "openingHours": []
         }
     ]
 
