@@ -147,6 +147,25 @@ def score_lead(row: dict, config: dict = None) -> tuple:
     if 0 < rating < 3.8:
         score += 15
         reasons.append(f"Reputation Gap ({rating}) - Fix Opportunity")
+
+    # 6. Service Type: Residential vs Commercial (Week 2 Feature)
+    # Residential services (B2C) are easier to sell to than Commercial (B2B).
+    name = row.get('name', '').lower()
+    full_text = f"{name} {category}"
+    
+    residential_keywords = ['home', 'residential', 'house', 'domestic', 'private', 'family']
+    commercial_keywords = ['commercial', 'industrial', 'office', 'corporate', 'b2b']
+    
+    is_residential = any(k in full_text for k in residential_keywords)
+    is_commercial = any(k in full_text for k in commercial_keywords)
+    
+    # Boost if explicitly Residential OR if it's a trade service that usually is residential (and not marked commercial)
+    trade_services = ['plumber', 'electrician', 'pest', 'roof', 'landscap', 'clean', 'hvac']
+    is_trade = any(t in category for t in trade_services)
+    
+    if is_residential or (is_trade and not is_commercial):
+        score += 10
+        reasons.append("Residential Service (High B2C Potential)")
     
     # Cap at 100
     score = min(score, 100)
