@@ -60,7 +60,8 @@ def get_gemini():
         if not api_key:
             raise ValueError("GEMINI_API_KEY missing")
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel('gemini-2.0-flash')
+        model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
+        return genai.GenerativeModel(model_name)
     except Exception as e:
         logger.warning("Gemini init failed: %s", e)
         return None

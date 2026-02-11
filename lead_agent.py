@@ -57,9 +57,11 @@ def get_agent(temperature: float = 0.9):
             )
             return response
     
+    model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
+    
     return GeminiAgent(
         client=client,
-        model_name='gemini-2.0-flash',
+        model_name=model_name,
         system_instruction=DEFAULT_AI_SYSTEM_PROMPT,
         temperature=temperature,
     )
