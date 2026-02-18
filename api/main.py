@@ -12,7 +12,7 @@ from slowapi.errors import RateLimitExceeded
 # Load environment variables
 load_dotenv(override=True)
 
-from .routers import leads, scrape, jobs, settings
+from .routers import leads, scrape, jobs, settings, webhooks, usage, plans, agents, auth
 from .rate_limit import limiter
 from .auth import validate_startup_config
 
@@ -82,7 +82,7 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Request-ID"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
     max_age=86400,
 )
 
@@ -90,6 +90,11 @@ app.include_router(leads.router, prefix="/api")
 app.include_router(scrape.router, prefix="/api")
 app.include_router(jobs.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+app.include_router(webhooks.router, prefix="/api")
+app.include_router(usage.router, prefix="/api")
+app.include_router(plans.router, prefix="/api")
+app.include_router(agents.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
 
 
 @app.get("/")
@@ -104,4 +109,3 @@ def root():
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
-

@@ -131,3 +131,60 @@ class DashboardMetrics(BaseModel):
     high_priority_leads: int
     leads_by_status: dict
     recent_jobs: List[JobResponse]
+
+
+class UsageResponse(BaseModel):
+    period: Optional[str] = None
+    leads_generated: int
+    scrape_jobs: int
+    remaining_credits: Optional[int] = None
+    monthly_quota: Optional[int] = None
+
+
+class PlanResponse(BaseModel):
+    plan_tier: str
+    monthly_lead_quota: int
+    instagram_enabled: bool
+    max_concurrent_jobs: int
+    subscription_status: str
+
+
+class TargetBuilderRequest(BaseModel):
+    objective: str = Field(..., min_length=8, max_length=500)
+    max_targets: int = Field(default=6, ge=1, le=20)
+    default_limit: int = Field(default=50, ge=5, le=200)
+    include_instagram: bool = False
+
+
+class TargetBuilderResponse(BaseModel):
+    objective: str
+    google_maps_targets: List[ScrapeTarget]
+    instagram_targets: List[InstagramTarget]
+    strategy: str
+    source: str
+    warnings: List[str] = Field(default_factory=list)
+
+
+class AgentTemplateResponse(BaseModel):
+    id: str
+    name: str
+    vertical: str
+    ideal_for: str
+    objective: str
+    expected_outcome: str
+    google_maps_targets: List[ScrapeTarget]
+    instagram_targets: List[InstagramTarget] = Field(default_factory=list)
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str = Field(..., min_length=20, max_length=8192)
+
+
+class GoogleAuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    customer_id: int
+    email: str
+    name: str
+    plan_tier: str
+    is_new_customer: bool

@@ -9,13 +9,15 @@ REST API for the LeadPilot lead generation system. Provides endpoints for managi
 
 ## Authentication
 
-All endpoints require an API key in the header:
+All endpoints require a bearer token in the header:
 
 ```http
-X-API-Key: your_api_key_here
+Authorization: Bearer your_access_token_here
 ```
 
 **Development mode:** Set `REQUIRE_AUTH=false` in `.env` to disable auth locally.
+
+Google login is available via `POST /api/auth/google`. This endpoint exchanges a Google ID token for a LeadPilot bearer session token.
 
 ---
 
@@ -32,6 +34,35 @@ Check API health status.
   "status": "healthy"
 }
 ```
+
+---
+
+### Auth
+
+#### `POST /api/auth/google`
+Exchange a Google ID token for a LeadPilot bearer token.
+
+**Request Body:**
+```json
+{
+  "id_token": "google_id_token_here"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "lps_...",
+  "token_type": "bearer",
+  "customer_id": 12,
+  "email": "owner@example.com",
+  "name": "Owner Name",
+  "plan_tier": "free",
+  "is_new_customer": true
+}
+```
+
+**Required env:** `GOOGLE_CLIENT_ID` must be set on the backend.
 
 ---
 
@@ -52,7 +83,7 @@ Get list of leads with optional filters.
 
 **Example:**
 ```bash
-curl -H "X-API-Key: your_key" \
+curl -H "Authorization: Bearer your_access_token" \
   "http://localhost:8000/api/leads/?min_score=80&no_website=true&limit=50"
 ```
 
@@ -180,6 +211,8 @@ Trigger a single Google Maps scrape.
 }
 ```
 
+Note: scrape jobs are queued and processed by the worker process (`python worker.py`).
+
 ---
 
 #### `POST /api/scrape/google-maps`
@@ -243,6 +276,78 @@ Get recent scraping jobs.
 
 ---
 
+### Agents
+
+#### `POST /api/agents/target-builder`
+Generate scrape targets from a plain-English objective.
+
+**Request Body:**
+```json
+{
+  "objective": "find dentists and salons in miami and austin with weak digital presence",
+  "max_targets": 6,
+  "default_limit": 50,
+  "include_instagram": false
+}
+```
+
+**Response:**
+```json
+{
+  "objective": "find dentists and salons in miami and austin with weak digital presence",
+  "google_maps_targets": [
+    {"city": "Miami", "category": "dentist", "limit": 50},
+    {"city": "Austin", "category": "salon", "limit": 50}
+  ],
+  "instagram_targets": [],
+  "strategy": "AI-generated target strategy",
+  "source": "ai",
+  "warnings": []
+}
+```
+
+---
+
+#### `GET /api/agents/templates`
+Get curated niche playbooks for fast campaign launch.
+
+**Query Parameters:**
+- `vertical` (optional): Filter by template vertical (e.g. `dental`, `hvac`, `salon`).
+
+**Behavior:**
+- Templates are plan-aware.
+- `instagram_targets` are automatically removed for plans without Instagram entitlement.
+
+**Response:**
+```json
+[
+  {
+    "id": "dentist_growth",
+    "name": "Dentist Website Upgrade Sprint",
+    "vertical": "dental",
+    "ideal_for": "web design and local SEO agencies",
+    "objective": "Find dentists with strong reviews but weak website funnel and no booking flow.",
+    "expected_outcome": "20-40 qualified dental prospects in about 15 minutes.",
+    "google_maps_targets": [
+      {"city": "Miami", "category": "dentist", "limit": 45}
+    ],
+    "instagram_targets": []
+  }
+]
+```
+
+---
+
+### Usage & Plans
+
+#### `GET /api/usage/current`
+Get current monthly usage for the authenticated customer.
+
+#### `GET /api/plans/current`
+Get active plan entitlements (quota, instagram access, concurrency).
+
+---
+
 #### `GET /api/jobs/{job_id}`
 Get specific job details.
 
@@ -288,10 +393,11 @@ Reset all settings to defaults.
 
 ## Rate Limits
 
-- **Read operations:** 60 requests/minute
-- **Write operations:** 20 requests/minute
+- **Read operations:** 100 requests/minute
+- **Write operations:** 30 requests/minute
+- **Scrape operations:** 10 requests/hour
 
-Rate limits are per IP address.
+Rate limits are tenant-aware: keyed by bearer token when present, fallback to IP address.
 
 ---
 
@@ -307,8 +413,8 @@ All errors return standard format:
 
 **Common status codes:**
 - `400` - Bad request (invalid parameters)
-- `401` - Missing API key
-- `403` - Invalid API key
+- `401` - Missing bearer token
+- `403` - Invalid/expired bearer token
 - `404` - Resource not found
 - `429` - Rate limit exceeded
 - `500` - Server error

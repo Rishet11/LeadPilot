@@ -1,11 +1,24 @@
+import hashlib
+
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+
+def rate_limit_key(request: Request) -> str:
+    """Prefer bearer token for tenant-aware limits, fallback to IP."""
+    auth_header = request.headers.get("Authorization", "").strip()
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        if token:
+            token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()[:24]
+            return f"token:{token_hash}"
+    return f"ip:{request.client.host if request.client else 'unknown'}"
+
+
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=rate_limit_key,
     default_limits=["200/minute"],
     storage_uri="memory://",
 )

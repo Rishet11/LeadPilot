@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 os.environ["ENVIRONMENT"] = "test"
 os.environ["REQUIRE_AUTH"] = "false"
 
-from api.database import Base, get_db
+from api.database import Base, Customer, get_db
 from api.main import app
 
 
@@ -33,6 +33,19 @@ def db_session():
     """Create a fresh database session for each test."""
     Base.metadata.create_all(bind=engine)
     session = TestingSessionLocal()
+    # Seed a default customer for tenant-aware endpoints
+    session.add(Customer(
+        id=1,
+        name="Test Customer",
+        email="test@example.com",
+        api_key="lp_test_key",
+        is_active=True,
+        is_admin=True,
+        plan_tier="agency",
+        subscription_status="active",
+    ))
+    session.commit()
+
     try:
         yield session
     finally:

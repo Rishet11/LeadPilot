@@ -30,5 +30,18 @@ services:
     depends_on:
       - api
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "worker.py"]
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env:ro
+    environment:
+      - ENVIRONMENT=development
+    depends_on:
+      - api
+
 volumes:
   data:
