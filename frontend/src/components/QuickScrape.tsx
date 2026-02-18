@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface QuickScrapeProps {
-  onScrape: (city: string, category: string, limit: number) => void;
+  onScrape: (city: string, category: string, limit: number) => Promise<boolean | void> | boolean | void;
   isLoading?: boolean;
 }
 
@@ -11,11 +11,27 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
   const [city, setCity] = useState("");
   const [category, setCategory] = useState("");
   const [limit, setLimit] = useState(50);
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (city && category) {
-      onScrape(city, category, limit);
+    setLocalError(null);
+    const trimmedCity = city.trim();
+    const trimmedCategory = category.trim();
+
+    if (!trimmedCity || !trimmedCategory) {
+      setLocalError("Please add both city and industry.");
+      return;
+    }
+
+    try {
+      const result = await onScrape(trimmedCity, trimmedCategory, limit);
+      if (result !== false) {
+        setCity("");
+        setCategory("");
+      }
+    } catch {
+      setLocalError("Unable to queue scrape right now.");
     }
   };
 
@@ -41,6 +57,7 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="e.g., London, UK"
+            disabled={isLoading}
             className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
           />
         </div>
@@ -51,6 +68,7 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder="e.g., Dentist"
+            disabled={isLoading}
             className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
           />
         </div>
@@ -59,6 +77,7 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
           <select
             value={limit}
             onChange={(e) => setLimit(Number(e.target.value))}
+            disabled={isLoading}
             className="field w-full px-4 py-3 text-sm focus:outline-none"
           >
             <option value={10}>10 leads</option>
@@ -67,9 +86,12 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
             <option value={100}>100 leads</option>
           </select>
         </div>
+        {localError && (
+          <p className="text-xs text-[var(--error)]">{localError}</p>
+        )}
         <button
           type="submit"
-          disabled={isLoading || !city || !category}
+          disabled={isLoading || !city.trim() || !category.trim()}
           className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 px-5 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         >
           {isLoading ? (

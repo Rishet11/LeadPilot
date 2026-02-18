@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { scrapeBatch } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { AgentTemplate, getAgentTemplates, scrapeBatch } from "@/lib/api";
 
 interface Target {
   city: string;
@@ -9,18 +9,82 @@ interface Target {
   limit: number;
 }
 
+function normalizeTarget(raw: Target): Target | null {
+  const city = raw.city.trim();
+  const category = raw.category.trim();
+  const limit = Math.max(1, Math.min(200, Number(raw.limit) || 50));
+
+  if (!city || !category) {
+    return null;
+  }
+
+  return { city, category, limit };
+}
+
+function dedupeTargets(items: Target[]): Target[] {
+  const map = new Map<string, Target>();
+
+  for (const item of items) {
+    const normalized = normalizeTarget(item);
+    if (!normalized) continue;
+    const key = `${normalized.city.toLowerCase()}|${normalized.category.toLowerCase()}`;
+    map.set(key, normalized);
+  }
+
+  return Array.from(map.values());
+}
+
 export default function BatchQueue() {
   const [targets, setTargets] = useState<Target[]>([]);
+  const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [city, setCity] = useState("");
   const [category, setCategory] = useState("");
   const [limit, setLimit] = useState(50);
   const [pasteText, setPasteText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
+  const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const templateData = await getAgentTemplates();
+        setTemplates(templateData.slice(0, 6));
+      } catch (err) {
+        console.error("Failed to load templates:", err);
+        setTemplates([]);
+      } finally {
+        setIsTemplatesLoading(false);
+      }
+    };
+
+    loadTemplates();
+  }, []);
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(null), 4500);
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  const addTargets = (incoming: Target[]) => {
+    if (!incoming.length) return 0;
+    const merged = dedupeTargets([...targets, ...incoming]);
+    const addedCount = Math.max(0, merged.length - targets.length);
+    setTargets(merged);
+    return addedCount;
+  };
 
   const addTarget = () => {
     if (city && category) {
-      setTargets([...targets, { city, category, limit }]);
+      const added = addTargets([{ city, category, limit }]);
+      if (added === 0) {
+        setMessage({
+          type: "error",
+          text: "Target already exists in queue.",
+        });
+      }
       setCity("");
       setCategory("");
       setLimit(50);
@@ -36,21 +100,44 @@ export default function BatchQueue() {
     const newTargets: Target[] = [];
 
     for (const line of lines) {
-      const parts = line.split(/[,\-]/).map((p) => p.trim());
+      const parts = line
+        .replace(/\s*\|\s*/g, ",")
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
       if (parts.length >= 2) {
         const [cityPart, categoryPart, limitPart] = parts;
         newTargets.push({
           city: cityPart,
           category: categoryPart,
-          limit: limitPart ? parseInt(limitPart) || 50 : 50,
+          limit: limitPart && /^\d+$/.test(limitPart) ? parseInt(limitPart, 10) : 50,
         });
       }
     }
 
     if (newTargets.length > 0) {
-      setTargets([...targets, ...newTargets]);
+      const added = addTargets(newTargets);
+      setMessage({
+        type: "success",
+        text: `Parsed ${newTargets.length} rows. Added ${added} unique target(s).`,
+      });
       setPasteText("");
     }
+  };
+
+  const applyTemplate = (template: AgentTemplate) => {
+    setApplyingTemplateId(template.id);
+    const incoming = template.google_maps_targets.map((t) => ({
+      city: t.city,
+      category: t.category,
+      limit: t.limit,
+    }));
+    const added = addTargets(incoming);
+    setMessage({
+      type: "success",
+      text: `Applied ${template.name}. Added ${added} unique target(s).`,
+    });
+    setApplyingTemplateId(null);
   };
 
   const runBatch = async () => {
@@ -77,6 +164,16 @@ export default function BatchQueue() {
     }
   };
 
+  const clearQueue = () => {
+    setTargets([]);
+    setMessage({
+      type: "success",
+      text: "Queue cleared.",
+    });
+  };
+
+  const totalLeadBudget = targets.reduce((sum, target) => sum + target.limit, 0);
+
   return (
     <div className="stagger-children">
       <div className="mb-8">
@@ -95,6 +192,47 @@ export default function BatchQueue() {
           {message.text}
         </div>
       )}
+
+      <div className="card-static p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 7h16M4 12h16M4 17h10" />
+              <circle cx="19" cy="17" r="2" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Niche Playbooks</h3>
+            <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Prebuilt queue templates</p>
+          </div>
+        </div>
+
+        {isTemplatesLoading ? (
+          <p className="text-xs text-[var(--text-muted)]">Loading playbooks...</p>
+        ) : templates.length === 0 ? (
+          <p className="text-xs text-[var(--text-muted)]">No playbooks available for this plan.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {templates.map((template) => (
+              <div key={template.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] p-3">
+                <p className="text-xs font-medium text-[var(--text-primary)]">{template.name}</p>
+                <p className="text-[11px] text-[var(--text-muted)] mt-1">{template.expected_outcome}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="tag font-mono text-[10px]">{template.vertical}</span>
+                  <span className="tag font-mono text-[10px]">{template.google_maps_targets.length} targets</span>
+                </div>
+                <button
+                  onClick={() => applyTemplate(template)}
+                  disabled={isLoading || applyingTemplateId === template.id}
+                  className="mt-3 btn-secondary w-full py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {applyingTemplateId === template.id ? "Adding..." : "Add Template to Queue"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="card-static p-6">
@@ -146,7 +284,7 @@ export default function BatchQueue() {
             </div>
             <button
               onClick={addTarget}
-              disabled={!city || !category}
+              disabled={isLoading || !city || !category}
               className="btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             >
               + Add to Queue
@@ -181,7 +319,7 @@ Sydney, Plumber, 20"
           />
           <button
             onClick={parseAndAdd}
-            disabled={!pasteText.trim()}
+            disabled={isLoading || !pasteText.trim()}
             className="mt-4 btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Parse & Add
@@ -203,7 +341,16 @@ Sydney, Plumber, 20"
             </div>
           </div>
           {targets.length > 0 && (
-            <span className="tag tag-gold font-mono text-[10px]">Ready</span>
+            <div className="flex items-center gap-2">
+              <span className="tag font-mono text-[10px]">{totalLeadBudget} lead budget</span>
+              <span className="tag tag-gold font-mono text-[10px]">Ready</span>
+              <button
+                onClick={clearQueue}
+                className="btn-secondary px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider"
+              >
+                Clear
+              </button>
+            </div>
           )}
         </div>
 
@@ -252,7 +399,7 @@ Sydney, Plumber, 20"
             </>
           ) : (
             <>
-              <span>Run Batch ({targets.length} targets)</span>
+              <span>Run Batch ({targets.length} targets / {totalLeadBudget} leads)</span>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>

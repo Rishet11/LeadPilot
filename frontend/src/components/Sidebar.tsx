@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearStoredApiKey } from "@/lib/auth";
+import { clearStoredAuthToken } from "@/lib/auth";
 
 const navItems = [
   {
@@ -69,7 +69,7 @@ export default function Sidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    clearStoredApiKey();
+    clearStoredAuthToken();
     router.push("/login");
   };
 
@@ -122,6 +122,27 @@ export default function Sidebar() {
             );
           })}
         </ul>
+
+        {/* Upgrade Plan Link */}
+        <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+          <Link
+            href="/pricing"
+            className={`sidebar-item relative flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium transition-all ${
+              pathname === "/pricing"
+                ? "sidebar-item-active"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            <span className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors bg-gradient-to-br from-yellow-400/20 to-orange-500/20 text-yellow-500`}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </span>
+            Upgrade Plan
+          </Link>
+        </div>
       </nav>
 
       {/* Footer */}
@@ -151,4 +172,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-

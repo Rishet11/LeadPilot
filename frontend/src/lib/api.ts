@@ -1,18 +1,17 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Import auth utilities
-import { getStoredApiKey } from "./auth";
+import { getStoredAuthToken } from "./auth";
 
-// Helper to get headers with API key from localStorage
+// Helper to get headers with bearer token from localStorage
 function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
-  
-  // Try localStorage first, then fall back to env var (for SSR/initial load)
-  const apiKey = getStoredApiKey() || process.env.NEXT_PUBLIC_API_KEY || "";
-  if (apiKey) {
-    headers["X-API-Key"] = apiKey;
+
+  const authToken = getStoredAuthToken();
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
   }
   return headers;
 }
@@ -64,6 +63,66 @@ export interface Setting {
   updated_at: string;
 }
 
+export interface UsageCurrent {
+  period: string | null;
+  leads_generated: number;
+  scrape_jobs: number;
+  remaining_credits: number | null;
+  monthly_quota: number | null;
+}
+
+export interface CurrentPlan {
+  plan_tier: string;
+  monthly_lead_quota: number;
+  instagram_enabled: boolean;
+  max_concurrent_jobs: number;
+  subscription_status: string;
+}
+
+export interface GoogleAuthResult {
+  access_token: string;
+  token_type: string;
+  customer_id: number;
+  email: string;
+  name: string;
+  plan_tier: string;
+  is_new_customer: boolean;
+}
+
+export interface GeneratedGoogleTarget {
+  city: string;
+  category: string;
+  limit: number;
+}
+
+export interface GeneratedInstagramTarget {
+  keyword: string;
+  limit: number;
+  followers_min?: number;
+  followers_max?: number;
+  score_threshold?: number;
+}
+
+export interface TargetBuilderResponse {
+  objective: string;
+  google_maps_targets: GeneratedGoogleTarget[];
+  instagram_targets: GeneratedInstagramTarget[];
+  strategy: string;
+  source: string;
+  warnings: string[];
+}
+
+export interface AgentTemplate {
+  id: string;
+  name: string;
+  vertical: string;
+  ideal_for: string;
+  objective: string;
+  expected_outcome: string;
+  google_maps_targets: GeneratedGoogleTarget[];
+  instagram_targets: GeneratedInstagramTarget[];
+}
+
 // Error handling helper
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -73,19 +132,15 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json();
 }
 
-// Validate API key by making a test request
-export async function validateApiKey(apiKey: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/api/leads/stats`, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-      },
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function loginWithGoogleIdToken(idToken: string): Promise<GoogleAuthResult> {
+  const res = await fetch(`${API_BASE}/api/auth/google`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id_token: idToken }),
+  });
+  return handleResponse<GoogleAuthResult>(res);
 }
 
 // Leads API
@@ -216,4 +271,46 @@ export async function resetSettings(): Promise<void> {
     headers: getHeaders(),
   });
   if (!res.ok) throw new Error("Failed to reset settings");
+}
+
+// Usage & Plan APIs
+export async function getCurrentUsage(): Promise<UsageCurrent> {
+  const res = await fetch(`${API_BASE}/api/usage/current`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<UsageCurrent>(res);
+}
+
+export async function getCurrentPlan(): Promise<CurrentPlan> {
+  const res = await fetch(`${API_BASE}/api/plans/current`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<CurrentPlan>(res);
+}
+
+export async function generateTargetsFromObjective(payload: {
+  objective: string;
+  max_targets?: number;
+  default_limit?: number;
+  include_instagram?: boolean;
+}): Promise<TargetBuilderResponse> {
+  const res = await fetch(`${API_BASE}/api/agents/target-builder`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<TargetBuilderResponse>(res);
+}
+
+export async function getAgentTemplates(vertical?: string): Promise<AgentTemplate[]> {
+  const searchParams = new URLSearchParams();
+  if (vertical) {
+    searchParams.set("vertical", vertical);
+  }
+
+  const suffix = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  const res = await fetch(`${API_BASE}/api/agents/templates${suffix}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<AgentTemplate[]>(res);
 }

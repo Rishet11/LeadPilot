@@ -1,22 +1,22 @@
-// Auth utilities for managing API key in localStorage
+// Auth utilities for managing bearer session token in localStorage
 
-const API_KEY_STORAGE_KEY = "leadpilot_api_key";
+const AUTH_TOKEN_STORAGE_KEY = "leadpilot_auth_token";
 
-export function getStoredApiKey(): string {
+export function getStoredAuthToken(): string {
   if (typeof window === "undefined") return "";
-  return localStorage.getItem(API_KEY_STORAGE_KEY) || "";
+  return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || "";
 }
 
-export function setStoredApiKey(key: string): void {
+export function setStoredAuthToken(token: string): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(API_KEY_STORAGE_KEY, key);
+  localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
 }
 
-export function clearStoredApiKey(): void {
+export function clearStoredAuthToken(): void {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(API_KEY_STORAGE_KEY);
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
 export function isLoggedIn(): boolean {
-  return !!getStoredApiKey();
+  return !!getStoredAuthToken();
 }

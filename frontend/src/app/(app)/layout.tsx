@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 import Sidebar from "@/components/Sidebar";
+import MobileNav from "@/components/MobileNav";
 
 export default function AppLayout({
   children,
@@ -38,10 +39,13 @@ export default function AppLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
+    <div className="min-h-screen lg:flex">
+      <div className="hidden lg:flex">
+        <Sidebar />
+      </div>
       <main className="flex-1 overflow-auto">
-        <div className="max-w-[1100px] mx-auto px-8 py-8 lg:px-10 lg:py-10 animate-page-in">
+        <MobileNav />
+        <div className="max-w-[1100px] mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-10 animate-page-in">
           {children}
         </div>
       </main>

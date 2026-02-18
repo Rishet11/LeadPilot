@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getSettings, updateSetting, resetSettings, Setting } from "@/lib/api";
+import { getSettings, updateSetting, resetSettings } from "@/lib/api";
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Setting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -36,11 +35,16 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(null), 4000);
+    return () => clearTimeout(timer);
+  }, [message]);
+
   const loadSettings = async () => {
     setIsLoading(true);
     try {
       const data = await getSettings();
-      setSettings(data);
 
       const promptSetting = data.find((s) => s.key === "ai_system_prompt");
       if (promptSetting) {
@@ -158,6 +162,7 @@ export default function SettingsPage() {
   const hasAiChanges = aiPrompt !== originalAiPrompt;
   const hasScoringChanges = JSON.stringify(scoringConfig) !== JSON.stringify(originalScoringConfig);
   const hasInstagramChanges = JSON.stringify(instagramConfig) !== JSON.stringify(originalInstagramConfig);
+  const hasAnyChanges = hasAiChanges || hasScoringChanges || hasInstagramChanges;
 
   const handleReset = async () => {
     if (!confirm("Are you sure you want to reset all settings to defaults?")) return;
@@ -206,10 +211,10 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={saveSettings}
-            disabled={isSaving}
+            disabled={isSaving || !hasAnyChanges}
             className="btn-primary px-5 py-2 text-xs font-medium disabled:opacity-50"
           >
-            {isSaving ? "Saving..." : "Save All"}
+            {isSaving ? "Saving..." : hasAnyChanges ? "Save All" : "No Changes"}
           </button>
         </div>
       </div>
@@ -420,7 +425,7 @@ export default function SettingsPage() {
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">API Keys</h3>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Server Integrations</h3>
               <p className="text-xs text-[var(--text-muted)]">
                 Configured via server environment variables
               </p>

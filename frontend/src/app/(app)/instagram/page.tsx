@@ -33,6 +33,7 @@ const BIO_KEYWORDS: Record<string, string[]> = {
 };
 
 const POLL_INTERVAL_MS = 5000;
+const MESSAGE_TIMEOUT_MS = 4500;
 
 interface Target {
   keyword: string;
@@ -40,6 +41,55 @@ interface Target {
   followers_min?: number;
   followers_max?: number;
   score_threshold?: number;
+}
+
+function normalizeTarget(raw: Target): Target | null {
+  const keyword = raw.keyword.trim();
+  if (!keyword) {
+    return null;
+  }
+
+  const limit = Math.max(1, Math.min(200, Number(raw.limit) || 50));
+  const followersMin = Number.isFinite(raw.followers_min) ? Number(raw.followers_min) : undefined;
+  const followersMax = Number.isFinite(raw.followers_max) ? Number(raw.followers_max) : undefined;
+  const scoreThreshold = Number.isFinite(raw.score_threshold) ? Number(raw.score_threshold) : undefined;
+
+  const normalized: Target = {
+    keyword,
+    limit,
+  };
+
+  if (followersMin !== undefined) {
+    normalized.followers_min = Math.max(0, followersMin);
+  }
+  if (followersMax !== undefined) {
+    normalized.followers_max = Math.max(0, followersMax);
+  }
+  if (
+    normalized.followers_min !== undefined &&
+    normalized.followers_max !== undefined &&
+    normalized.followers_min > normalized.followers_max
+  ) {
+    const min = normalized.followers_max;
+    const max = normalized.followers_min;
+    normalized.followers_min = min;
+    normalized.followers_max = max;
+  }
+  if (scoreThreshold !== undefined) {
+    normalized.score_threshold = Math.max(0, Math.min(100, scoreThreshold));
+  }
+
+  return normalized;
+}
+
+function dedupeTargets(items: Target[]): Target[] {
+  const map = new Map<string, Target>();
+  for (const item of items) {
+    const normalized = normalizeTarget(item);
+    if (!normalized) continue;
+    map.set(normalized.keyword.toLowerCase(), normalized);
+  }
+  return Array.from(map.values());
 }
 
 export default function InstagramPage() {
@@ -66,6 +116,25 @@ export default function InstagramPage() {
   const [activeTab, setActiveTab] = useState<"jobs" | "results">("jobs");
   const [resultsLoading, setResultsLoading] = useState(false);
 
+  const mergeTargets = (incoming: Target[]) => {
+    const merged = dedupeTargets([...targets, ...incoming]);
+    const addedCount = Math.max(0, merged.length - targets.length);
+    setTargets(merged);
+    return addedCount;
+  };
+
+  const buildTarget = (rawKeyword: string): Target => {
+    const built: Target = {
+      keyword: rawKeyword,
+      limit,
+    };
+    if (useCustomRange) {
+      built.followers_min = followersMin;
+      built.followers_max = followersMax;
+    }
+    return built;
+  };
+
   useEffect(() => {
     getSettings().then((settings: Setting[]) => {
       const minSetting = settings.find(s => s.key === "instagram_followers_min");
@@ -76,6 +145,12 @@ export default function InstagramPage() {
       });
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(null), MESSAGE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   // Poll jobs
   const loadJobs = useCallback(async () => {
@@ -111,13 +186,14 @@ export default function InstagramPage() {
   const combinedKeyword = city ? `${keyword} ${city}`.trim() : keyword.trim();
 
   const addTarget = () => {
-    if (!keyword.trim()) return;
-    const newTarget: Target = { keyword: combinedKeyword, limit };
-    if (useCustomRange) {
-      newTarget.followers_min = followersMin;
-      newTarget.followers_max = followersMax;
+    if (!combinedKeyword.trim()) return;
+    const added = mergeTargets([buildTarget(combinedKeyword)]);
+    if (added === 0) {
+      setMessage({ type: "error", text: "Keyword already exists in queue." });
+      return;
     }
-    setTargets([...targets, newTarget]);
+
+    setMessage({ type: "success", text: `Added "${combinedKeyword}" to queue.` });
     setKeyword("");
     setActiveNiche(null);
     setLimit(50);
@@ -133,7 +209,11 @@ export default function InstagramPage() {
     const newTargets: Target[] = [];
 
     for (const line of lines) {
-      const parts = line.split(",").map((p) => p.trim());
+      const parts = line
+        .replace(/\s*\|\s*/g, ",")
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
       const [keywordPart, limitPart, minPart, maxPart] = parts;
       if (keywordPart) {
         const target: Target = {
@@ -147,8 +227,17 @@ export default function InstagramPage() {
     }
 
     if (newTargets.length > 0) {
-      setTargets([...targets, ...newTargets]);
+      const added = mergeTargets(newTargets);
+      setMessage({
+        type: "success",
+        text: `Parsed ${newTargets.length} rows. Added ${added} unique keyword(s).`,
+      });
       setPasteText("");
+    } else {
+      setMessage({
+        type: "error",
+        text: "No valid rows found. Use: keyword, limit, min, max",
+      });
     }
   };
 
@@ -184,12 +273,12 @@ export default function InstagramPage() {
 
   const handleSuggestedCombo = (niche: string) => {
     const combo = `${niche.toLowerCase()} ${city}`.trim();
-    const newTarget: Target = { keyword: combo, limit };
-    if (useCustomRange) {
-      newTarget.followers_min = followersMin;
-      newTarget.followers_max = followersMax;
+    const added = mergeTargets([buildTarget(combo)]);
+    if (added === 0) {
+      setMessage({ type: "error", text: `"${combo}" already exists in queue.` });
+      return;
     }
-    setTargets([...targets, newTarget]);
+    setMessage({ type: "success", text: `Added "${combo}" to queue.` });
   };
 
   const isComboQueued = (niche: string) => {
@@ -239,6 +328,14 @@ export default function InstagramPage() {
     return "bg-[var(--text-muted)]";
   };
 
+  const clearQueue = () => {
+    if (targets.length === 0) return;
+    setTargets([]);
+    setMessage({ type: "success", text: "Queue cleared." });
+  };
+
+  const totalProfileBudget = targets.reduce((sum, target) => sum + target.limit, 0);
+
   return (
     <div className="stagger-children">
       {/* Title + Live running indicator */}
@@ -279,6 +376,7 @@ export default function InstagramPage() {
             <button
               key={niche}
               onClick={() => handleNicheClick(niche)}
+              disabled={isLoading}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
                 activeNiche === niche
                   ? "bg-[var(--accent)] text-black border-[var(--accent)]"
@@ -309,7 +407,7 @@ export default function InstagramPage() {
                     if (alreadyQueued) return;
                     setKeyword(term);
                   }}
-                  disabled={alreadyQueued}
+                  disabled={alreadyQueued || isLoading}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
                     keyword === term
                       ? "bg-[var(--accent)] text-black border-[var(--accent)]"
@@ -329,16 +427,18 @@ export default function InstagramPage() {
                 for (const term of terms) {
                   const full = city ? `${term} ${city}`.trim() : term;
                   if (!targets.some(t => t.keyword.toLowerCase() === full.toLowerCase())) {
-                    const t: Target = { keyword: full, limit };
-                    if (useCustomRange) {
-                      t.followers_min = followersMin;
-                      t.followers_max = followersMax;
-                    }
-                    newTargets.push(t);
+                    newTargets.push(buildTarget(full));
                   }
                 }
-                if (newTargets.length > 0) setTargets([...targets, ...newTargets]);
+                if (newTargets.length > 0) {
+                  const added = mergeTargets(newTargets);
+                  setMessage({
+                    type: "success",
+                    text: `Added ${added} keyword(s) from ${activeNiche}.`,
+                  });
+                }
               }}
+              disabled={isLoading}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all border border-dashed border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-dim)]"
             >
               + Add all
@@ -360,7 +460,7 @@ export default function InstagramPage() {
                 <button
                   key={niche}
                   onClick={() => !queued && handleSuggestedCombo(niche)}
-                  disabled={queued}
+                  disabled={queued || isLoading}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
                     queued
                       ? "opacity-40 cursor-not-allowed bg-[var(--surface-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"
@@ -401,6 +501,7 @@ export default function InstagramPage() {
                   setKeyword(e.target.value);
                   setActiveNiche(null);
                 }}
+                disabled={isLoading}
                 placeholder="e.g., makeup artist"
                 className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
               />
@@ -411,6 +512,7 @@ export default function InstagramPage() {
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
+                disabled={isLoading}
                 placeholder="e.g., london"
                 className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
               />
@@ -420,6 +522,7 @@ export default function InstagramPage() {
               <select
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value))}
+                disabled={isLoading}
                 className="field w-full px-4 py-3 text-sm focus:outline-none"
               >
                 <option value={10}>10 profiles</option>
@@ -435,6 +538,7 @@ export default function InstagramPage() {
                   type="checkbox"
                   checked={useCustomRange}
                   onChange={(e) => setUseCustomRange(e.target.checked)}
+                  disabled={isLoading}
                   className="w-3.5 h-3.5 rounded accent-[var(--accent)]"
                 />
                 <span className="text-xs text-[var(--text-muted)]">Custom follower range</span>
@@ -448,6 +552,7 @@ export default function InstagramPage() {
                       type="number"
                       value={followersMin ?? ""}
                       onChange={(e) => setFollowersMin(e.target.value ? parseInt(e.target.value) : undefined)}
+                      disabled={isLoading}
                       placeholder={String(globalDefaults.min)}
                       className="field w-full px-3 py-2 text-xs placeholder:text-[var(--text-dim)] focus:outline-none"
                     />
@@ -458,6 +563,7 @@ export default function InstagramPage() {
                       type="number"
                       value={followersMax ?? ""}
                       onChange={(e) => setFollowersMax(e.target.value ? parseInt(e.target.value) : undefined)}
+                      disabled={isLoading}
                       placeholder={String(globalDefaults.max)}
                       className="field w-full px-3 py-2 text-xs placeholder:text-[var(--text-dim)] focus:outline-none"
                     />
@@ -468,7 +574,7 @@ export default function InstagramPage() {
 
             <button
               onClick={addTarget}
-              disabled={!keyword.trim()}
+              disabled={!keyword.trim() || isLoading}
               className="btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             >
               + Add to Queue
@@ -495,13 +601,14 @@ export default function InstagramPage() {
           <textarea
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
+            disabled={isLoading}
             placeholder={`makeup artist london, 50\nhome baker mumbai, 30, ${globalDefaults.min}, ${globalDefaults.max}\npersonal trainer sydney, 20, 1000, 10000`}
             rows={6}
             className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none resize-none font-mono"
           />
           <button
             onClick={parseAndAdd}
-            disabled={!pasteText.trim()}
+            disabled={!pasteText.trim() || isLoading}
             className="mt-4 btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Parse & Add
@@ -520,11 +627,22 @@ export default function InstagramPage() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Queue</h3>
-              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{targets.length} keywords</p>
+              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                {targets.length} keywords
+              </p>
             </div>
           </div>
           {targets.length > 0 && (
-            <span className="tag tag-gold font-mono text-[10px]">Ready</span>
+            <div className="flex items-center gap-2">
+              <span className="tag tag-gold font-mono text-[10px]">{totalProfileBudget} profiles</span>
+              <button
+                onClick={clearQueue}
+                disabled={isLoading}
+                className="btn-secondary px-3 py-1.5 text-[10px] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Clear
+              </button>
+            </div>
           )}
         </div>
 
@@ -578,7 +696,7 @@ export default function InstagramPage() {
             </>
           ) : (
             <>
-              <span>Run Batch ({targets.length} keywords)</span>
+              <span>Run Batch ({targets.length} keywords / {totalProfileBudget} profiles)</span>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>

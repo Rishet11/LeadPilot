@@ -13,6 +13,14 @@ npm install
 ```bash
 # Create .env.local with your API URL
 NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# Google sign-in client ID (must match backend GOOGLE_CLIENT_ID)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+
+# Optional: Live checkout links
+NEXT_PUBLIC_LEMON_STARTER_URL=
+NEXT_PUBLIC_LEMON_GROWTH_URL=
+NEXT_PUBLIC_LEMON_AGENCY_URL=
 ```
 
 3. Run development server:
@@ -25,7 +33,7 @@ npm run dev
 ## Pages
 
 - **Dashboard** - Metrics, recent activity, quick scrape
-- **Batch Queue** - Queue multiple city/industry targets
+- **Batch Queue** - Queue multiple city/industry targets + apply niche playbooks
 - **Leads CRM** - View, filter, and manage leads
 - **Instagram** - Instagram keyword scraper
 - **Settings** - AI prompt and scoring configuration

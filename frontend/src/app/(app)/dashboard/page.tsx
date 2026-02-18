@@ -1,9 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import MetricCard from "@/components/MetricCard";
 import QuickScrape from "@/components/QuickScrape";
-import { getLeadStats, getJobs, scrapeSingle, LeadStats, Job } from "@/lib/api";
+import {
+  AgentTemplate,
+  getLeadStats,
+  getJobs,
+  scrapeSingle,
+  scrapeBatch,
+  getCurrentUsage,
+  getCurrentPlan,
+  getAgentTemplates,
+  generateTargetsFromObjective,
+  GeneratedGoogleTarget,
+  LeadStats,
+  Job,
+  UsageCurrent,
+  CurrentPlan,
+} from "@/lib/api";
 
 const POLL_INTERVAL_MS = 5000;
 const REVENUE_PER_HIGH_PRIORITY_LEAD = 5000;
@@ -11,34 +26,60 @@ const REVENUE_PER_HIGH_PRIORITY_LEAD = 5000;
 export default function Dashboard() {
   const [stats, setStats] = useState<LeadStats | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [usage, setUsage] = useState<UsageCurrent | null>(null);
+  const [plan, setPlan] = useState<CurrentPlan | null>(null);
+  const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBatchLoading, setIsBatchLoading] = useState(false);
+  const [templateQueueingId, setTemplateQueueingId] = useState<string | null>(null);
+  const [isGeneratingTargets, setIsGeneratingTargets] = useState(false);
+  const [agentObjective, setAgentObjective] = useState("");
+  const [generatedTargets, setGeneratedTargets] = useState<GeneratedGoogleTarget[]>([]);
+  const [agentWarnings, setAgentWarnings] = useState<string[]>([]);
+  const [agentInfo, setAgentInfo] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(true);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const refreshInFlightRef = useRef(false);
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, POLL_INTERVAL_MS);
+    loadData(true);
+    const interval = setInterval(() => {
+      loadData(false);
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (showSpinner = false) => {
+    if (refreshInFlightRef.current) {
+      return;
+    }
+    if (showSpinner) {
+      setIsRefreshing(true);
+    }
+    refreshInFlightRef.current = true;
+
     try {
-      const [statsData, jobsData] = await Promise.all([
+      const [statsData, jobsData, usageData, planData, templatesData] = await Promise.all([
         getLeadStats(),
         getJobs(10),
+        getCurrentUsage(),
+        getCurrentPlan(),
+        getAgentTemplates(),
       ]);
       setStats(statsData);
       setJobs(jobsData);
+      setUsage(usageData);
+      setPlan(planData);
+      setTemplates(templatesData.slice(0, 4));
+      setRefreshWarning(null);
+      setLastUpdatedAt(new Date().toISOString());
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
-      setStats({
-        total_leads: 0,
-        high_priority_leads: 0,
-        leads_by_status: { new: 0, contacted: 0, closed: 0 },
-        leads_by_source: { google_maps: 0, instagram: 0 },
-      });
-      setJobs([]);
+      setRefreshWarning("Live refresh failed. Showing last known data.");
     } finally {
+      refreshInFlightRef.current = false;
       setIsRefreshing(false);
     }
   };
@@ -47,14 +88,115 @@ export default function Dashboard() {
     setIsLoading(true);
     setError(null);
     try {
-      await scrapeSingle(city, category, limit);
+      await scrapeSingle(city.trim(), category.trim(), limit);
       setTimeout(loadData, 2000);
+      setAgentInfo(`Queued quick scrape for ${category} in ${city}.`);
+      return true;
     } catch (err) {
       setError("Failed to start scrape. Make sure the API is running.");
       console.error("Failed to start scrape:", err);
+      return false;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGenerateTargets = async () => {
+    if (!agentObjective.trim()) return;
+    setIsGeneratingTargets(true);
+    setError(null);
+    setAgentInfo(null);
+
+    try {
+      const result = await generateTargetsFromObjective({
+        objective: agentObjective.trim(),
+        max_targets: 6,
+        default_limit: 50,
+        include_instagram: false,
+      });
+      setGeneratedTargets(result.google_maps_targets || []);
+      setAgentWarnings(result.warnings || []);
+      setAgentInfo(`Generated ${result.google_maps_targets.length} target(s) using ${result.source.toUpperCase()} strategy.`);
+    } catch (err) {
+      console.error("Failed to generate targets:", err);
+      setError("Target Builder failed. Try a clearer objective with city + industry.");
+      setGeneratedTargets([]);
+      setAgentWarnings([]);
+    } finally {
+      setIsGeneratingTargets(false);
+    }
+  };
+
+  const handleRunGeneratedBatch = async () => {
+    if (generatedTargets.length === 0) return;
+    setIsBatchLoading(true);
+    setError(null);
+    setAgentInfo(null);
+
+    try {
+      const result = await scrapeBatch(generatedTargets);
+      setAgentInfo(`Queued batch job #${result.job_id} with ${generatedTargets.length} targets.`);
+      setGeneratedTargets([]);
+      setTimeout(loadData, 2000);
+    } catch (err) {
+      console.error("Failed to queue generated targets:", err);
+      setError("Failed to queue generated targets.");
+    } finally {
+      setIsBatchLoading(false);
+    }
+  };
+
+  const handleUseTemplateObjective = (template: AgentTemplate) => {
+    setAgentObjective(template.objective);
+    setAgentInfo(`Loaded "${template.name}" objective. You can tweak and generate targets now.`);
+    setError(null);
+  };
+
+  const handleQueueTemplate = async (template: AgentTemplate) => {
+    if (!template.google_maps_targets || template.google_maps_targets.length === 0) {
+      setError("This template has no Google Maps targets to queue.");
+      return;
+    }
+
+    setTemplateQueueingId(template.id);
+    setError(null);
+    setAgentInfo(null);
+
+    try {
+      const result = await scrapeBatch(template.google_maps_targets);
+      setAgentInfo(
+        `Queued ${template.name} as job #${result.job_id} with ${template.google_maps_targets.length} targets.`
+      );
+      setTimeout(loadData, 2000);
+    } catch (err) {
+      console.error("Failed to queue template:", err);
+      setError(`Failed to queue ${template.name}.`);
+    } finally {
+      setTemplateQueueingId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!agentInfo && !error && !refreshWarning) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setAgentInfo(null);
+      setError(null);
+      setRefreshWarning(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [agentInfo, error, refreshWarning]);
+
+  const formatLastUpdated = (isoTime: string | null) => {
+    if (!isoTime) return "not synced yet";
+    const seconds = Math.max(0, Math.floor((Date.now() - new Date(isoTime).getTime()) / 1000));
+    if (seconds < 5) return "just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
   };
 
   const formatDate = (dateStr: string) => {
@@ -93,19 +235,52 @@ export default function Dashboard() {
           <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Overview</p>
           <h1 className="font-display text-3xl text-[var(--text-primary)] tracking-[-0.02em]">Dashboard</h1>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--success-dim)] border border-[var(--success)]/20">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--success)] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--success)]"></span>
-          </span>
-          <span className="font-mono text-[10px] text-[var(--success)] uppercase tracking-wider">Live</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => loadData(true)}
+            disabled={isRefreshing}
+            className="btn-secondary px-3 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </button>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--success-dim)] border border-[var(--success)]/20">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--success)] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--success)]"></span>
+            </span>
+            <span className="font-mono text-[10px] text-[var(--success)] uppercase tracking-wider">Live</span>
+          </div>
         </div>
       </div>
+      <p className="mb-4 text-xs text-[var(--text-muted)]">
+        Last synced: {formatLastUpdated(lastUpdatedAt)}
+      </p>
+      {plan && (
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <span className="tag font-mono text-[10px] uppercase">{plan.plan_tier} plan</span>
+          <span className="tag font-mono text-[10px]">quota: {plan.monthly_lead_quota >= 1000000 ? "unlimited" : plan.monthly_lead_quota}</span>
+          {usage && (
+            <span className="tag font-mono text-[10px]">
+              remaining: {usage.remaining_credits === null ? "unlimited" : usage.remaining_credits}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Error alert */}
+      {refreshWarning && (
+        <div className="mb-6 p-4 bg-[var(--warning-dim)] border border-[var(--warning)]/20 rounded-xl text-[var(--warning)] text-sm">
+          {refreshWarning}
+        </div>
+      )}
       {error && (
         <div className="mb-6 p-4 bg-[var(--error-dim)] border border-[var(--error)]/20 rounded-xl text-[var(--error)] text-sm">
           {error}
+        </div>
+      )}
+      {agentInfo && (
+        <div className="mb-6 p-4 bg-[var(--success-dim)] border border-[var(--success)]/20 rounded-xl text-[var(--success)] text-sm">
+          {agentInfo}
         </div>
       )}
 
@@ -206,8 +381,125 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Quick scrape */}
-        <QuickScrape onScrape={handleScrape} isLoading={isLoading} />
+        <div className="space-y-5">
+          <QuickScrape onScrape={handleScrape} isLoading={isLoading} />
+
+          <div className="card-static p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a5 5 0 0 0-5 5v2H6a2 2 0 0 0-2 2v3a8 8 0 0 0 16 0v-3a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5z" />
+                  <circle cx="9" cy="14" r="1" />
+                  <circle cx="15" cy="14" r="1" />
+                  <path d="M9 18h6" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Target Builder Agent</h3>
+                <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Objective to targets</p>
+              </div>
+            </div>
+
+            <textarea
+              value={agentObjective}
+              onChange={(e) => setAgentObjective(e.target.value)}
+              rows={3}
+              placeholder="e.g., Find dentists and med spas in Miami and Fort Lauderdale with weak digital presence"
+              className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none resize-none"
+            />
+
+            <button
+              onClick={handleGenerateTargets}
+              disabled={isGeneratingTargets || !agentObjective.trim()}
+              className="btn-secondary w-full mt-3 py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingTargets ? "Generating..." : "Generate Targets"}
+            </button>
+
+            {agentWarnings.length > 0 && (
+              <div className="mt-3 p-3 rounded-lg bg-[var(--warning-dim)] border border-[var(--warning)]/20">
+                {agentWarnings.map((w, idx) => (
+                  <p key={idx} className="text-[var(--warning)] text-xs">{w}</p>
+                ))}
+              </div>
+            )}
+
+            {generatedTargets.length > 0 && (
+              <div className="mt-4">
+                <div className="space-y-2 max-h-56 overflow-auto">
+                  {generatedTargets.map((target, idx) => (
+                    <div
+                      key={`${target.city}-${target.category}-${idx}`}
+                      className="flex items-center justify-between px-3 py-2 bg-[var(--surface-elevated)] rounded-lg border border-[var(--border-subtle)]"
+                    >
+                      <p className="text-xs text-[var(--text-primary)]">
+                        {target.city} / {target.category}
+                      </p>
+                      <span className="tag font-mono text-[10px]">{target.limit}</span>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={handleRunGeneratedBatch}
+                  disabled={isBatchLoading}
+                  className="btn-primary w-full mt-3 py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isBatchLoading ? "Queueing..." : `Queue Batch (${generatedTargets.length} targets)`}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="card-static p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 7h16M4 12h16M4 17h10" />
+                  <circle cx="19" cy="17" r="2" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Niche Playbooks</h3>
+                <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">One-click campaigns</p>
+              </div>
+            </div>
+
+            {templates.length === 0 ? (
+              <p className="text-xs text-[var(--text-muted)]">No playbooks available for this plan.</p>
+            ) : (
+              <div className="space-y-3">
+                {templates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-elevated)]"
+                  >
+                    <p className="text-xs font-medium text-[var(--text-primary)]">{template.name}</p>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-1">{template.expected_outcome}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="tag font-mono text-[10px]">{template.vertical}</span>
+                      <span className="tag font-mono text-[10px]">{template.google_maps_targets.length} targets</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleUseTemplateObjective(template)}
+                        className="btn-secondary py-2 text-xs"
+                      >
+                        Use Objective
+                      </button>
+                      <button
+                        onClick={() => handleQueueTemplate(template)}
+                        disabled={templateQueueingId === template.id}
+                        className="btn-primary py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {templateQueueingId === template.id ? "Queueing..." : "Queue Now"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Stats cards */}

@@ -25,6 +25,15 @@
   --accent-dim: rgba(212, 175, 55, 0.1);
   --accent-glow: rgba(212, 175, 55, 0.15);
 
+  /* Backward-compatible aliases used across older UI screens */
+  --bg-base: var(--surface-base);
+  --bg-tertiary: var(--surface-card);
+  --fg-primary: var(--text-primary);
+  --border: var(--border-default);
+  --accent-primary: var(--accent);
+  --accent-primary-hover: var(--accent-hover);
+  --accent-muted: var(--accent-dim);
+
   /* Semantic colors */
   --success: #22C55E;
   --success-dim: rgba(34, 197, 94, 0.1);
