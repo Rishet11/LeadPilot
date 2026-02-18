@@ -17,6 +17,7 @@ LeadPilot is an AI-powered lead generation platform that automates prospecting, 
 - **Smart Scoring**: Filters out low-value prospects. Prioritizes businesses with high review counts but no website or poor social presence.
 - **Auto-Personalization**: Reads customer reviews to generate "Human-like" outreach messages (e.g., "Saw your customers love the pastry but hate the wait times...").
 - **Configurable Models**: Switch between Gemini models (e.g., `gemini-2.0-flash`, `gemini-3-flash`) via environment variables.
+- **Target Builder + Niche Playbooks**: Convert plain-English goals into scrape targets, or launch prebuilt vertical templates in one click.
 
 ### ⚙️ Automation & Scale
 - **Batch Processing**: Run scraping jobs for multiple cities and categories in one go.
@@ -67,6 +68,7 @@ cp .env.example .env
 **Edit `.env`** with your keys:
 - `APIFY_API_TOKEN`
 - `GEMINI_API_KEY`
+- `GOOGLE_CLIENT_ID` (for Google login)
 - `GEMINI_MODEL_NAME` (optional, defaults to `gemini-2.0-flash`)
 
 ### 3. Frontend Setup
@@ -76,6 +78,8 @@ npm install
 
 # Configure environment
 cp .env.example .env.local
+# Required for Google login
+# NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
 ```
 
 ---
@@ -100,17 +104,30 @@ python main.py --city "Austin" --category "Plumber" --agent --find-emails
 uvicorn api.main:app --reload
 ```
 
-**Terminal 2 (Frontend):**
+**Terminal 2 (Worker):**
+```bash
+python worker.py
+```
+
+**Terminal 3 (Frontend):**
 ```bash
 cd frontend
 npm run dev
 ```
 Access the dashboard at `http://localhost:3000`.
 
+### Option 2b: One command
+```bash
+make dev
+```
+This starts API, worker, and frontend together.
+
 ### Option 3: Docker
 ```bash
 docker-compose up --build
 ```
+
+This now starts `api`, `worker`, and `frontend`.
 
 ---
 

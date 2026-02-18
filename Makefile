@@ -1,15 +1,22 @@
-.PHONY: dev api frontend test lint format clean docker-up docker-down
+VENV_BIN := $(CURDIR)/venv/bin
+NODE22_BIN := /opt/homebrew/opt/node@22/bin
+NODE_PATH_PREFIX := $(if $(wildcard $(NODE22_BIN)/node),$(NODE22_BIN):,)
+
+.PHONY: dev api worker frontend test lint format clean docker-up docker-down
 
 # Development
 dev:
-	@echo "Starting API and Frontend..."
-	@make -j2 api frontend
+	@echo "Starting API, Worker, and Frontend..."
+	@make -j3 api worker frontend
 
 api:
-	uvicorn api.main:app --reload
+	$(VENV_BIN)/python3 -m uvicorn api.main:app --reload --reload-dir api --reload-include "*.py" --reload-exclude "venv*" --reload-exclude "venv_py313_backup_*" --reload-exclude "frontend/*" --reload-exclude "data/*" --reload-exclude "logs/*" --reload-exclude ".git/*"
+
+worker:
+	$(VENV_BIN)/python3 worker.py
 
 frontend:
-	cd frontend && npm run dev
+	cd frontend && PATH="$(NODE_PATH_PREFIX)$$PATH" npm run dev
 
 # Testing
 test:
@@ -52,8 +59,9 @@ clean:
 # Help
 help:
 	@echo "Available commands:"
-	@echo "  make dev         - Start API and Frontend concurrently"
+	@echo "  make dev         - Start API, Worker, and Frontend concurrently"
 	@echo "  make api         - Start API server only"
+	@echo "  make worker      - Start background worker only"
 	@echo "  make frontend    - Start Frontend only"
 	@echo "  make test        - Run pytest tests"
 	@echo "  make lint        - Run ruff linter"
