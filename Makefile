@@ -16,7 +16,7 @@ worker:
 	$(VENV_BIN)/python3 worker.py
 
 frontend:
-	cd frontend && PATH="$(NODE_PATH_PREFIX)$$PATH" npm run dev
+	cd frontend && NEXT_TELEMETRY_DISABLED=1 PATH="$(NODE_PATH_PREFIX)$$PATH" npm run dev -- --hostname 127.0.0.1 --port 3000
 
 # Testing
 test:
