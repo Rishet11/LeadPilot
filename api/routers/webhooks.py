@@ -8,6 +8,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from ..auth import get_current_customer
 from ..database import Customer, WebhookEvent, get_db
 
 logger = logging.getLogger("leadpilot")
@@ -63,6 +64,11 @@ def _upsert_customer_subscription(db: Session, payload: dict) -> bool:
 
     db.commit()
     return True
+
+
+def _require_admin(customer: dict) -> None:
+    if not customer or not customer.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
 
 
 @router.post("/webhooks/lemonsqueezy")
@@ -139,7 +145,10 @@ async def handle_lemonsqueezy_webhook(
 def list_webhook_events(
     limit: int = 50,
     db: Session = Depends(get_db),
+    customer: dict = Depends(get_current_customer),
 ):
+    _require_admin(customer)
+
     events = db.query(WebhookEvent).filter(
         WebhookEvent.source == "lemonsqueezy"
     ).order_by(WebhookEvent.received_at.desc()).limit(max(1, min(limit, 200))).all()
@@ -159,7 +168,13 @@ def list_webhook_events(
 
 
 @router.post("/webhooks/lemonsqueezy/retry/{event_id}")
-def retry_failed_event(event_id: str, db: Session = Depends(get_db)):
+def retry_failed_event(
+    event_id: str,
+    db: Session = Depends(get_db),
+    customer: dict = Depends(get_current_customer),
+):
+    _require_admin(customer)
+
     event = db.query(WebhookEvent).filter(
         WebhookEvent.source == "lemonsqueezy",
         WebhookEvent.event_id == event_id,
