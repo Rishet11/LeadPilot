@@ -39,7 +39,7 @@ class Base(DeclarativeBase):
 
 
 class Customer(Base):
-    """Customer model - stores paying customers with unique API keys."""
+    """Customer model for account, billing, and tenant isolation data."""
     __tablename__ = "customers"
 
     id = Column(Integer, primary_key=True, index=True)
