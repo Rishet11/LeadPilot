@@ -44,6 +44,8 @@ export interface Job {
   targets: string;
   status: string;
   leads_found: number;
+  attempt_count?: number;
+  next_retry_at?: string | null;
   error_message: string | null;
   started_at: string | null;
   completed_at: string | null;

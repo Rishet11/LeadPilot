@@ -78,6 +78,8 @@ def _create_job(db: Session, customer_id: int, job_type: str, targets_payload: l
         job_type=job_type,
         targets=json.dumps(targets_payload),
         status=JobStatus.PENDING.value,
+        attempt_count=0,
+        next_retry_at=None,
     )
     db.add(job)
     db.commit()

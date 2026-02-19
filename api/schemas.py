@@ -98,6 +98,8 @@ class JobResponse(BaseModel):
     targets: str
     status: str
     leads_found: int
+    attempt_count: Optional[int] = 0
+    next_retry_at: Optional[datetime] = None
     error_message: Optional[str] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None

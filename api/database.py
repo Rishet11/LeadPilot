@@ -18,6 +18,7 @@ from sqlalchemy import (
     Date,
     UniqueConstraint,
     Index,
+    text,
 )
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, relationship
 import enum
@@ -55,7 +56,7 @@ class Customer(Base):
     variant_id = Column(String(100), nullable=True)  # Plan ID
     subscription_status = Column(String(50), default="free")  # free, active, past_due, cancelled
     renews_at = Column(DateTime, nullable=True)
-    plan_tier = Column(String(50), default="free")  # free, starter, growth, agency
+    plan_tier = Column(String(50), default="free")  # free, starter, growth
     
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -137,6 +138,8 @@ class Job(Base):
     targets = Column(Text)  # JSON string of targets
     status = Column(String(50), default=JobStatus.PENDING)
     leads_found = Column(Integer, default=0)
+    attempt_count = Column(Integer, default=0)
+    next_retry_at = Column(DateTime, nullable=True)
     error_message = Column(Text)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
@@ -204,6 +207,29 @@ class WebhookEvent(Base):
 def init_db():
     """Initialize database tables."""
     Base.metadata.create_all(bind=engine)
+    _apply_sqlite_migrations()
+
+
+def _apply_sqlite_migrations() -> None:
+    """
+    Lightweight SQLite migrations for additive columns.
+
+    This keeps local/dev databases forward-compatible without introducing
+    a full migration framework for small schema changes.
+    """
+    if engine.dialect.name != "sqlite":
+        return
+
+    with engine.begin() as conn:
+        columns = {
+            row[1]  # PRAGMA table_info => (cid, name, type, notnull, dflt_value, pk)
+            for row in conn.execute(text("PRAGMA table_info(jobs)"))
+        }
+
+        if "attempt_count" not in columns:
+            conn.execute(text("ALTER TABLE jobs ADD COLUMN attempt_count INTEGER DEFAULT 0"))
+        if "next_retry_at" not in columns:
+            conn.execute(text("ALTER TABLE jobs ADD COLUMN next_retry_at DATETIME"))
 
 
 def get_db():
