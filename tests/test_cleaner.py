@@ -2,7 +2,6 @@
 Tests for data cleaning functions.
 """
 
-import pytest
 import pandas as pd
 from cleaner import (
     clean_dataframe, standardize_phone, extract_city,
@@ -71,7 +70,7 @@ class TestCleanDataframe:
         result = clean_dataframe(data)
         assert result.iloc[0]["images_count"] == 25
         assert result.iloc[0]["country_code"] == "US"
-        assert result.iloc[0]["is_unclaimed"] == True
+        assert result.iloc[0]["is_unclaimed"]
         assert result.iloc[0]["price"] == "$$"
 
     def test_email_extraction_from_emails_list(self):
@@ -260,4 +259,4 @@ class TestDerivedColumns:
             "instagram": "", "address": ""
         }])
         result = add_derived_columns(df)
-        assert result.iloc[0]["has_website"] == True
+        assert result.iloc[0]["has_website"]

@@ -98,9 +98,9 @@ def get_current_customer(
             Customer, Customer.id == AuthSession.customer_id
         ).filter(
             AuthSession.token_hash == token_hash,
-            AuthSession.revoked == False,
+            AuthSession.revoked.is_(False),
             AuthSession.expires_at > now,
-            Customer.is_active == True,
+            Customer.is_active.is_(True),
         ).first()
 
         if not auth_session:

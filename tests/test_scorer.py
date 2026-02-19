@@ -2,7 +2,6 @@
 Tests for lead scoring functions.
 """
 
-import pytest
 from scorer import score_lead, has_website, DEFAULT_CONFIG
 
 

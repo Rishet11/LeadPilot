@@ -3,18 +3,19 @@ Instagram Pipeline - Lightweight Lead Discovery for Micro-Businesses
 Goal: Acquire 1-3 paying clients (No SaaS, Just Money)
 """
 
-import os
 import logging
-import pandas as pd
+import os
+import re
 from datetime import datetime
+
+import pandas as pd
 from dotenv import load_dotenv
 
 # Import clients
-from apify_client import run_instagram_search, poll_run_status, fetch_dataset
+from apify_client import fetch_dataset, poll_run_status, run_instagram_search
+from lead_agent import generate_instagram_dms_batch
 
 load_dotenv()
-
-import re
 
 logger = logging.getLogger("leadpilot")
 
@@ -124,10 +125,6 @@ def score_profile(profile: dict, target_city: str = None) -> int:
     return score
 
 
-# Import batch DM generator from lead_agent
-from lead_agent import generate_instagram_dms_batch
-
-
 def process_instagram_targets(targets: list) -> list:
     """
     Process Instagram targets and return leads as list of dicts.
@@ -155,12 +152,12 @@ def process_instagram_targets(targets: list) -> list:
     for i in range(0, len(all_leads), batch_size):
         chunk_leads = all_leads[i:i+batch_size]
         chunk_input = [{
-            "username": l["username"],
-            "bio": l["bio"],
-            "followers": l.get("followers"),
-            "external_url": l.get("external_url", ""),
-            "has_real_website": l.get("has_real_website", False),
-        } for l in chunk_leads]
+            "username": lead_item["username"],
+            "bio": lead_item["bio"],
+            "followers": lead_item.get("followers"),
+            "external_url": lead_item.get("external_url", ""),
+            "has_real_website": lead_item.get("has_real_website", False),
+        } for lead_item in chunk_leads]
 
         ai_responses = generate_instagram_dms_batch(chunk_input)
         chunk_map = {r['id']: r['dm_message'] for r in ai_responses if 'id' in r}
@@ -224,7 +221,8 @@ def process_target(target: dict) -> list:
 
     for item in raw_data:
         username = item.get("username")
-        if not username: continue
+        if not username:
+            continue
 
         profile = {
             "username": username,
@@ -286,12 +284,12 @@ def run_batch_pipeline(config_path: str = "instagram_batch_config.json"):
     for i in range(0, len(all_leads), batch_size):
         chunk_leads = all_leads[i:i+batch_size]
         chunk_input = [{
-            "username": l["username"],
-            "bio": l["bio"],
-            "followers": l.get("followers"),
-            "external_url": l.get("external_url", ""),
-            "has_real_website": l.get("has_real_website", False),
-        } for l in chunk_leads]
+            "username": lead_item["username"],
+            "bio": lead_item["bio"],
+            "followers": lead_item.get("followers"),
+            "external_url": lead_item.get("external_url", ""),
+            "has_real_website": lead_item.get("has_real_website", False),
+        } for lead_item in chunk_leads]
 
         ai_responses = generate_instagram_dms_batch(chunk_input)
 

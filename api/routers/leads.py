@@ -54,7 +54,7 @@ def get_leads(
     if category:
         query = query.filter(Lead.category.ilike(f"%{category[:100]}%"))
     if no_website:
-        query = query.filter((Lead.website == None) | (Lead.website == ""))
+        query = query.filter(Lead.website.is_(None) | (Lead.website == ""))
     
     return query.order_by(desc(Lead.lead_score)).offset(skip).limit(limit).all()
 

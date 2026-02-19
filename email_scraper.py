@@ -91,7 +91,7 @@ def find_email_on_website(url: str, timeout: int = 10) -> str:
 
         return ''
 
-    except Exception as e:
+    except Exception:
         # logger.debug(f"Error scraping {url}: {e}")
         return ''
 
@@ -170,7 +170,7 @@ def _pick_best_email(emails: set, domain_url: str) -> str:
     # Try to match domain
     try:
         domain = urlparse(domain_url).netloc.replace('www.', '')
-    except:
+    except Exception:
         domain = ''
 
     sorted_emails = sorted(list(emails))

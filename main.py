@@ -16,7 +16,6 @@ Usage:
     python main.py --find-emails            # Find contact emails
 """
 
-import os
 import sys
 import json
 import argparse

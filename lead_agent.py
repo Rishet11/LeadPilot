@@ -13,7 +13,7 @@ import time
 import logging
 from dotenv import load_dotenv
 
-from constants import DEFAULT_AI_SYSTEM_PROMPT, CATEGORY_HOOKS, CATEGORY_VALUES
+from constants import DEFAULT_AI_SYSTEM_PROMPT, CATEGORY_HOOKS
 
 load_dotenv()
 
@@ -122,20 +122,14 @@ def analyze_leads_batch(leads: list, max_leads: int = 25) -> list:
         category = (lead.get('category') or '').lower()
         city = lead.get('city', 'Unknown')
         
-        # Find matching hooks and ticket value
+        # Find matching hooks
         hooks = {}
-        ticket_value = CATEGORY_VALUES['default']
-        
+
         for cat_key, cat_data in CATEGORY_HOOKS.items():
             if cat_key in category:
                 hooks = cat_data
                 break
-        
-        for cat_key, val in CATEGORY_VALUES.items():
-            if cat_key in category:
-                ticket_value = val
-                break
-        
+
         parts = [
             f"ID: {i}",
             f"Name: {lead.get('name')}",
@@ -155,19 +149,23 @@ def analyze_leads_batch(leads: list, max_leads: int = 25) -> list:
         if est_missed_customers > 5:
             # Use specific term per category
             customer_term = "customers"
-            if 'gym' in category or 'fitness' in category: customer_term = "members"
-            elif 'restaurant' in category or 'cafe' in category: customer_term = "diners"
-            elif 'salon' in category: customer_term = "clients"
-            elif 'dentist' in category: customer_term = "patients"
-            
+            if 'gym' in category or 'fitness' in category:
+                customer_term = "members"
+            elif 'restaurant' in category or 'cafe' in category:
+                customer_term = "diners"
+            elif 'salon' in category:
+                customer_term = "clients"
+            elif 'dentist' in category:
+                customer_term = "patients"
+
             parts.append(f"Est. Monthly Missed: {est_missed_customers} {customer_term} (conservative est.)")
-        
+
         if hooks:
-            parts.append(f"--- CATEGORY INSIGHTS ---")
+            parts.append("--- CATEGORY INSIGHTS ---")
             parts.append(f"Pain Point: {hooks['pain_point']}")
             parts.append(f"Quick Win: {hooks['quick_win']}")
             parts.append(f"Urgency Trigger: {hooks['urgency']}")
-            parts.append(f"-------------------------")
+            parts.append("-------------------------")
 
         # Add recent reviews for sentiment analysis (Week 2 Feature)
         top_reviews = lead.get('top_reviews')

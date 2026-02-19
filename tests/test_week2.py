@@ -1,5 +1,4 @@
 
-import pytest
 from unittest.mock import patch, MagicMock
 from scorer import score_lead
 from lead_agent import analyze_leads_batch

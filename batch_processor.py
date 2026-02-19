@@ -29,7 +29,6 @@ def process_batch_targets(targets: list) -> list:
     Returns:
         List of lead dictionaries
     """
-    import pandas as pd
 
     all_leads = []
 
