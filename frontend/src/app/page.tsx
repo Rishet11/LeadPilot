@@ -1,170 +1,122 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useMemo, useState } from "react";
 import GuestPreview from "@/components/GuestPreview";
+import { useState, useEffect } from "react";
 
-type DemoLead = {
-  name: string;
-  city: string;
-  category: string;
-  score: number;
-  rating: number;
-  reviews: number;
-  status: "Hot" | "Warm";
-  opportunity: string;
-  signals: string[];
-  email: string;
-  outreach: string;
-};
-
-const QUICK_SEGMENTS = ["Dentist", "Med Spa", "HVAC", "Law Firm", "Gym", "Chiro"];
-const CITY_PRESETS = ["Miami", "Austin", "Los Angeles", "Chicago", "Phoenix", "London"];
+// --- Data Constants (Kept for content, will re-style later) ---
 
 const PROOF_STRIP = [
-  { label: "Time to first list", value: "< 10 min" },
-  { label: "Lead scoring dimensions", value: "12 signals" },
-  { label: "Outreach starter quality", value: "Research-based" },
-  { label: "Best-fit users", value: "Local agencies" },
+  { label: "Time to first list", value: "< 10 min", icon: "⚡" },
+  { label: "Lead scoring dimensions", value: "12 signals", icon: "📊" },
+  { label: "Outreach starter quality", value: "Research-based", icon: "✨" },
+  { label: "Best-fit users", value: "Local agencies", icon: "🎯" },
 ];
-
-function buildDemoLeads(city: string, category: string): DemoLead[] {
-  const brands = ["North", "Blue", "Prime", "Urban", "Summit", "Bright"];
-  const suffixes = ["Studio", "Clinic", "Group", "Experts", "Works", "Care"];
-  const opportunityAngles = [
-    "Weak conversion path from maps traffic",
-    "Under-leveraged reviews in outreach funnels",
-    "Inconsistent local brand positioning",
-    "Lead response speed likely too slow",
-    "Strong demand, low website conversion confidence",
-  ];
-  const signalSets = [
-    ["No clear CTA", "Outdated site", "Low review velocity"],
-    ["Weak social proof", "No booking link", "Generic positioning"],
-    ["Limited local SEO pages", "No nurture flow", "Thin offer messaging"],
-    ["No follow-up automation", "Sparse case studies", "Slow first response"],
-    ["High demand signal", "Low website trust", "Low offer clarity"],
-  ];
-
-  return Array.from({ length: 5 }).map((_, idx) => {
-    const brand = brands[(idx + city.length) % brands.length];
-    const suffix = suffixes[(idx + category.length) % suffixes.length];
-    const name = `${brand} ${category} ${suffix}`;
-    const score = 69 + idx * 6;
-    const rating = 4.0 + idx * 0.2;
-    const reviews = 24 + idx * 39;
-    const status = score >= 82 ? "Hot" : "Warm";
-    const opportunity = opportunityAngles[idx % opportunityAngles.length];
-    const signals = signalSets[idx % signalSets.length];
-
-    return {
-      name,
-      city,
-      category,
-      score,
-      rating: Number(rating.toFixed(1)),
-      reviews,
-      status,
-      opportunity,
-      signals,
-      email: `owner@${name.toLowerCase().replace(/\s+/g, "").slice(0, 16)}.com`,
-      outreach: `Hey ${name}, spotted your ${rating.toFixed(1)} star reputation in ${city}. You already have demand, but your digital capture flow looks under-optimized. Want a fast teardown with a practical growth plan?`,
-    };
-  });
-}
 
 const WORKFLOW = [
   {
     title: "Set objective",
     text: "Type what you want: niche, city, and lead quality constraints.",
+    step: "01"
   },
   {
     title: "Generate targets",
     text: "Target Builder turns one sentence into clean scrape targets.",
+    step: "02"
   },
   {
     title: "Queue and score",
     text: "LeadPilot scrapes, qualifies, and prioritizes accounts automatically.",
+    step: "03"
   },
   {
     title: "Export and close",
     text: "Push the list into your outreach stack and start conversations.",
-  },
-];
-
-const VALUE_BLOCKS = [
-  {
-    title: "Local gap scoring",
-    text: "Flags weak digital presence opportunities instead of random directories.",
-  },
-  {
-    title: "Fast outreach drafts",
-    text: "Creates personalized first-touch copy so reps start from 80%, not 0%.",
-  },
-  {
-    title: "Batch campaigns",
-    text: "Run multi-city, multi-niche queue jobs in one workflow.",
-  },
-  {
-    title: "Agency-ready output",
-    text: "Export qualified leads and deliver a clear narrative to clients.",
-  },
-];
-
-const PLAYBOOKS = [
-  {
-    niche: "Dentist Playbook",
-    target: "Clinics with 4.3+ ratings and weak conversion UX",
-    angle: "Turn review credibility into booked consults",
-  },
-  {
-    niche: "Med Spa Playbook",
-    target: "Studios with demand but inconsistent offer messaging",
-    angle: "Improve premium positioning and funnel clarity",
-  },
-  {
-    niche: "HVAC Playbook",
-    target: "Providers with seasonal traffic and weak lead capture",
-    angle: "Increase call-to-book conversion during peak windows",
-  },
-  {
-    niche: "Law Firm Playbook",
-    target: "Firms with trust signals but low response systems",
-    angle: "Convert inquiry intent with faster follow-up flows",
-  },
-];
-
-const ICP_CARDS = [
-  {
-    title: "Web design agencies",
-    text: "Find businesses with demand but no conversion-ready web presence.",
-  },
-  {
-    title: "Performance marketers",
-    text: "Discover local accounts where paid traffic can produce fast wins.",
-  },
-  {
-    title: "Freelance closers",
-    text: "Build weekly prospect lists with messaging that sounds researched.",
+    step: "04"
   },
 ];
 
 const AGENT_STACK = [
   {
     title: "Target Builder Agent",
-    text: "Convert one sentence into niche + city + quality constraints.",
+    text: "Turn one sentence into clean targets by city and niche.",
+    icon: "🎯"
   },
   {
-    title: "Lead Research Agent",
-    text: "Summarizes signals and drafts context-aware first-touch copy.",
+    title: "Auto Message Refresh",
+    text: "Regenerates outreach text when you click Regenerate on a lead.",
+    icon: "🔄"
   },
   {
-    title: "Follow-up Agent",
-    text: "Generates a short follow-up sequence based on status and intent.",
+    title: "Auto QA Check",
+    text: "Cleans risky wording so your message sounds safer and clearer.",
+    icon: "🛡️"
+  },
+];
+
+const TARGET_AUDIENCE = [
+  {
+    role: "Web Design Agencies",
+    icon: "🎨",
+    benefit: "Find businesses with outdated sites & low convex.",
   },
   {
-    title: "Campaign QA Agent",
-    text: "Flags risky or low-trust copy before you send anything.",
+    role: "Local SEO Agencies",
+    icon: "📍",
+    benefit: "Spot map-listed businesses with digital gaps.",
+  },
+  {
+    role: "Freelance Marketers",
+    icon: "🚀",
+    benefit: "Build prospect lists & outreach drafts fast.",
+  },
+  {
+    role: "Lead-Gen Agencies",
+    icon: "⚡",
+    benefit: "Scale outbound for dentists, HVAC, etc.",
+  },
+  {
+    role: "Appt Setters",
+    icon: "📞",
+    benefit: "Get ready leads + scripts to book calls.",
+  },
+  {
+    role: "Small Outbound Teams",
+    icon: "🎯",
+    benefit: "Sell recurring services to local SMBs.",
+  },
+];
+
+const FEATURES = [
+  {
+    title: "Local Gap Scoring",
+    desc: "We analyze digital presence to find high-intent targets that others miss.",
+    icon: "📊",
+    size: "large",
+  },
+  {
+    title: "AI Outreach Writer",
+    desc: "Auto-generates personalized first touches based on business data.",
+    icon: "✍️",
+    size: "large",
+  },
+  {
+    title: "Batch Search",
+    desc: "Run city + niche searches in bulk.",
+    icon: "🔍",
+    size: "small",
+  },
+  {
+    title: "Export Ready",
+    desc: "One-click CSV exp to Apollo/Instantly.",
+    icon: "📥",
+    size: "small",
+  },
+  {
+    title: "No-Setup Start",
+    desc: "Browser-based. No complex install.",
+    icon: "⚡",
+    size: "small",
   },
 ];
 
@@ -187,369 +139,275 @@ const FAQS = [
   },
 ];
 
-export default function LandingPage() {
-  const [industry, setIndustry] = useState("Dentist");
-  const [city, setCity] = useState("Miami");
-  const [leads, setLeads] = useState<DemoLead[]>(buildDemoLeads("Miami", "Dentist"));
-  const [avgDealValue, setAvgDealValue] = useState(1500);
-  const [monthlyCloses, setMonthlyCloses] = useState(3);
-  const [activePlaybook, setActivePlaybook] = useState(PLAYBOOKS[0].niche);
+// --- Components ---
 
-  const runDemo = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const cleanedIndustry = industry.trim();
-    const cleanedCity = city.trim();
-    if (!cleanedIndustry || !cleanedCity) return;
-    setLeads(buildDemoLeads(cleanedCity, cleanedIndustry));
-  };
-
-  const projectedMonthlyRevenue = useMemo(() => avgDealValue * monthlyCloses, [avgDealValue, monthlyCloses]);
-  const growthPlanCost = 99;
-  const projectedROI = useMemo(() => {
-    if (growthPlanCost <= 0) return 0;
-    return Math.round((projectedMonthlyRevenue / growthPlanCost) * 10) / 10;
-  }, [projectedMonthlyRevenue]);
-
+function MockUI() {
   return (
-    <div className="min-h-screen bg-[var(--surface-base)] text-[var(--text-primary)] relative overflow-x-hidden">
-      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[70rem] h-[28rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.18)_0%,rgba(212,175,55,0.08)_35%,transparent_72%)] blur-2xl" />
-      <div className="pointer-events-none absolute top-[32rem] -left-40 w-[30rem] h-[30rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.08)_0%,transparent_70%)]" />
-      <div className="pointer-events-none absolute top-[60rem] -right-40 w-[30rem] h-[30rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08)_0%,transparent_70%)]" />
+    <div className="w-full h-full bg-[#111] rounded-xl border border-[var(--border-secondary)] flex flex-col overflow-hidden shadow-2xl relative min-h-[300px]">
+      {/* Window Controls */}
+      <div className="h-8 border-b border-[var(--border-secondary)] bg-[#1A1A1A] flex items-center px-3 gap-1.5">
+        <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
+      </div>
+      
+      {/* App Interface Mock */}
+      <div className="flex-1 flex text-[10px] sm:text-xs">
+        {/* Sidebar */}
+        <div className="w-16 sm:w-48 border-r border-[var(--border-secondary)] p-3 space-y-2 hidden sm:block">
+           <div className="h-6 w-full bg-[var(--bg-secondary)] rounded mb-4" />
+           <div className="h-4 w-3/4 bg-[#1A1A1A] rounded" />
+           <div className="h-4 w-1/2 bg-[#1A1A1A] rounded" />
+           <div className="h-4 w-2/3 bg-[#1A1A1A] rounded" />
+        </div>
+        
+        {/* Main Content */}
+        <div className="flex-1 p-4 bg-[#050505]">
+           <div className="flex justify-between items-center mb-6">
+              <div className="h-8 w-32 bg-[#1A1A1A] rounded" /> {/* Title */}
+              <div className="h-8 w-24 bg-[var(--text-primary)] rounded" /> {/* CTA */}
+           </div>
+           
+           {/* Table Header */}
+           <div className="h-8 w-full border-b border-[var(--border-secondary)] mb-2 flex items-center px-2 gap-4">
+              <div className="h-3 w-4 bg-[#222] rounded" />
+              <div className="h-3 w-32 bg-[#222] rounded" />
+              <div className="h-3 w-20 bg-[#222] rounded" />
+              <div className="h-3 w-16 bg-[#222] rounded" />
+           </div>
 
-      <div className="relative z-10 bg-[linear-gradient(90deg,rgba(212,175,55,0.18),rgba(212,175,55,0.06))] border-b border-[var(--accent)]/20 text-center py-2.5 text-sm font-medium">
-        Built for local agencies that need qualified outreach lists in minutes.
+           {/* Table Rows */}
+           {[1, 2, 3, 4, 5].map((i) => (
+             <div key={i} className="h-10 w-full border-b border-[var(--border-secondary)] flex items-center px-2 gap-4 opacity-60">
+                <div className="h-3 w-4 bg-[#1A1A1A] rounded" />
+                <div className="h-3 w-24 bg-[#1A1A1A] rounded" />
+                <div className="h-3 w-16 bg-[#1A1A1A] rounded" />
+                <div className="h-3 w-12 bg-green-900/40 rounded" />
+             </div>
+           ))}
+        </div>
       </div>
 
-      <header className="relative z-10 border-b border-[var(--border-subtle)] bg-[var(--surface-base)]/85 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            <span className="text-sm font-semibold tracking-[-0.02em]">LeadPilot</span>
-          </Link>
+      {/* Floating Badge (3D effect element) */}
+      <div className="absolute bottom-6 right-6 bg-[#111] border border-[var(--border-highlight)] px-3 py-1.5 rounded-lg shadow-xl flex items-center gap-2">
+         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+         <span className="text-[10px] text-[var(--text-secondary)]">Live Scraping...</span>
+      </div>
+    </div>
+  );
+}
 
-          <div className="flex items-center gap-2">
-            <Link href="/pricing" className="btn-secondary px-4 py-2 text-xs">Pricing</Link>
-            <Link href="/login" className="btn-primary px-4 py-2 text-xs">Start Free</Link>
+export default function LandingPage() {
+  return (
+    <div className="min-h-screen relative overflow-x-hidden selection:bg-white/20 selection:text-white">
+      
+      {/* Background Grid */}
+      <div className="fixed inset-0 bg-grid z-0 pointer-events-none opacity-40" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black via-transparent to-black z-0 pointer-events-none" />
+
+      {/* Navigation */}
+      <nav className="fixed top-0 inset-x-0 z-50 h-14 border-b border-[var(--border-primary)] bg-black/50 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-4 h-full flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-white rounded-sm" />
+            <span className="font-semibold text-sm tracking-tight text-white">LeadPilot</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="text-sm font-medium text-[var(--text-secondary)] hover:text-white px-4 py-2 rounded-lg hover:bg-white/10 transition-all">Sign In</Link>
+            <Link href="/pricing" className="text-xs bg-white text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition-colors shadow-[0_0_15px_rgba(255,255,255,0.3)]">Get Started</Link>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="relative z-10">
-        <section className="max-w-6xl mx-auto px-6 pt-16 pb-12">
-          <div className="grid lg:grid-cols-2 gap-10 items-start">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--accent)]/30 bg-[var(--accent-dim)] mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--accent)]">
-                  Local Outbound Copilot
-                </span>
-              </div>
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-40 px-4 overflow-hidden z-10">
+        <div className="max-w-5xl mx-auto text-center">
+          
+          {/* Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[var(--border-secondary)] bg-[var(--bg-secondary)] mb-8 animate-reveal">
+            <span className="text-[10px] font-medium text-[var(--text-secondary)]">New Feature:</span>
+            <span className="text-[10px] font-medium text-white">Local Gap Scoring &rarr;</span>
+          </div>
+          
+          {/* Headline */}
+          <h1 className="text-5xl md:text-7xl font-semibold tracking-tight mb-6 animate-reveal [animation-delay:100ms] text-gradient">
+            Find high-intent leads <br /> before your competitors.
+          </h1>
+          
+          {/* Subheadline */}
+          <p className="text-lg text-[var(--text-secondary)] max-w-xl mx-auto mb-10 leading-relaxed animate-reveal [animation-delay:200ms]">
+             Automated hyper-local lead generation. We scan maps, social, and web signals to find businesses that actually need your services.
+          </p>
 
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-medium tracking-[-0.04em] leading-[1.03]">
-                Turn one objective into a <span className="text-gold-gradient">revenue-ready local pipeline</span>
-              </h1>
-              <p className="text-lg text-[var(--text-secondary)] leading-relaxed mt-6 max-w-xl">
-                LeadPilot discovers, scores, and drafts outreach for local businesses so agencies can spend less time list-building and more time closing deals.
-              </p>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-reveal [animation-delay:300ms]">
+            <a href="#preview" className="bg-white text-black px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all shadow-[0_0_20px_-5px_rgba(255,255,255,0.3)]">
+              Start Free Search
+            </a>
+            <Link href="/preview" className="px-6 py-3 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-white border border-[var(--border-secondary)] hover:border-[var(--border-primary)] transition-all">
+              View Demo
+            </Link>
+          </div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/login" className="btn-primary px-6 py-3 text-sm">Start with Google</Link>
-                <Link href="/dashboard" className="btn-secondary px-6 py-3 text-sm">See Dashboard</Link>
-              </div>
-
-              <div className="mt-7 space-y-2">
-                <p className="text-sm text-[var(--text-secondary)] flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
-                  Niche-first targeting for local businesses, not generic B2B lists
-                </p>
-                <p className="text-sm text-[var(--text-secondary)] flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
-                  AI-generated first-touch drafts with practical offer angles
-                </p>
-                <p className="text-sm text-[var(--text-secondary)] flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
-                  Export-ready lead packs your team can act on immediately
-                </p>
-              </div>
-
-              <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {PROOF_STRIP.map((item) => (
-                  <div key={item.label} className="card-static p-3">
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-dim)] mb-1">{item.label}</p>
-                    <p className="text-sm font-medium">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="card-static p-6 lg:p-7">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-1">Interactive Demo</p>
-                  <h2 className="text-lg font-semibold">Preview lead output instantly</h2>
+          {/* 3D Mock UI */}
+          <div className="mt-20 relative max-w-4xl mx-auto animate-reveal [animation-delay:500ms] perspective-1000">
+             <div className="relative transform-style-3d rotate-x-12 scale-90 hover:scale-100 hover:rotate-0 transition-transform duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] group">
+                <div className="absolute inset-0 bg-[var(--accent-glow)] blur-3xl opacity-20 -z-10 group-hover:opacity-40 transition-opacity duration-1000" />
+                <div className="aspect-[16/10] w-full">
+                    <MockUI />
                 </div>
-                <span className="tag tag-gold font-mono text-[10px]">Live</span>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Guest Preview Section */}
+      <section id="preview" className="relative z-10 py-24 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)]">
+        <div className="max-w-6xl mx-auto px-6">
+            <div className="text-center mb-12">
+               <h2 className="text-2xl font-semibold mb-2">Try for free</h2>
+               <p className="text-[var(--text-secondary)] text-sm">No credit card required.</p>
+            </div>
+            <GuestPreview />
+        </div>
+      </section>
+
+      {/* Audience Section - Spotlight Cards */}
+      <section className="py-32 px-4 relative z-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-20">
+             <h2 className="text-3xl md:text-4xl font-semibold mb-4 text-gradient">Built for Local Hunters</h2>
+             <p className="text-[var(--text-secondary)] max-w-xl">
+                Stop wasting time on generic databases. LeadPilot is engineered for granular local search.
+             </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {TARGET_AUDIENCE.map((item, i) => (
+              <div key={i} className="spotlight-card group p-6 rounded-2xl relative">
+                 <div className="w-10 h-10 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] flex items-center justify-center text-xl mb-4 group-hover:scale-110 group-hover:border-[var(--border-highlight)] transition-all duration-300">
+                    {item.icon}
+                 </div>
+                 <h3 className="text-lg font-medium mb-2 text-[var(--text-primary)]">{item.role}</h3>
+                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.benefit}</p>
+                 
+                 {/* Hover Gradient */}
+                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--border-highlight)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Workflow Section - The Beam */}
+      <section className="py-32 relative border-t border-[var(--border-secondary)] bg-[var(--bg-secondary)]/30">
+        <div className="max-w-4xl mx-auto px-4 relative">
+           <div className="text-center mb-24">
+             <div className="inline-block px-3 py-1 rounded-full border border-[var(--border-secondary)] bg-[var(--bg-primary)] mb-4">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">The Pipeline</span>
+             </div>
+             <h2 className="text-3xl md:text-5xl font-semibold text-gradient">From Zero to Booked</h2>
+           </div>
+
+           <div className="relative">
+              {/* Central Beam Line */}
+              <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-[var(--border-secondary)] md:-ml-px">
+                 <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-[var(--accent-glow)] to-transparent opacity-50" />
               </div>
 
-              <form onSubmit={runDemo} className="grid sm:grid-cols-3 gap-3 mb-4">
-                <input
-                  value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
-                  className="field px-4 py-3 text-sm"
-                  placeholder="Industry"
-                />
-                <input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="field px-4 py-3 text-sm"
-                  placeholder="City"
-                />
-                <button type="submit" className="btn-primary px-4 py-3 text-sm">Generate</button>
-              </form>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {QUICK_SEGMENTS.map((segment) => (
-                  <button
-                    key={segment}
-                    type="button"
-                    onClick={() => setIndustry(segment)}
-                    className="tag text-[11px] hover:border-[var(--accent)]"
-                  >
-                    {segment}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2 mb-5">
-                {CITY_PRESETS.map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setCity(preset)}
-                    className="tag text-[11px]"
-                  >
-                    {preset}
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-3 max-h-[360px] overflow-auto pr-1">
-                {leads.map((lead, idx) => (
-                  <div key={`${lead.name}-${idx}`} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] p-3.5">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div>
-                        <p className="text-sm font-semibold">{lead.name}</p>
-                        <p className="text-[11px] text-[var(--text-muted)]">{lead.category} in {lead.city} · {lead.rating}★ ({lead.reviews} reviews)</p>
+              <div className="space-y-24">
+                 {WORKFLOW.map((step, i) => (
+                   <div key={i} className={`relative flex items-center gap-8 md:gap-16 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+                      {/* Step Number Bubble */}
+                      <div className="absolute left-8 md:left-1/2 -ml-4 md:-ml-5 w-8 h-8 md:w-10 md:h-10 rounded-full bg-[var(--bg-primary)] border border-[var(--border-highlight)] z-10 flex items-center justify-center shadow-[0_0_20px_-5px_rgba(255,255,255,0.3)]">
+                         <span className="text-[10px] md:text-xs font-mono font-bold">{step.step}</span>
                       </div>
-                      <div className="text-right">
-                        <span className="tag font-mono text-[10px]">Score {lead.score}</span>
-                        <p className={`text-[10px] mt-1 font-mono uppercase tracking-wide ${lead.status === "Hot" ? "text-[var(--success)]" : "text-[var(--warning)]"}`}>
-                          {lead.status}
-                        </p>
+
+                      {/* Content Card */}
+                      <div className={`flex-1 pl-20 md:pl-0 ${i % 2 === 0 ? 'md:text-right' : 'md:text-left'}`}>
+                         <h3 className="text-xl font-medium mb-2 text-[var(--text-primary)]">{step.title}</h3>
+                         <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{step.text}</p>
                       </div>
-                    </div>
-                    <p className="text-[11px] text-[var(--accent)] mb-2">{lead.opportunity}</p>
-                    <p className="text-[11px] text-[var(--text-dim)] mb-2">{lead.email}</p>
-                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{lead.outreach}</p>
-                    <div className="flex flex-wrap gap-1.5 mt-2.5">
-                      {lead.signals.map((signal) => (
-                        <span key={signal} className="tag text-[10px]">
-                          {signal}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                      <div className="flex-1 hidden md:block" />
+                   </div>
+                 ))}
               </div>
-            </div>
-          </div>
-        </section>
+           </div>
+        </div>
+      </section>
 
-        <GuestPreview />
+      {/* Features bento Grid */}
+      <section className="py-32 px-4 relative z-10">
+        <div className="max-w-6xl mx-auto">
+           <div className="max-w-2xl mb-16">
+              <h2 className="text-3xl md:text-4xl font-semibold mb-6 text-gradient">Everything you need. <br /> Nothing you don't.</h2>
+              <p className="text-[var(--text-secondary)]">
+                 We stripped away the CRM bloat. LeadPilot is a precision instrument for finding and contacting leads.
+              </p>
+           </div>
 
-        <section className="border-y border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.0))]">
-          <div className="max-w-6xl mx-auto px-6 py-14">
-            <div className="mb-8">
-              <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-2">Who It Is For</p>
-              <h2 className="font-display text-3xl tracking-[-0.03em]">Built for service teams that sell outcomes</h2>
-            </div>
-            <div className="grid md:grid-cols-3 gap-4">
-              {ICP_CARDS.map((card) => (
-                <article key={card.title} className="card-static p-5">
-                  <h3 className="text-sm font-semibold mb-2">{card.title}</h3>
-                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{card.text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="max-w-6xl mx-auto px-6 py-16">
-          <div className="flex items-end justify-between gap-4 mb-6">
-            <div>
-              <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-2">Niche Playbooks</p>
-              <h2 className="font-display text-3xl tracking-[-0.03em]">Start from proven local outreach angles</h2>
-            </div>
-            <span className="text-xs text-[var(--text-muted)] hidden sm:inline">Click any playbook to preview target positioning</span>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-4">
-            <div className="grid sm:grid-cols-2 gap-3">
-              {PLAYBOOKS.map((playbook) => (
-                <button
-                  key={playbook.niche}
-                  type="button"
-                  onClick={() => setActivePlaybook(playbook.niche)}
-                  className={`card-static p-4 text-left transition-colors ${
-                    activePlaybook === playbook.niche ? "border-[var(--accent)]/50 bg-[var(--accent-dim)]" : ""
-                  }`}
+           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              {FEATURES.map((feature, i) => (
+                <div 
+                  key={i}
+                  className={`spotlight-card p-8 rounded-2xl relative overflow-hidden group 
+                    ${feature.size === 'large' ? 'md:col-span-3 lg:col-span-4' : 'md:col-span-3 lg:col-span-2'}`}
                 >
-                  <p className="text-sm font-semibold mb-1">{playbook.niche}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">{playbook.target}</p>
-                </button>
-              ))}
-            </div>
-            <div className="card-static p-5">
-              {PLAYBOOKS.filter((item) => item.niche === activePlaybook).map((item) => (
-                <div key={item.niche}>
-                  <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.18em] mb-2">Current Playbook</p>
-                  <h3 className="text-lg font-semibold mb-2">{item.niche}</h3>
-                  <p className="text-sm text-[var(--text-secondary)] mb-3">{item.target}</p>
-                  <div className="impact-box">
-                    <p className="text-xs text-[var(--text-muted)] mb-1">Suggested offer angle</p>
-                    <p className="text-sm">{item.angle}</p>
-                  </div>
+                   <div className="relative z-10">
+                      <div className="w-12 h-12 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] flex items-center justify-center text-2xl mb-6 shadow-lg group-hover:border-[var(--border-highlight)] transition-colors">
+                         {feature.icon}
+                      </div>
+                      <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                      <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-sm">{feature.desc}</p>
+                   </div>
+                   
+                   {/* Decorative background elements for large cards */}
+                   {feature.size === 'large' && (
+                      <div className="absolute right-0 bottom-0 opacity-10 grayscale group-hover:opacity-20 transition-opacity duration-500">
+                         {/* Abstract shape */}
+                         <div className="w-64 h-64 bg-gradient-to-tl from-white to-transparent rounded-full blur-[100px]" />
+                      </div>
+                   )}
                 </div>
               ))}
+           </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-24 border-t border-[var(--border-secondary)]">
+         <div className="max-w-3xl mx-auto px-4">
+            <h2 className="text-2xl font-semibold mb-12 text-center">Frequently Asked Questions</h2>
+            <div className="space-y-px bg-[var(--border-secondary)] border-b border-[var(--border-secondary)]">
+               {FAQS.map((faq, i) => (
+                 <div key={i} className="bg-[var(--bg-primary)] p-6 hover:bg-[var(--bg-secondary)] transition-colors cursor-default">
+                    <h3 className="text-sm font-medium mb-2 text-[var(--text-primary)]">{faq.q}</h3>
+                    <p className="text-sm text-[var(--text-secondary)]">{faq.a}</p>
+                 </div>
+               ))}
             </div>
-          </div>
-        </section>
+         </div>
+      </section>
 
-        <section className="max-w-6xl mx-auto px-6 py-16">
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div>
-              <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-2">How It Works</p>
-              <h2 className="font-display text-3xl tracking-[-0.03em] mb-5">From objective to outreach in one flow</h2>
-              <div className="space-y-3">
-                {WORKFLOW.map((step, idx) => (
-                  <div key={step.title} className="card-static p-4">
-                    <p className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1">Step {idx + 1}</p>
-                    <p className="text-sm font-semibold">{step.title}</p>
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">{step.text}</p>
-                  </div>
-                ))}
-              </div>
+      {/* Footer */}
+      <footer className="py-20 border-t border-[var(--border-primary)] relative z-10 bg-[var(--bg-primary)]">
+         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-2.5">
+               <div className="w-6 h-6 bg-white rounded-sm" />
+               <span className="font-semibold tracking-tight">LeadPilot</span>
+            </div>
+            
+            <div className="flex gap-8 text-sm text-[var(--text-secondary)]">
+               <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+               <Link href="/login" className="hover:text-white transition-colors">Login</Link>
+               <a href="mailto:rishetmehra11@gmail.com" className="hover:text-white transition-colors">Contact</a>
             </div>
 
-            <div>
-              <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-2">Value Layer</p>
-              <h2 className="font-display text-3xl tracking-[-0.03em] mb-5">Features that directly support revenue</h2>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {VALUE_BLOCKS.map((block) => (
-                  <div key={block.title} className="card-static p-4">
-                    <h3 className="text-sm font-semibold mb-1.5">{block.title}</h3>
-                    <p className="text-sm text-[var(--text-secondary)]">{block.text}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 grid sm:grid-cols-2 gap-3">
-                {AGENT_STACK.map((agent) => (
-                  <div key={agent.title} className="card-static p-4">
-                    <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-wider mb-1">Agent</p>
-                    <h3 className="text-sm font-semibold mb-1.5">{agent.title}</h3>
-                    <p className="text-sm text-[var(--text-secondary)]">{agent.text}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 card-static p-5">
-                <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-2">Back-of-Napkin ROI</p>
-                <h3 className="text-base font-semibold mb-4">What if LeadPilot helps you close a few more each month?</h3>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs text-[var(--text-muted)] mb-1.5">Average client value</label>
-                    <input
-                      type="range"
-                      min={500}
-                      max={6000}
-                      step={100}
-                      value={avgDealValue}
-                      onChange={(e) => setAvgDealValue(Number(e.target.value))}
-                      className="w-full"
-                    />
-                    <p className="text-sm mt-1 font-medium">${avgDealValue.toLocaleString()} / client</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[var(--text-muted)] mb-1.5">Monthly closes from LeadPilot pipeline</label>
-                    <input
-                      type="range"
-                      min={1}
-                      max={12}
-                      step={1}
-                      value={monthlyCloses}
-                      onChange={(e) => setMonthlyCloses(Number(e.target.value))}
-                      className="w-full"
-                    />
-                    <p className="text-sm mt-1 font-medium">{monthlyCloses} closes / month</p>
-                  </div>
-                </div>
-
-                <div className="mt-5 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-dim)] p-4">
-                  <p className="text-xs text-[var(--text-muted)] mb-1">Projected monthly revenue influenced</p>
-                  <p className="text-2xl font-semibold tracking-tight">${projectedMonthlyRevenue.toLocaleString()}</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">~{projectedROI}x vs Growth plan (${growthPlanCost}/month)</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-y border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(255,255,255,0.015),rgba(255,255,255,0))]">
-          <div className="max-w-6xl mx-auto px-6 py-14">
-            <div className="mb-7">
-              <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-2">FAQ</p>
-              <h2 className="font-display text-3xl tracking-[-0.03em]">Answers teams ask before they buy</h2>
-            </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              {FAQS.map((faq) => (
-                <article key={faq.q} className="card-static p-5">
-                  <h3 className="text-sm font-semibold mb-2">{faq.q}</h3>
-                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{faq.a}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-[var(--border-subtle)]">
-          <div className="max-w-5xl mx-auto px-6 py-16">
-            <div className="card-static p-8 text-center">
-              <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Ready To Launch</p>
-              <h2 className="font-display text-3xl sm:text-4xl tracking-[-0.03em] mb-3">
-                Get qualified local prospects and outreach copy this week
-              </h2>
-              <p className="text-[var(--text-secondary)] max-w-2xl mx-auto mb-8">
-                Start with Google sign-in, pick your niche, queue targets, and export a pipeline your sales team can action immediately.
-              </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                <Link href="/pricing" className="btn-primary px-6 py-3 text-sm">See Pricing</Link>
-                <Link href="/login" className="btn-secondary px-6 py-3 text-sm">Sign In with Google</Link>
-                <Link href="/dashboard" className="btn-secondary px-6 py-3 text-sm">Open Dashboard</Link>
-              </div>
-              <p className="text-xs text-[var(--text-muted)] mt-5">
-                Questions? Contact <a href="mailto:rishetmehra11@gmail.com" className="text-[var(--accent)] hover:underline">rishetmehra11@gmail.com</a>
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
+            <p className="text-xs text-[var(--text-tertiary)]">
+               &copy; {new Date().getFullYear()} LeadPilot Inc.
+            </p>
+         </div>
+      </footer>
     </div>
   );
 }

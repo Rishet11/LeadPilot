@@ -213,6 +213,14 @@ export async function updateLeadStatus(id: number, status: string): Promise<Lead
   return handleResponse<Lead>(res);
 }
 
+export async function regenerateLeadOutreach(id: number): Promise<Lead> {
+  const res = await fetch(`${API_BASE}/api/leads/${id}/regenerate-outreach`, {
+    method: "POST",
+    headers: getHeaders(),
+  });
+  return handleResponse<Lead>(res);
+}
+
 export async function deleteLead(id: number): Promise<void> {
   const res = await fetch(`${API_BASE}/api/leads/${id}`, {
     method: "DELETE",

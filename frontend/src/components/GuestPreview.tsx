@@ -49,7 +49,7 @@ export default function GuestPreview() {
   };
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-16">
+    <section id="no-login-preview" className="max-w-6xl mx-auto px-6 py-16">
       <div className="mb-6">
         <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-[0.2em] mb-2">No-Login Preview</p>
         <h2 className="font-display text-3xl tracking-[-0.03em]">Try a real scrape before signing in</h2>
@@ -66,7 +66,7 @@ export default function GuestPreview() {
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="field w-full px-3 py-2.5 text-sm"
+                className="w-full bg-[#111] border border-[var(--border-secondary)] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-[var(--text-tertiary)] focus:border-[var(--text-secondary)] focus:ring-0 transition-colors"
                 placeholder="Miami"
                 disabled={isRunning}
               />
@@ -76,7 +76,7 @@ export default function GuestPreview() {
               <input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="field w-full px-3 py-2.5 text-sm"
+                className="w-full bg-[#111] border border-[var(--border-secondary)] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-[var(--text-tertiary)] focus:border-[var(--text-secondary)] focus:ring-0 transition-colors"
                 placeholder="Dentist"
                 disabled={isRunning}
               />
@@ -86,7 +86,7 @@ export default function GuestPreview() {
               <select
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value))}
-                className="field w-full px-3 py-2.5 text-sm"
+                className="w-full bg-[#111] border border-[var(--border-secondary)] rounded-lg px-3 py-2.5 text-sm text-white focus:border-[var(--text-secondary)] focus:ring-0 transition-colors appearance-none"
                 disabled={isRunning}
               >
                 {LIMIT_OPTIONS.map((option) => (
@@ -100,7 +100,7 @@ export default function GuestPreview() {
             <button
               type="submit"
               disabled={isRunning}
-              className="btn-primary w-full px-4 py-2.5 text-sm disabled:opacity-50"
+              className="w-full bg-white text-black font-medium rounded-lg px-4 py-2.5 text-sm hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isRunning ? "Running preview..." : "Run Preview"}
             </button>
@@ -150,6 +150,18 @@ export default function GuestPreview() {
               </article>
             ))}
           </div>
+
+          {!error && leads.length > 0 && (
+            <div className="mt-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-dim)] p-4">
+              <p className="text-sm font-medium text-[var(--text-primary)] mb-1">Want full access to all features?</p>
+              <p className="text-xs text-[var(--text-secondary)] mb-3">
+                Save leads, run full jobs, and manage your outreach workspace.
+              </p>
+              <Link href="/login" className="btn-primary inline-flex px-4 py-2 text-xs">
+                Sign In with Google
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </section>

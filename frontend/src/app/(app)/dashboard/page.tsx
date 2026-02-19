@@ -247,6 +247,16 @@ export default function Dashboard() {
           {agentInfo}
         </div>
       )}
+      {(stats?.total_leads ?? 0) === 0 && jobs.length === 0 && (
+        <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/25 bg-[var(--accent-dim)]">
+          <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-wider mb-2">Quick start</p>
+          <div className="grid md:grid-cols-3 gap-2 text-xs text-[var(--text-secondary)]">
+            <p>1. Run a quick scrape with city + niche.</p>
+            <p>2. Wait for the job to complete in Activity.</p>
+            <p>3. Open Leads, regenerate outreach, and export CSV.</p>
+          </div>
+        </div>
+      )}
 
       {/* Metrics grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 stagger-children">

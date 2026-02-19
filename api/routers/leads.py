@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
 from pydantic import BaseModel
+import re
 
 from ..database import get_db, Lead
 from ..schemas import LeadResponse, LeadStatusUpdate, LeadStatus
@@ -23,6 +24,55 @@ def _filter_by_customer(query, customer: dict):
     if customer.get("is_admin"):
         return query
     return query.filter(Lead.customer_id == customer["id"])
+
+
+def _qa_sanitize_outreach(text: str) -> str:
+    sanitized = re.sub(r"\s+", " ", (text or "")).strip()
+    risky_phrases = [
+        "guaranteed results",
+        "guaranteed leads",
+        "100% guaranteed",
+        "no-brainer offer",
+        "limited time only",
+    ]
+    lowered = sanitized.lower()
+    for phrase in risky_phrases:
+        if phrase in lowered:
+            sanitized = re.sub(re.escape(phrase), "practical improvement", sanitized, flags=re.IGNORECASE)
+    return sanitized[:700]
+
+
+def _build_regenerated_outreach(lead: Lead) -> str:
+    business_name = (lead.name or "your business").strip()
+    category = (lead.category or "service business").strip()
+    city = (lead.city or "your area").strip()
+    rating = lead.rating
+    reviews = int(lead.reviews or 0)
+    has_website = bool((lead.website or "").strip())
+
+    social_proof = ""
+    if rating is not None and reviews > 0:
+        social_proof = f"and your {float(rating):.1f} rating across {reviews} reviews"
+    elif reviews > 0:
+        social_proof = f"and your {reviews} reviews"
+
+    gap_line = (
+        "I noticed there may be missed conversions because your website flow is weak or missing."
+        if not has_website
+        else "I noticed there may be room to improve how local traffic converts into booked calls."
+    )
+
+    reason_hint = (lead.reason or "").strip()
+    context_line = f"Your profile already shows demand {social_proof}.".strip()
+    if reason_hint:
+        context_line = f"{context_line} Main signal: {reason_hint}."
+
+    return (
+        f"Hi {business_name} team, quick note after reviewing your {category} listing in {city}. "
+        f"{context_line} {gap_line} "
+        "I can share a short, practical teardown with 2-3 fixes you can apply immediately. "
+        "Open to seeing it?"
+    )
 
 
 @router.get("", response_model=List[LeadResponse])
@@ -125,6 +175,28 @@ def update_lead_status(
         raise HTTPException(status_code=404, detail="Lead not found")
     
     lead.status = status_update.status.value
+    db.commit()
+    db.refresh(lead)
+    return lead
+
+
+@router.post("/{lead_id}/regenerate-outreach", response_model=LeadResponse)
+@limiter.limit(WRITE_LIMIT)
+def regenerate_lead_outreach(
+    request: Request,
+    lead_id: int,
+    db: Session = Depends(get_db),
+    customer: dict = Depends(get_current_customer),
+):
+    query = db.query(Lead).filter(Lead.id == lead_id)
+    query = _filter_by_customer(query, customer)
+    lead = query.first()
+
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    regenerated = _build_regenerated_outreach(lead)
+    lead.ai_outreach = _qa_sanitize_outreach(regenerated)
     db.commit()
     db.refresh(lead)
     return lead

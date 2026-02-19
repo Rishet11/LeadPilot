@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { batchDeleteLeads, getLeads, Lead, updateLeadStatus } from "@/lib/api";
+import { batchDeleteLeads, getLeads, Lead, regenerateLeadOutreach, updateLeadStatus } from "@/lib/api";
 
 const FILTER_DEBOUNCE_MS = 280;
 const NOTICE_TIMEOUT_MS = 3800;
@@ -85,6 +85,7 @@ export default function LeadsCRM() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRegeneratingOutreach, setIsRegeneratingOutreach] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
@@ -215,6 +216,23 @@ export default function LeadsCRM() {
     } catch (err) {
       console.error("Clipboard failed:", err);
       setNotice({ type: "error", text: "Copy failed in this browser." });
+    }
+  };
+
+  const handleRegenerateOutreach = async () => {
+    if (!selectedLead) return;
+    setIsRegeneratingOutreach(true);
+
+    try {
+      const updated = await regenerateLeadOutreach(selectedLead.id);
+      setLeads((current) => current.map((lead) => (lead.id === updated.id ? updated : lead)));
+      setSelectedLead(updated);
+      setNotice({ type: "success", text: "Outreach regenerated." });
+    } catch (err) {
+      console.error("Failed to regenerate outreach:", err);
+      setNotice({ type: "error", text: "Failed to regenerate outreach." });
+    } finally {
+      setIsRegeneratingOutreach(false);
     }
   };
 
@@ -565,22 +583,31 @@ export default function LeadsCRM() {
               </div>
             </div>
 
-            {selectedLead.ai_outreach && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Outreach</p>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Outreach</p>
+                <div className="flex items-center gap-3">
+                  {selectedLead.ai_outreach && (
+                    <button
+                      onClick={() => void copyToClipboard(selectedLead.ai_outreach!, "Outreach message")}
+                      className="text-[11px] text-[var(--accent)] hover:underline"
+                    >
+                      Copy
+                    </button>
+                  )}
                   <button
-                    onClick={() => void copyToClipboard(selectedLead.ai_outreach!, "Outreach message")}
-                    className="text-[11px] text-[var(--accent)] hover:underline"
+                    onClick={() => void handleRegenerateOutreach()}
+                    disabled={isRegeneratingOutreach}
+                    className="text-[11px] text-[var(--accent)] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Copy
+                    {isRegeneratingOutreach ? "Regenerating..." : "Regenerate"}
                   </button>
                 </div>
-                <div className="p-4 bg-[var(--surface-elevated)] rounded-xl text-xs text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed border border-[var(--border-subtle)]">
-                  {selectedLead.ai_outreach}
-                </div>
               </div>
-            )}
+              <div className="p-4 bg-[var(--surface-elevated)] rounded-xl text-xs text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed border border-[var(--border-subtle)]">
+                {selectedLead.ai_outreach || "No outreach draft yet. Click Regenerate to create one."}
+              </div>
+            </div>
           </div>
         </div>
       )}
