@@ -60,8 +60,10 @@ export default function LoginPage() {
     try {
       const result = await loginWithGoogleIdToken(response.credential);
       completeLogin(result.access_token);
-    } catch (err: any) {
-      setError(err?.message || "Google login failed. Please try again.");
+    } catch (err: unknown) {
+      const fallback = "Google login failed. Please try again.";
+      const message = err instanceof Error ? err.message : fallback;
+      setError(message || fallback);
     } finally {
       setLoading(false);
     }

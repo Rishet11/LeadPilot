@@ -1,4 +1,5 @@
 VENV_BIN := $(CURDIR)/venv/bin
+VENV_PY := $(VENV_BIN)/python3
 NODE22_BIN := /opt/homebrew/opt/node@22/bin
 NODE_PATH_PREFIX := $(if $(wildcard $(NODE22_BIN)/node),$(NODE22_BIN):,)
 
@@ -10,30 +11,30 @@ dev:
 	@make -j3 api worker frontend
 
 api:
-	$(VENV_BIN)/python3 -m uvicorn api.main:app --reload --reload-dir api --reload-include "*.py" --reload-exclude "venv*" --reload-exclude "venv_py313_backup_*" --reload-exclude "frontend/*" --reload-exclude "data/*" --reload-exclude "logs/*" --reload-exclude ".git/*"
+	$(VENV_PY) -m uvicorn api.main:app --reload --reload-dir api --reload-include "*.py" --reload-exclude "venv*" --reload-exclude "venv_py313_backup_*" --reload-exclude "frontend/*" --reload-exclude "data/*" --reload-exclude "logs/*" --reload-exclude ".git/*"
 
 worker:
-	$(VENV_BIN)/python3 worker.py
+	$(VENV_PY) worker.py
 
 frontend:
 	cd frontend && NEXT_TELEMETRY_DISABLED=1 PATH="$(NODE_PATH_PREFIX)$$PATH" npm run dev -- --hostname 127.0.0.1 --port 3000
 
 # Testing
 test:
-	PYTHONPATH=. pytest tests/ -v --tb=short
+	PYTHONPATH=. $(VENV_PY) -m pytest tests/ -v --tb=short
 
 test-cov:
-	PYTHONPATH=. pytest tests/ -v --cov=api --cov=. --cov-report=term-missing
+	PYTHONPATH=. $(VENV_PY) -m pytest tests/ -v --cov=api --cov=. --cov-report=term-missing
 
 # Code Quality
 lint:
-	ruff check .
+	$(VENV_PY) -m ruff check .
 
 format:
-	ruff format .
+	$(VENV_PY) -m ruff format .
 
 fix:
-	ruff check --fix .
+	$(VENV_PY) -m ruff check --fix .
 
 # Docker
 docker-up:
@@ -48,7 +49,7 @@ docker-logs:
 # Database
 db-reset:
 	rm -f data/leadpilot.db
-	python -c "from api.database import init_db; init_db()"
+	$(VENV_PY) -c "from api.database import init_db; init_db()"
 
 # Cleanup
 clean:

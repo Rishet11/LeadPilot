@@ -32,7 +32,7 @@ LeadPilot is an AI-powered lead generation platform that automates prospecting, 
 |-------|------------|
 | **Frontend** | Next.js 16, React 19, Tailwind CSS 4 |
 | **Backend API** | FastAPI, Uvicorn |
-| **Core Logic** | Python 3.9+, Pandas |
+| **Core Logic** | Python 3.11+, Pandas |
 | **AI Engine** | Google Gemini (via `google-genai`) |
 | **Scraping** | Apify Client, BeautifulSoup4 |
 | **Container** | Docker |
@@ -43,7 +43,7 @@ LeadPilot is an AI-powered lead generation platform that automates prospecting, 
 
 ### Prerequisites
 - Node.js 18+
-- Python 3.9+
+- Python 3.11+
 - Apify Account (for scraping)
 - Google AI Studio Key (for Gemini)
 
@@ -55,8 +55,8 @@ cd LeadPilot
 
 ### 2. Backend Setup
 ```bash
-# Create and activate virtual env
-python -m venv venv
+# Create and activate virtual env (Python 3.11+)
+python3.11 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies

@@ -1,7 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getSettings, updateSetting, resetSettings } from "@/lib/api";
+
+const DEFAULT_SCORING_CONFIG = {
+  no_website: 50,
+  high_reviews: 20,
+  medium_reviews: 25,
+  high_rating: 20,
+  good_rating: 10,
+  high_value_category: 10,
+  low_rating_opportunity: 15,
+};
+
+const DEFAULT_INSTAGRAM_CONFIG = {
+  followers_min: 500,
+  followers_max: 50000,
+  score_threshold: 50,
+};
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -11,29 +27,13 @@ export default function SettingsPage() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [originalAiPrompt, setOriginalAiPrompt] = useState("");
 
-  const [scoringConfig, setScoringConfig] = useState({
-    no_website: 50,
-    high_reviews: 20,
-    medium_reviews: 25,
-    high_rating: 20,
-    good_rating: 10,
-    high_value_category: 10,
-    low_rating_opportunity: 15,
-  });
-  const [originalScoringConfig, setOriginalScoringConfig] = useState({ ...scoringConfig });
+  const [scoringConfig, setScoringConfig] = useState({ ...DEFAULT_SCORING_CONFIG });
+  const [originalScoringConfig, setOriginalScoringConfig] = useState({ ...DEFAULT_SCORING_CONFIG });
 
-  const [instagramConfig, setInstagramConfig] = useState({
-    followers_min: 500,
-    followers_max: 50000,
-    score_threshold: 50,
-  });
-  const [originalInstagramConfig, setOriginalInstagramConfig] = useState({ ...instagramConfig });
+  const [instagramConfig, setInstagramConfig] = useState({ ...DEFAULT_INSTAGRAM_CONFIG });
+  const [originalInstagramConfig, setOriginalInstagramConfig] = useState({ ...DEFAULT_INSTAGRAM_CONFIG });
 
   const [savingSection, setSavingSection] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
 
   useEffect(() => {
     if (!message) return;
@@ -41,7 +41,7 @@ export default function SettingsPage() {
     return () => clearTimeout(timer);
   }, [message]);
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getSettings();
@@ -52,7 +52,7 @@ export default function SettingsPage() {
         setOriginalAiPrompt(promptSetting.value);
       }
 
-      const newScoring = { ...scoringConfig };
+      const newScoring = { ...DEFAULT_SCORING_CONFIG };
       data.forEach((s) => {
         if (s.key.startsWith("scoring_")) {
           const key = s.key.replace("scoring_", "") as keyof typeof scoringConfig;
@@ -64,7 +64,7 @@ export default function SettingsPage() {
       setScoringConfig(newScoring);
       setOriginalScoringConfig({ ...newScoring });
 
-      const newInstagram = { ...instagramConfig };
+      const newInstagram = { ...DEFAULT_INSTAGRAM_CONFIG };
       data.forEach((s) => {
         if (s.key.startsWith("instagram_")) {
           const key = s.key.replace("instagram_", "") as keyof typeof instagramConfig;
@@ -80,7 +80,11 @@ export default function SettingsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
 
   const saveSection = async (
     section: string,
