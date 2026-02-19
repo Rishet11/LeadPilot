@@ -450,55 +450,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="card-static p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 7h16M4 12h16M4 17h10" />
-                  <circle cx="19" cy="17" r="2" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Niche Playbooks</h3>
-                <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">One-click campaigns</p>
-              </div>
-            </div>
 
-            {templates.length === 0 ? (
-              <p className="text-xs text-[var(--text-muted)]">No playbooks available for this plan.</p>
-            ) : (
-              <div className="space-y-3">
-                {templates.map((template) => (
-                  <div
-                    key={template.id}
-                    className="p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-elevated)]"
-                  >
-                    <p className="text-xs font-medium text-[var(--text-primary)]">{template.name}</p>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-1">{template.expected_outcome}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="tag font-mono text-[10px]">{template.vertical}</span>
-                      <span className="tag font-mono text-[10px]">{template.google_maps_targets.length} targets</span>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => handleUseTemplateObjective(template)}
-                        className="btn-secondary py-2 text-xs"
-                      >
-                        Use Objective
-                      </button>
-                      <button
-                        onClick={() => handleQueueTemplate(template)}
-                        disabled={templateQueueingId === template.id}
-                        className="btn-primary py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {templateQueueingId === template.id ? "Queueing..." : "Queue Now"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
