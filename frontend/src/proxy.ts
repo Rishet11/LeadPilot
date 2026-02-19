@@ -7,7 +7,7 @@ const PROTECTED_ROUTES = ['/leads', '/dashboard', '/batch', '/instagram', '/sett
 // Routes that are always accessible
 const PUBLIC_ROUTES = ['/', '/login'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Always allow public routes
@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
   
   if (isProduction && PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
     // Let the client-side auth guard handle this
-    // We can't check localStorage in middleware (server-side)
+    // We can't check localStorage in proxy (server-side)
     return NextResponse.next();
   }
   
