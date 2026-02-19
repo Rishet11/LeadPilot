@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for LeadPilot tests.
 """
+# ruff: noqa: E402
 
 import os
 import pytest

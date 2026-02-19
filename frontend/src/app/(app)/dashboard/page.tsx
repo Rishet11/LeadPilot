@@ -4,14 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import MetricCard from "@/components/MetricCard";
 import QuickScrape from "@/components/QuickScrape";
 import {
-  AgentTemplate,
   getLeadStats,
   getJobs,
   scrapeSingle,
   scrapeBatch,
   getCurrentUsage,
   getCurrentPlan,
-  getAgentTemplates,
   generateTargetsFromObjective,
   GeneratedGoogleTarget,
   LeadStats,
@@ -21,17 +19,15 @@ import {
 } from "@/lib/api";
 
 const POLL_INTERVAL_MS = 5000;
-const REVENUE_PER_HIGH_PRIORITY_LEAD = 5000;
+// const REVENUE_PER_HIGH_PRIORITY_LEAD = 5000; // Removed
 
 export default function Dashboard() {
   const [stats, setStats] = useState<LeadStats | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [usage, setUsage] = useState<UsageCurrent | null>(null);
   const [plan, setPlan] = useState<CurrentPlan | null>(null);
-  const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBatchLoading, setIsBatchLoading] = useState(false);
-  const [templateQueueingId, setTemplateQueueingId] = useState<string | null>(null);
   const [isGeneratingTargets, setIsGeneratingTargets] = useState(false);
   const [agentObjective, setAgentObjective] = useState("");
   const [generatedTargets, setGeneratedTargets] = useState<GeneratedGoogleTarget[]>([]);
@@ -61,18 +57,16 @@ export default function Dashboard() {
     refreshInFlightRef.current = true;
 
     try {
-      const [statsData, jobsData, usageData, planData, templatesData] = await Promise.all([
+      const [statsData, jobsData, usageData, planData] = await Promise.all([
         getLeadStats(),
         getJobs(10),
         getCurrentUsage(),
         getCurrentPlan(),
-        getAgentTemplates(),
       ]);
       setStats(statsData);
       setJobs(jobsData);
       setUsage(usageData);
       setPlan(planData);
-      setTemplates(templatesData.slice(0, 4));
       setRefreshWarning(null);
       setLastUpdatedAt(new Date().toISOString());
     } catch (err) {
@@ -143,36 +137,6 @@ export default function Dashboard() {
       setError("Failed to queue generated targets.");
     } finally {
       setIsBatchLoading(false);
-    }
-  };
-
-  const handleUseTemplateObjective = (template: AgentTemplate) => {
-    setAgentObjective(template.objective);
-    setAgentInfo(`Loaded "${template.name}" objective. You can tweak and generate targets now.`);
-    setError(null);
-  };
-
-  const handleQueueTemplate = async (template: AgentTemplate) => {
-    if (!template.google_maps_targets || template.google_maps_targets.length === 0) {
-      setError("This template has no Google Maps targets to queue.");
-      return;
-    }
-
-    setTemplateQueueingId(template.id);
-    setError(null);
-    setAgentInfo(null);
-
-    try {
-      const result = await scrapeBatch(template.google_maps_targets);
-      setAgentInfo(
-        `Queued ${template.name} as job #${result.job_id} with ${template.google_maps_targets.length} targets.`
-      );
-      setTimeout(loadData, 2000);
-    } catch (err) {
-      console.error("Failed to queue template:", err);
-      setError(`Failed to queue ${template.name}.`);
-    } finally {
-      setTemplateQueueingId(null);
     }
   };
 
@@ -285,7 +249,7 @@ export default function Dashboard() {
       )}
 
       {/* Metrics grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 stagger-children">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 stagger-children">
         <MetricCard
           title="Total Leads"
           value={stats?.total_leads ?? 0}
@@ -309,16 +273,7 @@ export default function Dashboard() {
             </svg>
           }
         />
-        <MetricCard
-          title="Potential Revenue"
-          value={`$${((stats?.high_priority_leads ?? 0) * REVENUE_PER_HIGH_PRIORITY_LEAD).toLocaleString()}`}
-          icon={
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          }
-        />
+        {/* MetricCard for Potential Revenue Removed */}
       </div>
 
       {/* Main content grid */}
@@ -449,8 +404,8 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-
-
+          
+          {/* Niche Playbooks Widget Removed */}
         </div>
       </div>
 
