@@ -6,7 +6,7 @@ export default function PrivacyPage() {
       <p className="mb-4">LeadPilot processes account data, usage metrics, and lead records to provide lead generation services.</p>
       <p className="mb-4">We store your API credentials securely, isolate customer data by account, and only process third-party data needed for scraping and enrichment workflows.</p>
       <p className="mb-4">You are responsible for lawful use of contact data and outreach in your jurisdiction.</p>
-      <p className="mb-4">For deletion or data access requests, email founder@leadpilot.ai.</p>
+      <p className="mb-4">For deletion or data access requests, email rishetmehra11@gmail.com.</p>
     </main>
   );
 }

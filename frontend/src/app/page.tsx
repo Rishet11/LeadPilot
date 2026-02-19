@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
+import GuestPreview from "@/components/GuestPreview";
 
 type DemoLead = {
   name: string;
@@ -369,6 +370,8 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <GuestPreview />
+
         <section className="border-y border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.0))]">
           <div className="max-w-6xl mx-auto px-6 py-14">
             <div className="mb-8">
@@ -541,7 +544,7 @@ export default function LandingPage() {
                 <Link href="/dashboard" className="btn-secondary px-6 py-3 text-sm">Open Dashboard</Link>
               </div>
               <p className="text-xs text-[var(--text-muted)] mt-5">
-                Questions? Contact <a href="mailto:founder@leadpilot.ai" className="text-[var(--accent)] hover:underline">founder@leadpilot.ai</a>
+                Questions? Contact <a href="mailto:rishetmehra11@gmail.com" className="text-[var(--accent)] hover:underline">rishetmehra11@gmail.com</a>
               </p>
             </div>
           </div>

@@ -92,6 +92,46 @@ class ScrapeResponse(BaseModel):
     message: str
 
 
+class GuestScrapeTarget(BaseModel):
+    city: str = Field(..., min_length=1, max_length=100)
+    category: str = Field(..., min_length=1, max_length=100)
+    limit: int = Field(default=8, ge=1, le=15)
+
+    @field_validator('city', 'category')
+    @classmethod
+    def sanitize_text(cls, v: str) -> str:
+        return sanitize_search_text(v)
+
+
+class GuestPreviewLead(BaseModel):
+    name: str
+    city: Optional[str] = None
+    category: Optional[str] = None
+    rating: Optional[float] = None
+    reviews: Optional[int] = None
+    website: Optional[str] = None
+    maps_url: Optional[str] = None
+    lead_score: int = 0
+    reason: Optional[str] = None
+    ai_outreach: Optional[str] = None
+
+
+class GuestPreviewUsageResponse(BaseModel):
+    monthly_job_limit: int
+    monthly_lead_limit: int
+    jobs_used: int
+    leads_used: int
+    jobs_remaining: int
+    leads_remaining: int
+
+
+class GuestScrapeResponse(BaseModel):
+    status: str
+    message: str
+    leads: List[GuestPreviewLead]
+    usage: GuestPreviewUsageResponse
+
+
 class JobResponse(BaseModel):
     id: int
     job_type: str

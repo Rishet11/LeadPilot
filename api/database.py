@@ -184,6 +184,22 @@ class UsageMonthly(Base):
     customer = relationship("Customer", back_populates="monthly_usage")
 
 
+class GuestPreviewUsage(Base):
+    """Per-guest monthly preview usage counters for no-login scrape trials."""
+    __tablename__ = "guest_preview_usage"
+    __table_args__ = (
+        UniqueConstraint("fingerprint", "period_start", name="uq_guest_preview_fingerprint_period"),
+        Index("ix_guest_preview_fingerprint", "fingerprint"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    fingerprint = Column(String(128), nullable=False)
+    period_start = Column(Date, nullable=False, default=lambda: date.today().replace(day=1))
+    preview_jobs = Column(Integer, default=0)
+    preview_leads = Column(Integer, default=0)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class WebhookEvent(Base):
     """Billing webhook audit log and idempotency registry."""
     __tablename__ = "webhook_events"

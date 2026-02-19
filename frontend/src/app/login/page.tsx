@@ -144,10 +144,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
-          Need access? <a href="/pricing" className="text-[var(--accent)] hover:underline">Choose a plan</a>
-          {" "}or contact <a href="mailto:founder@leadpilot.ai" className="text-[var(--accent)] hover:underline">founder@leadpilot.ai</a>
-        </p>
       </div>
     </div>
   );

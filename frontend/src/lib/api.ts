@@ -125,6 +125,35 @@ export interface AgentTemplate {
   instagram_targets: GeneratedInstagramTarget[];
 }
 
+export interface GuestPreviewLead {
+  name: string;
+  city: string | null;
+  category: string | null;
+  rating: number | null;
+  reviews: number | null;
+  website: string | null;
+  maps_url: string | null;
+  lead_score: number;
+  reason: string | null;
+  ai_outreach: string | null;
+}
+
+export interface GuestPreviewUsage {
+  monthly_job_limit: number;
+  monthly_lead_limit: number;
+  jobs_used: number;
+  leads_used: number;
+  jobs_remaining: number;
+  leads_remaining: number;
+}
+
+export interface GuestPreviewResponse {
+  status: string;
+  message: string;
+  leads: GuestPreviewLead[];
+  usage: GuestPreviewUsage;
+}
+
 // Error handling helper
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -233,6 +262,17 @@ export async function scrapeInstagram(targets: {
     body: JSON.stringify({ targets }),
   });
   return handleResponse<{ job_id: number }>(res);
+}
+
+export async function scrapeGuestPreview(city: string, category: string, limit: number): Promise<GuestPreviewResponse> {
+  const res = await fetch(`${API_BASE}/api/scrape/guest-preview`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ city, category, limit }),
+  });
+  return handleResponse<GuestPreviewResponse>(res);
 }
 
 // Jobs API

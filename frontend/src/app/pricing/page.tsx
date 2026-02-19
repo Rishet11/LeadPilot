@@ -101,7 +101,7 @@ const FAQS = [
   {
     question: "Is there a refund policy?",
     answer:
-      "If onboarding is clearly blocked due to a product issue, contact founder@leadpilot.ai within 7 days and we will review your case quickly.",
+      "If onboarding is clearly blocked due to a product issue, contact rishetmehra11@gmail.com within 7 days and we will review your case quickly.",
   },
 ];
 
@@ -134,7 +134,7 @@ export default function PricingPage() {
         : checkoutLinks.growth;
 
     if (!link) {
-      window.location.assign(`mailto:founder@leadpilot.ai?subject=${encodeURIComponent(`LeadPilot ${plan.name} plan`)}`);
+      window.location.assign(`mailto:rishetmehra11@gmail.com?subject=${encodeURIComponent(`LeadPilot ${plan.name} plan`)}`);
       return;
     }
 
