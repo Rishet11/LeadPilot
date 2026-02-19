@@ -25,7 +25,7 @@ def _filter_by_customer(query, customer: dict):
     return query.filter(Lead.customer_id == customer["id"])
 
 
-@router.get("/", response_model=List[LeadResponse])
+@router.get("", response_model=List[LeadResponse])
 @limiter.limit(READ_LIMIT)
 def get_leads(
     request: Request,

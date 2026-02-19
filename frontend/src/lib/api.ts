@@ -277,7 +277,7 @@ export async function scrapeGuestPreview(city: string, category: string, limit: 
 
 // Jobs API
 export async function getJobs(limit = 20): Promise<Job[]> {
-  const res = await fetch(`${API_BASE}/api/jobs/?limit=${limit}`, {
+  const res = await fetch(`${API_BASE}/api/jobs?limit=${limit}`, {
     headers: getHeaders(),
   });
   return handleResponse<Job[]>(res);

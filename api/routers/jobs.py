@@ -20,7 +20,7 @@ def _filter_by_customer(query, customer: dict):
     return query.filter(Job.customer_id == customer["id"])
 
 
-@router.get("/", response_model=List[JobResponse])
+@router.get("", response_model=List[JobResponse])
 @limiter.limit(READ_LIMIT)
 def get_jobs(
     request: Request,
