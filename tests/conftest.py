@@ -13,6 +13,9 @@ from sqlalchemy.pool import StaticPool
 os.environ["ENVIRONMENT"] = "test"
 os.environ["REQUIRE_AUTH"] = "false"
 
+from api.rate_limit import limiter
+limiter.enabled = False
+
 from api.database import Base, Customer, get_db
 from api.main import app
 
