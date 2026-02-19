@@ -24,7 +24,6 @@ DEFAULT_PLANS = {
     "free": PlanEntitlement("free", monthly_lead_quota=100, instagram_enabled=False, max_concurrent_jobs=1),
     "starter": PlanEntitlement("starter", monthly_lead_quota=500, instagram_enabled=False, max_concurrent_jobs=2),
     "growth": PlanEntitlement("growth", monthly_lead_quota=2000, instagram_enabled=True, max_concurrent_jobs=3),
-    "agency": PlanEntitlement("agency", monthly_lead_quota=1000000, instagram_enabled=True, max_concurrent_jobs=5),
 }
 
 
@@ -37,6 +36,9 @@ def infer_plan_tier(customer: Optional[Customer]) -> str:
         return "free"
 
     explicit_tier = (customer.plan_tier or "").lower().strip()
+    # Backward compatibility: agency tier was removed and now maps to growth.
+    if explicit_tier == "agency":
+        return "growth"
     if explicit_tier in DEFAULT_PLANS:
         return explicit_tier
 
@@ -44,7 +46,6 @@ def infer_plan_tier(customer: Optional[Customer]) -> str:
     variant_map = {
         os.getenv("LEMON_STARTER_VARIANT_ID", ""): "starter",
         os.getenv("LEMON_GROWTH_VARIANT_ID", ""): "growth",
-        os.getenv("LEMON_AGENCY_VARIANT_ID", ""): "agency",
     }
     if variant_id and variant_map.get(variant_id):
         return variant_map[variant_id]

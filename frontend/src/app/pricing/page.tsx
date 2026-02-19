@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 type BillingCycle = "monthly" | "yearly";
-type PlanKey = "free" | "starter" | "growth" | "agency";
+type PlanKey = "free" | "starter" | "growth";
 
 type PlanConfig = {
   key: PlanKey;
@@ -63,7 +63,7 @@ const PLAN_CONFIGS: PlanConfig[] = [
   {
     key: "growth",
     name: "Growth",
-    description: "For agencies running outbound every week.",
+    description: "For small teams running outbound every week.",
     monthlyPrice: 99,
     yearlyPrice: 990,
     monthlyLeadCredits: "2,000 / month",
@@ -77,26 +77,7 @@ const PLAN_CONFIGS: PlanConfig[] = [
       "Google Maps + Instagram scraping",
       "3 concurrent scrape jobs",
       "Target Builder + niche presets",
-      "Faster export and team workflow",
-    ],
-  },
-  {
-    key: "agency",
-    name: "Agency",
-    description: "For high-volume teams with multiple client campaigns.",
-    monthlyPrice: 249,
-    yearlyPrice: 2490,
-    monthlyLeadCredits: "1,000,000 / month",
-    concurrentJobs: "5 running jobs",
-    sources: "All sources",
-    support: "Founder-priority support",
-    cta: "Get Agency",
-    features: [
-      "High-volume lead credits",
-      "5 concurrent scrape jobs",
-      "Advanced outreach and export workflow",
-      "Client report-ready pipeline",
-      "Priority roadmap feedback",
+      "Priority support + faster export flow",
     ],
   },
 ];
@@ -137,26 +118,23 @@ export default function PricingPage() {
     () => ({
       starter: process.env.NEXT_PUBLIC_LEMON_STARTER_URL || "",
       growth: process.env.NEXT_PUBLIC_LEMON_GROWTH_URL || "",
-      agency: process.env.NEXT_PUBLIC_LEMON_AGENCY_URL || "",
     }),
     []
   );
 
   const openCheckout = (plan: PlanConfig) => {
     if (plan.key === "free") {
-      window.location.href = "/login";
+      window.location.assign("/login");
       return;
     }
 
     const link =
       plan.key === "starter"
         ? checkoutLinks.starter
-        : plan.key === "growth"
-          ? checkoutLinks.growth
-          : checkoutLinks.agency;
+        : checkoutLinks.growth;
 
     if (!link) {
-      window.location.href = `mailto:founder@leadpilot.ai?subject=${encodeURIComponent(`LeadPilot ${plan.name} plan`)}`;
+      window.location.assign(`mailto:founder@leadpilot.ai?subject=${encodeURIComponent(`LeadPilot ${plan.name} plan`)}`);
       return;
     }
 
@@ -216,7 +194,7 @@ export default function PricingPage() {
         </section>
 
         <section className="max-w-7xl mx-auto px-6 pb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {PLAN_CONFIGS.map((plan) => {
               const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
               const period = billingCycle === "monthly" ? "/month" : "/year";
@@ -288,10 +266,14 @@ export default function PricingPage() {
                 <thead>
                   <tr className="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]">
                     <th className="py-3 pr-4 font-medium">Capability</th>
-                    <th className="py-3 px-4 font-medium">Free</th>
-                    <th className="py-3 px-4 font-medium">Starter</th>
-                    <th className="py-3 px-4 font-medium">Growth</th>
-                    <th className="py-3 pl-4 font-medium">Agency</th>
+                    {PLAN_CONFIGS.map((plan) => (
+                      <th
+                        key={`head-${plan.key}`}
+                        className="py-3 px-4 font-medium"
+                      >
+                        {plan.name}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
