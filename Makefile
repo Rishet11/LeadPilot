@@ -3,12 +3,21 @@ VENV_PY := $(VENV_BIN)/python3
 NODE22_BIN := /opt/homebrew/opt/node@22/bin
 NODE_PATH_PREFIX := $(if $(wildcard $(NODE22_BIN)/node),$(NODE22_BIN):,)
 
-.PHONY: dev api worker frontend test lint format clean docker-up docker-down
+.PHONY: dev stop api worker frontend test lint format clean docker-up docker-down
 
 # Development
 dev:
 	@echo "Starting API, Worker, and Frontend..."
 	@make -j3 api worker frontend
+
+stop:
+	@echo "Stopping local API, Worker, and Frontend processes..."
+	-@for pid in $$(pgrep -f "api.main:app|worker.py|next dev|npm run dev" 2>/dev/null); do kill $$pid 2>/dev/null || true; done
+	-@lsof -ti tcp:3000 | xargs kill 2>/dev/null || true
+	-@lsof -ti tcp:8000 | xargs kill 2>/dev/null || true
+	-@for pid in $$(lsof -ti tcp:3000 2>/dev/null); do kill -9 $$pid 2>/dev/null || true; done
+	-@for pid in $$(lsof -ti tcp:8000 2>/dev/null); do kill -9 $$pid 2>/dev/null || true; done
+	@echo "Done."
 
 api:
 	$(VENV_PY) -m uvicorn api.main:app --reload --reload-dir api --reload-include "*.py" --reload-exclude "venv*" --reload-exclude "venv_py313_backup_*" --reload-exclude "frontend/*" --reload-exclude "data/*" --reload-exclude "logs/*" --reload-exclude ".git/*"
@@ -61,6 +70,7 @@ clean:
 help:
 	@echo "Available commands:"
 	@echo "  make dev         - Start API, Worker, and Frontend concurrently"
+	@echo "  make stop        - Stop API, Worker, and Frontend local dev processes"
 	@echo "  make api         - Start API server only"
 	@echo "  make worker      - Start background worker only"
 	@echo "  make frontend    - Start Frontend only"
