@@ -59,6 +59,13 @@ export interface LeadStats {
   leads_by_source: Record<string, number>;
 }
 
+export interface LeadPage {
+  items: Lead[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
 export interface Setting {
   key: string;
   value: string;
@@ -89,6 +96,13 @@ export interface GoogleAuthResult {
   name: string;
   plan_tier: string;
   is_new_customer: boolean;
+}
+
+export interface CurrentSessionUser {
+  id: number | null;
+  name: string | null;
+  email: string | null;
+  is_admin: boolean;
 }
 
 export interface GeneratedGoogleTarget {
@@ -154,13 +168,62 @@ export interface GuestPreviewResponse {
   usage: GuestPreviewUsage;
 }
 
+export class ApiError extends Error {
+  status: number;
+  detail: string;
+
+  constructor(status: number, detail: string) {
+    super(detail || `HTTP ${status}`);
+    this.status = status;
+    this.detail = detail || `HTTP ${status}`;
+    this.name = "ApiError";
+  }
+}
+
 // Error handling helper
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: "Request failed" }));
-    throw new Error(error.detail || `HTTP ${res.status}`);
+    throw new ApiError(res.status, error.detail || `HTTP ${res.status}`);
   }
   return res.json();
+}
+
+export function getUserFacingApiError(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const detail = (error.detail || "").toLowerCase();
+    if (error.status === 401 || detail.includes("missing bearer token")) {
+      return "Please sign in again with Google.";
+    }
+    if (error.status === 402 || detail.includes("credits exceeded")) {
+      return "You have reached your monthly lead credits. Upgrade your plan to continue.";
+    }
+    if (error.status === 403 && detail.includes("instagram scraping")) {
+      return "Instagram scraping is not available on your current plan.";
+    }
+    if (error.status === 403 || detail.includes("expired session token")) {
+      return "Your session expired. Please log in again.";
+    }
+    if (error.status === 429 && detail.includes("running jobs")) {
+      return "You already have the maximum running jobs for your plan. Wait for completion or upgrade.";
+    }
+    if (error.status === 429) {
+      return "Too many requests right now. Please wait a moment and retry.";
+    }
+    if (error.detail) {
+      return error.detail;
+    }
+  }
+
+  if (error instanceof TypeError) {
+    return "Network error. Check your connection and API URL.";
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 export async function loginWithGoogleIdToken(idToken: string): Promise<GoogleAuthResult> {
@@ -172,6 +235,13 @@ export async function loginWithGoogleIdToken(idToken: string): Promise<GoogleAut
     body: JSON.stringify({ id_token: idToken }),
   });
   return handleResponse<GoogleAuthResult>(res);
+}
+
+export async function getCurrentSessionUser(): Promise<CurrentSessionUser> {
+  const res = await fetch(`${API_BASE}/api/auth/me`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<CurrentSessionUser>(res);
 }
 
 // Leads API
@@ -195,6 +265,28 @@ export async function getLeads(params?: {
     headers: getHeaders(),
   });
   return handleResponse<Lead[]>(res);
+}
+
+export async function getLeadsPage(params?: {
+  skip?: number;
+  limit?: number;
+  status?: string;
+  source?: string;
+  min_score?: number;
+  city?: string;
+  category?: string;
+  no_website?: boolean;
+}): Promise<LeadPage> {
+  const searchParams = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) searchParams.set(key, String(value));
+    });
+  }
+  const res = await fetch(`${API_BASE}/api/leads/page?${searchParams}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<LeadPage>(res);
 }
 
 export async function getLeadStats(): Promise<LeadStats> {
@@ -313,6 +405,15 @@ export async function updateSetting(key: string, value: string): Promise<Setting
     body: JSON.stringify({ key, value }),
   });
   return handleResponse<Setting>(res);
+}
+
+export async function updateSettingsBulk(items: { key: string; value: string }[]): Promise<Setting[]> {
+  const res = await fetch(`${API_BASE}/api/settings/bulk`, {
+    method: "PUT",
+    headers: getHeaders(),
+    body: JSON.stringify({ items }),
+  });
+  return handleResponse<Setting[]>(res);
 }
 
 export async function resetSettings(): Promise<void> {
