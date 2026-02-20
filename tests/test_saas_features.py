@@ -36,6 +36,49 @@ def test_settings_are_isolated_per_customer(client, db_session):
     assert other_setting.value == "OTHER_PROMPT"
 
 
+def test_bulk_settings_update_succeeds_transactionally(client):
+    res = client.put(
+        "/api/settings/bulk",
+        json={
+            "items": [
+                {"key": "ai_system_prompt", "value": "NEW_PROMPT"},
+                {"key": "scoring_no_website", "value": "77"},
+                {"key": "instagram_followers_min", "value": "1200"},
+            ]
+        },
+    )
+    assert res.status_code == 200
+    payload = res.json()
+    assert len(payload) == 3
+
+    settings = client.get("/api/settings").json()
+    values = {item["key"]: item["value"] for item in settings}
+    assert values["ai_system_prompt"] == "NEW_PROMPT"
+    assert values["scoring_no_website"] == "77"
+    assert values["instagram_followers_min"] == "1200"
+
+
+def test_bulk_settings_rejects_invalid_key_without_partial_write(client):
+    seed = client.put("/api/settings/scoring_no_website", json={"key": "scoring_no_website", "value": "55"})
+    assert seed.status_code == 200
+
+    res = client.put(
+        "/api/settings/bulk",
+        json={
+            "items": [
+                {"key": "scoring_no_website", "value": "99"},
+                {"key": "unknown_setting_key", "value": "1"},
+            ]
+        },
+    )
+    assert res.status_code == 400
+    assert "Invalid setting key" in res.json()["detail"]
+
+    current = client.get("/api/settings/scoring_no_website")
+    assert current.status_code == 200
+    assert current.json()["value"] == "55"
+
+
 def test_usage_gate_blocks_when_credits_exhausted(client, db_session):
     customer = db_session.query(Customer).filter(Customer.id == 1).first()
     customer.plan_tier = "free"
