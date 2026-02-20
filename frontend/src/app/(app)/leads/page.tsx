@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { batchDeleteLeads, getLeads, Lead, regenerateLeadOutreach, updateLeadStatus } from "@/lib/api";
+import { batchDeleteLeads, getLeadsPage, getUserFacingApiError, Lead, regenerateLeadOutreach, updateLeadStatus } from "@/lib/api";
+import { toInstagramProfileUrl, toSafeExternalUrl } from "@/lib/urls";
 
 const FILTER_DEBOUNCE_MS = 280;
 const NOTICE_TIMEOUT_MS = 3800;
+const PAGE_SIZE = 50;
+const STALE_AFTER_MS = 120000;
 
 const statusOptions = [
   { value: "new", label: "New" },
@@ -81,12 +84,15 @@ function leadsToCsv(leads: Lead[]): string {
 
 export default function LeadsCRM() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRegeneratingOutreach, setIsRegeneratingOutreach] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
     status: "",
@@ -99,37 +105,48 @@ export default function LeadsCRM() {
 
   const selectAllRef = useRef<HTMLInputElement | null>(null);
 
-  const loadLeads = async (activeFilters: Filters) => {
+  const loadLeads = async (activeFilters: Filters, page = currentPage) => {
     setIsLoading(true);
     setSelectedIds(new Set());
 
     try {
-      const data = await getLeads({
+      const data = await getLeadsPage({
         status: activeFilters.status || undefined,
         source: activeFilters.source || undefined,
         min_score: activeFilters.minScore || undefined,
         city: activeFilters.city.trim() || undefined,
         no_website: activeFilters.noWebsite || undefined,
-        limit: 100,
+        skip: (page - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
       });
-      setLeads(data);
+      setLeads(data.items);
+      setTotalLeads(data.total);
+      setLastUpdatedAt(new Date().toISOString());
+      setSelectedLead((current) => {
+        if (!current) return null;
+        return data.items.find((lead) => lead.id === current.id) || null;
+      });
     } catch (err) {
       console.error("Failed to load leads:", err);
       setLeads([]);
-      setNotice({ type: "error", text: "Failed to load leads. Please refresh." });
+      setTotalLeads(0);
+      setNotice({ type: "error", text: getUserFacingApiError(err, "Failed to load leads. Please refresh.") });
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => setEffectiveFilters(filters), FILTER_DEBOUNCE_MS);
+    const timer = setTimeout(() => {
+      setEffectiveFilters(filters);
+      setCurrentPage(1);
+    }, FILTER_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [filters]);
 
   useEffect(() => {
-    void loadLeads(effectiveFilters);
-  }, [effectiveFilters]);
+    void loadLeads(effectiveFilters, currentPage);
+  }, [effectiveFilters, currentPage]);
 
   useEffect(() => {
     if (!selectAllRef.current) return;
@@ -164,7 +181,7 @@ export default function LeadsCRM() {
       if (selectedLead?.id === leadId) {
         setSelectedLead({ ...selectedLead, status: previous.status });
       }
-      setNotice({ type: "error", text: "Failed to update status." });
+      setNotice({ type: "error", text: getUserFacingApiError(err, "Failed to update status.") });
     }
   };
 
@@ -192,18 +209,26 @@ export default function LeadsCRM() {
     if (selectedIds.size === 0) return;
     if (!confirm(`Delete ${selectedIds.size} selected lead(s)?`)) return;
 
+    const idsToDelete = Array.from(selectedIds);
+    const selectedCount = idsToDelete.length;
     setIsDeleting(true);
     try {
-      await batchDeleteLeads(Array.from(selectedIds));
+      await batchDeleteLeads(idsToDelete);
       setLeads((current) => current.filter((lead) => !selectedIds.has(lead.id)));
+      setTotalLeads((current) => Math.max(0, current - selectedCount));
       if (selectedLead && selectedIds.has(selectedLead.id)) {
         setSelectedLead(null);
       }
       setSelectedIds(new Set());
       setNotice({ type: "success", text: "Selected leads deleted." });
+      if (leads.length <= selectedCount && currentPage > 1) {
+        setCurrentPage((page) => Math.max(1, page - 1));
+      } else {
+        void loadLeads(effectiveFilters, currentPage);
+      }
     } catch (err) {
       console.error("Failed to delete leads:", err);
-      setNotice({ type: "error", text: "Failed to delete selected leads." });
+      setNotice({ type: "error", text: getUserFacingApiError(err, "Failed to delete selected leads.") });
     } finally {
       setIsDeleting(false);
     }
@@ -230,7 +255,7 @@ export default function LeadsCRM() {
       setNotice({ type: "success", text: "Outreach regenerated." });
     } catch (err) {
       console.error("Failed to regenerate outreach:", err);
-      setNotice({ type: "error", text: "Failed to regenerate outreach." });
+      setNotice({ type: "error", text: getUserFacingApiError(err, "Failed to regenerate outreach.") });
     } finally {
       setIsRegeneratingOutreach(false);
     }
@@ -263,6 +288,23 @@ export default function LeadsCRM() {
 
   const statusLabel = statusOptions.find((item) => item.value === filters.status)?.label || "All Status";
   const sourceLabel = filters.source ? filters.source.replace("_", " ") : "All Sources";
+  const totalPages = Math.max(1, Math.ceil(totalLeads / PAGE_SIZE));
+  const rangeStart = totalLeads === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = totalLeads === 0 ? 0 : Math.min(totalLeads, currentPage * PAGE_SIZE);
+  const formatLastUpdated = (isoTime: string | null) => {
+    if (!isoTime) return "not synced yet";
+    const seconds = Math.max(0, Math.floor((Date.now() - new Date(isoTime).getTime()) / 1000));
+    if (seconds < 5) return "just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
+  const isStale = !lastUpdatedAt || Date.now() - new Date(lastUpdatedAt).getTime() > STALE_AFTER_MS;
+  const selectedLeadMapsUrl = toSafeExternalUrl(selectedLead?.maps_url);
+  const selectedLeadWebsiteUrl = toSafeExternalUrl(selectedLead?.website);
+  const selectedLeadInstagramUrl = toInstagramProfileUrl(selectedLead?.instagram);
 
   return (
     <div className="flex flex-col xl:flex-row gap-5 min-h-[calc(100vh-180px)] xl:h-[calc(100vh-140px)]">
@@ -271,11 +313,14 @@ export default function LeadsCRM() {
           <div>
             <p className="font-mono text-[10px] text-[var(--accent)] tracking-[0.2em] uppercase mb-1">CRM</p>
             <h1 className="font-display text-2xl text-[var(--text-primary)] tracking-[-0.02em]">Leads</h1>
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Last synced: {formatLastUpdated(lastUpdatedAt)}
+            </p>
           </div>
 
           <div className="flex items-center flex-wrap gap-2">
             <button
-              onClick={() => void loadLeads(effectiveFilters)}
+              onClick={() => void loadLeads(effectiveFilters, currentPage)}
               disabled={isLoading}
               className="btn-secondary px-3 py-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -286,7 +331,7 @@ export default function LeadsCRM() {
               disabled={leads.length === 0}
               className="btn-secondary px-3 py-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Export CSV
+              Export Page CSV
             </button>
             {selectedIds.size > 0 && (
               <button
@@ -297,7 +342,10 @@ export default function LeadsCRM() {
                 {isDeleting ? "Deleting..." : `Delete (${selectedIds.size})`}
               </button>
             )}
-            <span className="tag font-mono text-[10px]">{leads.length} leads</span>
+            <span className="tag font-mono text-[10px]">
+              {rangeStart}-{rangeEnd} of {totalLeads}
+            </span>
+            {isStale && <span className="tag font-mono text-[10px]">stale</span>}
           </div>
         </div>
 
@@ -404,82 +452,106 @@ export default function LeadsCRM() {
                   </tr>
                 </thead>
                 <tbody>
-                  {leads.map((lead) => (
-                    <tr
-                      key={lead.id}
-                      onClick={() => setSelectedLead(lead)}
-                      className={`border-t border-[var(--border-subtle)] cursor-pointer transition-colors ${
-                        selectedLead?.id === lead.id
-                          ? "bg-[var(--accent-dim)]"
-                          : "hover:bg-[var(--surface-card)]"
-                      }`}
-                    >
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(lead.id)}
-                          onChange={() => toggleSelectOne(lead.id)}
-                          className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--accent)]"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <div>
-                          {lead.maps_url ? (
-                            <a
-                              href={lead.maps_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-sm font-medium text-[var(--accent)] hover:underline"
-                            >
-                              {lead.name}
-                            </a>
-                          ) : (
-                            <p className="text-sm font-medium text-[var(--text-primary)]">{lead.name}</p>
-                          )}
-                          <p className="font-mono text-[10px] text-[var(--text-muted)]">{lead.category || "Unknown category"}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[var(--text-muted)]">{lead.city || "-"}</td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-[var(--text-primary)]">
-                          {lead.rating ?? "-"}{lead.rating !== null ? "★" : ""} ({lead.reviews ?? 0})
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-14 h-1.5 bg-[var(--surface-elevated)] rounded-full overflow-hidden">
-                            <div
-                              className={`h-full ${getScoreColor(lead.lead_score)}`}
-                              style={{ width: `${lead.lead_score}%` }}
-                            />
+                  {leads.map((lead) => {
+                    const safeMapsUrl = toSafeExternalUrl(lead.maps_url);
+                    return (
+                      <tr
+                        key={lead.id}
+                        onClick={() => setSelectedLead(lead)}
+                        className={`border-t border-[var(--border-subtle)] cursor-pointer transition-colors ${
+                          selectedLead?.id === lead.id
+                            ? "bg-[var(--accent-dim)]"
+                            : "hover:bg-[var(--surface-card)]"
+                        }`}
+                      >
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(lead.id)}
+                            onChange={() => toggleSelectOne(lead.id)}
+                            className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--accent)]"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div>
+                            {safeMapsUrl ? (
+                              <a
+                                href={safeMapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-sm font-medium text-[var(--accent)] hover:underline"
+                              >
+                                {lead.name}
+                              </a>
+                            ) : (
+                              <p className="text-sm font-medium text-[var(--text-primary)]">{lead.name}</p>
+                            )}
+                            <p className="font-mono text-[10px] text-[var(--text-muted)]">{lead.category || "Unknown category"}</p>
                           </div>
-                          <span className="font-mono text-[10px] text-[var(--text-muted)] w-6">{lead.lead_score}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            void handleStatusChange(lead.id, e.target.value);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-2 py-1 bg-[var(--surface-elevated)] border border-[var(--border-subtle)] rounded-lg font-mono text-[10px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
-                        >
-                          {statusOptions.map((status) => (
-                            <option key={status.value} value={status.value}>
-                              {status.label}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[var(--text-muted)]">{lead.city || "-"}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-[var(--text-primary)]">
+                            {lead.rating ?? "-"}{lead.rating !== null ? "★" : ""} ({lead.reviews ?? 0})
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-14 h-1.5 bg-[var(--surface-elevated)] rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${getScoreColor(lead.lead_score)}`}
+                                style={{ width: `${lead.lead_score}%` }}
+                              />
+                            </div>
+                            <span className="font-mono text-[10px] text-[var(--text-muted)] w-6">{lead.lead_score}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={lead.status}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              void handleStatusChange(lead.id, e.target.value);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="px-2 py-1 bg-[var(--surface-elevated)] border border-[var(--border-subtle)] rounded-lg font-mono text-[10px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                          >
+                            {statusOptions.map((status) => (
+                              <option key={status.value} value={status.value}>
+                                {status.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3 shrink-0">
+          <p className="text-xs text-[var(--text-muted)]">
+            Page {currentPage} of {totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={isLoading || currentPage <= 1}
+              className="btn-secondary px-3 py-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={isLoading || currentPage >= totalPages}
+              className="btn-secondary px-3 py-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -487,9 +559,9 @@ export default function LeadsCRM() {
         <div className="w-full xl:w-80 card-static p-5 overflow-auto shrink-0 xl:max-h-none max-h-[420px]">
           <div className="flex items-start justify-between mb-5">
             <div>
-              {selectedLead.maps_url ? (
+              {selectedLeadMapsUrl ? (
                 <a
-                  href={selectedLead.maps_url}
+                  href={selectedLeadMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-semibold text-[var(--accent)] hover:underline"
@@ -549,20 +621,20 @@ export default function LeadsCRM() {
                     <span className="ml-auto font-mono">{selectedLead.phone}</span>
                   </a>
                 )}
-                {selectedLead.website && (
+                {selectedLeadWebsiteUrl && (
                   <a
-                    href={selectedLead.website}
+                    href={selectedLeadWebsiteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline px-3 py-2.5 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]"
                   >
                     <span className="text-[var(--text-muted)]">Web</span>
-                    <span className="ml-auto truncate max-w-[180px]">{selectedLead.website}</span>
+                    <span className="ml-auto truncate max-w-[180px]">{selectedLeadWebsiteUrl}</span>
                   </a>
                 )}
-                {selectedLead.instagram && (
+                {selectedLeadInstagramUrl && (
                   <a
-                    href={`https://instagram.com/${selectedLead.instagram}`}
+                    href={selectedLeadInstagramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline px-3 py-2.5 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]"

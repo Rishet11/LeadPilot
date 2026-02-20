@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getSettings, updateSetting, resetSettings } from "@/lib/api";
+import { getCurrentSessionUser, getSettings, getUserFacingApiError, resetSettings, updateSetting, updateSettingsBulk } from "@/lib/api";
 
 const DEFAULT_SCORING_CONFIG = {
   no_website: 50,
@@ -34,6 +34,7 @@ export default function SettingsPage() {
   const [originalInstagramConfig, setOriginalInstagramConfig] = useState({ ...DEFAULT_INSTAGRAM_CONFIG });
 
   const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!message) return;
@@ -45,6 +46,8 @@ export default function SettingsPage() {
     setIsLoading(true);
     try {
       const data = await getSettings();
+      const sessionUser = await getCurrentSessionUser().catch(() => ({ is_admin: false }));
+      setIsAdmin(Boolean(sessionUser?.is_admin));
 
       const promptSetting = data.find((s) => s.key === "ai_system_prompt");
       if (promptSetting) {
@@ -98,7 +101,7 @@ export default function SettingsPage() {
       await saveFn();
       setMessage({ type: "success", text: successMsg });
     } catch (err) {
-      setMessage({ type: "error", text: errorMsg });
+      setMessage({ type: "error", text: getUserFacingApiError(err, errorMsg) });
       console.error(`Failed to save ${section} settings:`, err);
     } finally {
       setSavingSection(null);
@@ -110,19 +113,26 @@ export default function SettingsPage() {
     setMessage(null);
 
     try {
-      await updateSetting("ai_system_prompt", aiPrompt);
+      const items = [
+        { key: "ai_system_prompt", value: aiPrompt },
+        ...Object.entries(scoringConfig).map(([key, value]) => ({
+          key: `scoring_${key}`,
+          value: String(value),
+        })),
+        ...Object.entries(instagramConfig).map(([key, value]) => ({
+          key: `instagram_${key}`,
+          value: String(value),
+        })),
+      ];
+      await updateSettingsBulk(items);
 
-      for (const [key, value] of Object.entries(scoringConfig)) {
-        await updateSetting(`scoring_${key}`, String(value));
-      }
-
-      for (const [key, value] of Object.entries(instagramConfig)) {
-        await updateSetting(`instagram_${key}`, String(value));
-      }
+      setOriginalAiPrompt(aiPrompt);
+      setOriginalScoringConfig({ ...scoringConfig });
+      setOriginalInstagramConfig({ ...instagramConfig });
 
       setMessage({ type: "success", text: "Settings saved." });
     } catch (err) {
-      setMessage({ type: "error", text: "Failed to save settings." });
+      setMessage({ type: "error", text: getUserFacingApiError(err, "Failed to save settings.") });
       console.error("Failed to save all settings:", err);
     } finally {
       setIsSaving(false);
@@ -176,7 +186,7 @@ export default function SettingsPage() {
       await loadSettings();
       setMessage({ type: "success", text: "Settings reset to defaults." });
     } catch (err) {
-      setMessage({ type: "error", text: "Failed to reset settings." });
+      setMessage({ type: "error", text: getUserFacingApiError(err, "Failed to reset settings.") });
       console.error("Failed to reset settings:", err);
     }
   };
@@ -419,33 +429,35 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <div className="card-static p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 2H3v16h5v4l4-4h5l4-4V2z"/>
-                <path d="M10 8h4"/>
-                <path d="M10 12h4"/>
-              </svg>
+        {isAdmin && (
+          <div className="card-static p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 2H3v16h5v4l4-4h5l4-4V2z"/>
+                  <path d="M10 8h4"/>
+                  <path d="M10 12h4"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Server Integrations</h3>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Configured via server environment variables
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Server Integrations</h3>
-              <p className="text-xs text-[var(--text-muted)]">
-                Configured via server environment variables
-              </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
+                <code className="px-3 py-1.5 bg-[var(--surface-card)] rounded-lg text-[var(--text-primary)] font-mono text-xs">APIFY_API_TOKEN</code>
+                <span className="text-xs text-[var(--text-muted)]">Google Maps & Instagram scraping</span>
+              </div>
+              <div className="flex items-center gap-3 p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
+                <code className="px-3 py-1.5 bg-[var(--surface-card)] rounded-lg text-[var(--text-primary)] font-mono text-xs">GEMINI_API_KEY</code>
+                <span className="text-xs text-[var(--text-muted)]">AI outreach generation</span>
+              </div>
             </div>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
-              <code className="px-3 py-1.5 bg-[var(--surface-card)] rounded-lg text-[var(--text-primary)] font-mono text-xs">APIFY_API_TOKEN</code>
-              <span className="text-xs text-[var(--text-muted)]">Google Maps & Instagram scraping</span>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
-              <code className="px-3 py-1.5 bg-[var(--surface-card)] rounded-lg text-[var(--text-primary)] font-mono text-xs">GEMINI_API_KEY</code>
-              <span className="text-xs text-[var(--text-muted)]">AI outreach generation</span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { scrapeInstagram, getSettings, getJobs, getLeads, Setting, Job, Lead } from "@/lib/api";
+import { scrapeInstagram, getSettings, getJobs, getLeads, getUserFacingApiError, Setting, Job, Lead } from "@/lib/api";
 
 const NICHES = [
   "Dentist", "Salon", "Gym", "Restaurant", "Cafe", "Bakery",
@@ -34,6 +34,7 @@ const BIO_KEYWORDS: Record<string, string[]> = {
 
 const POLL_INTERVAL_MS = 5000;
 const MESSAGE_TIMEOUT_MS = 4500;
+const STALE_AFTER_MS = 30000;
 
 interface Target {
   keyword: string;
@@ -100,6 +101,7 @@ export default function InstagramPage() {
   const [followersMin, setFollowersMin] = useState<number | undefined>(undefined);
   const [followersMax, setFollowersMax] = useState<number | undefined>(undefined);
   const [useCustomRange, setUseCustomRange] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -110,6 +112,8 @@ export default function InstagramPage() {
   // Job tracking state
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
+  const [lastJobsUpdatedAt, setLastJobsUpdatedAt] = useState<string | null>(null);
+  const [jobsRefreshWarning, setJobsRefreshWarning] = useState<string | null>(null);
 
   // Results preview state
   const [previewLeads, setPreviewLeads] = useState<Lead[]>([]);
@@ -157,8 +161,11 @@ export default function InstagramPage() {
     try {
       const allJobs = await getJobs(20);
       setJobs(allJobs.filter(j => j.job_type === "instagram"));
-    } catch {
+      setLastJobsUpdatedAt(new Date().toISOString());
+      setJobsRefreshWarning(null);
+    } catch (err) {
       setJobs([]);
+      setJobsRefreshWarning(getUserFacingApiError(err, "Live refresh failed. Showing last known jobs."));
     } finally {
       setJobsLoading(false);
     }
@@ -166,8 +173,21 @@ export default function InstagramPage() {
 
   useEffect(() => {
     loadJobs();
-    const interval = setInterval(loadJobs, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    const poll = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      loadJobs();
+    };
+    const interval = setInterval(poll, POLL_INTERVAL_MS);
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        loadJobs();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [loadJobs]);
 
   // Load results on-demand
@@ -258,7 +278,7 @@ export default function InstagramPage() {
     } catch (err) {
       setMessage({
         type: "error",
-        text: "Failed to start Instagram scrape. Make sure the API is running.",
+        text: getUserFacingApiError(err, "Failed to start Instagram scrape. Make sure the API is running."),
       });
       console.error("Failed to start Instagram scrape:", err);
     } finally {
@@ -300,6 +320,8 @@ export default function InstagramPage() {
     switch (status) {
       case "completed":
         return "bg-[var(--success-dim)] text-[var(--success)]";
+      case "completed_with_errors":
+        return "bg-[var(--warning-dim)] text-[var(--warning)]";
       case "running":
         return "bg-[var(--accent-dim)] text-[var(--accent)]";
       case "failed":
@@ -313,6 +335,8 @@ export default function InstagramPage() {
     switch (status) {
       case "completed":
         return "bg-[var(--success)]";
+      case "completed_with_errors":
+        return "bg-[var(--warning)]";
       case "running":
         return "bg-[var(--accent)]";
       case "failed":
@@ -327,6 +351,20 @@ export default function InstagramPage() {
     if (score >= 50) return "bg-[var(--warning)]";
     return "bg-[var(--text-muted)]";
   };
+
+  const formatLastUpdated = (isoTime: string | null) => {
+    if (!isoTime) return "not synced yet";
+    const seconds = Math.max(0, Math.floor((Date.now() - new Date(isoTime).getTime()) / 1000));
+    if (seconds < 5) return "just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
+
+  const isStale =
+    !lastJobsUpdatedAt || Date.now() - new Date(lastJobsUpdatedAt).getTime() > STALE_AFTER_MS;
 
   const clearQueue = () => {
     if (targets.length === 0) return;
@@ -354,6 +392,10 @@ export default function InstagramPage() {
           </div>
         )}
       </div>
+      <div className="mb-4 flex items-center gap-2">
+        <p className="text-xs text-[var(--text-muted)]">Last synced: {formatLastUpdated(lastJobsUpdatedAt)}</p>
+        {isStale && <span className="tag font-mono text-[10px]">stale</span>}
+      </div>
 
       {/* Message alert */}
       {message && (
@@ -365,6 +407,11 @@ export default function InstagramPage() {
           }`}
         >
           {message.text}
+        </div>
+      )}
+      {jobsRefreshWarning && (
+        <div className="mb-6 p-4 rounded-xl text-sm bg-[var(--warning-dim)] border border-[var(--warning)]/20 text-[var(--warning)]">
+          {jobsRefreshWarning}
         </div>
       )}
 
@@ -532,45 +579,65 @@ export default function InstagramPage() {
               </select>
             </div>
 
-            <div className="pt-4 border-t border-[var(--border-subtle)]">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useCustomRange}
-                  onChange={(e) => setUseCustomRange(e.target.checked)}
-                  disabled={isLoading}
-                  className="w-3.5 h-3.5 rounded accent-[var(--accent)]"
-                />
-                <span className="text-xs text-[var(--text-muted)]">Custom follower range</span>
-              </label>
+            <button
+              onClick={() => {
+                setShowAdvanced((current) => {
+                  const next = !current;
+                  if (!next) {
+                    setUseCustomRange(false);
+                    setFollowersMin(undefined);
+                    setFollowersMax(undefined);
+                  }
+                  return next;
+                });
+              }}
+              disabled={isLoading}
+              className="btn-secondary w-full py-2.5 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {showAdvanced ? "Hide Advanced Options" : "Show Advanced Options"}
+            </button>
 
-              {useCustomRange && (
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div>
-                    <label className="block font-mono text-[10px] text-[var(--text-dim)] mb-1">Min</label>
-                    <input
-                      type="number"
-                      value={followersMin ?? ""}
-                      onChange={(e) => setFollowersMin(e.target.value ? parseInt(e.target.value) : undefined)}
-                      disabled={isLoading}
-                      placeholder={String(globalDefaults.min)}
-                      className="field w-full px-3 py-2 text-xs placeholder:text-[var(--text-dim)] focus:outline-none"
-                    />
+            {showAdvanced && (
+              <div className="pt-4 border-t border-[var(--border-subtle)]">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useCustomRange}
+                    onChange={(e) => setUseCustomRange(e.target.checked)}
+                    disabled={isLoading}
+                    className="w-3.5 h-3.5 rounded accent-[var(--accent)]"
+                  />
+                  <span className="text-xs text-[var(--text-muted)]">Custom follower range</span>
+                </label>
+
+                {useCustomRange && (
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <label className="block font-mono text-[10px] text-[var(--text-dim)] mb-1">Min</label>
+                      <input
+                        type="number"
+                        value={followersMin ?? ""}
+                        onChange={(e) => setFollowersMin(e.target.value ? parseInt(e.target.value) : undefined)}
+                        disabled={isLoading}
+                        placeholder={String(globalDefaults.min)}
+                        className="field w-full px-3 py-2 text-xs placeholder:text-[var(--text-dim)] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-mono text-[10px] text-[var(--text-dim)] mb-1">Max</label>
+                      <input
+                        type="number"
+                        value={followersMax ?? ""}
+                        onChange={(e) => setFollowersMax(e.target.value ? parseInt(e.target.value) : undefined)}
+                        disabled={isLoading}
+                        placeholder={String(globalDefaults.max)}
+                        className="field w-full px-3 py-2 text-xs placeholder:text-[var(--text-dim)] focus:outline-none"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block font-mono text-[10px] text-[var(--text-dim)] mb-1">Max</label>
-                    <input
-                      type="number"
-                      value={followersMax ?? ""}
-                      onChange={(e) => setFollowersMax(e.target.value ? parseInt(e.target.value) : undefined)}
-                      disabled={isLoading}
-                      placeholder={String(globalDefaults.max)}
-                      className="field w-full px-3 py-2 text-xs placeholder:text-[var(--text-dim)] focus:outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             <button
               onClick={addTarget}
@@ -582,38 +649,46 @@ export default function InstagramPage() {
           </div>
         </div>
 
-        <div className="card-static p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-              </svg>
+        {showAdvanced ? (
+          <div className="card-static p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Quick Paste</h3>
+                <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Bulk import</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Quick Paste</h3>
-              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Bulk import</p>
-            </div>
+            <p className="text-xs text-[var(--text-secondary)] mb-4">
+              Format: <code className="text-[var(--text-primary)] bg-[var(--surface-elevated)] px-1.5 py-0.5 rounded">keyword, limit, min, max</code>
+            </p>
+            <textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              disabled={isLoading}
+              placeholder={`makeup artist london, 50\nhome baker mumbai, 30, ${globalDefaults.min}, ${globalDefaults.max}\npersonal trainer sydney, 20, 1000, 10000`}
+              rows={6}
+              className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none resize-none font-mono"
+            />
+            <button
+              onClick={parseAndAdd}
+              disabled={!pasteText.trim() || isLoading}
+              className="mt-4 btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Parse & Add
+            </button>
           </div>
-          <p className="text-xs text-[var(--text-secondary)] mb-4">
-            Format: <code className="text-[var(--text-primary)] bg-[var(--surface-elevated)] px-1.5 py-0.5 rounded">keyword, limit, min, max</code>
-          </p>
-          <textarea
-            value={pasteText}
-            onChange={(e) => setPasteText(e.target.value)}
-            disabled={isLoading}
-            placeholder={`makeup artist london, 50\nhome baker mumbai, 30, ${globalDefaults.min}, ${globalDefaults.max}\npersonal trainer sydney, 20, 1000, 10000`}
-            rows={6}
-            className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none resize-none font-mono"
-          />
-          <button
-            onClick={parseAndAdd}
-            disabled={!pasteText.trim() || isLoading}
-            className="mt-4 btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Parse & Add
-          </button>
-        </div>
+        ) : (
+          <div className="card-static p-6 flex items-center justify-center">
+            <p className="text-xs text-[var(--text-muted)] text-center">
+              Advanced tools are hidden. Use “Show Advanced Options” for bulk import and custom follower ranges.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Queue + Run button */}
@@ -762,7 +837,7 @@ export default function InstagramPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-medium ${getStatusPill(job.status)}`}>
-                        {job.status}
+                        {job.status.replace(/_/g, " ")}
                       </span>
                       <span className="font-mono text-[10px] text-[var(--text-dim)] min-w-[55px] text-right">
                         {formatDate(job.created_at)}

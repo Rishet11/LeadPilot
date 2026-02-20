@@ -10,6 +10,7 @@ import {
   scrapeBatch,
   getCurrentUsage,
   getCurrentPlan,
+  getUserFacingApiError,
   generateTargetsFromObjective,
   GeneratedGoogleTarget,
   LeadStats,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/api";
 
 const POLL_INTERVAL_MS = 5000;
+const STALE_AFTER_MS = 30000;
 // const REVENUE_PER_HIGH_PRIORITY_LEAD = 5000; // Removed
 
 export default function Dashboard() {
@@ -41,10 +43,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadData(true);
-    const interval = setInterval(() => {
+    const poll = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       loadData(false);
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    };
+    const interval = setInterval(poll, POLL_INTERVAL_MS);
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        loadData(false);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   const loadData = async (showSpinner = false) => {
@@ -71,7 +84,7 @@ export default function Dashboard() {
       setLastUpdatedAt(new Date().toISOString());
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
-      setRefreshWarning("Live refresh failed. Showing last known data.");
+      setRefreshWarning(getUserFacingApiError(err, "Live refresh failed. Showing last known data."));
     } finally {
       refreshInFlightRef.current = false;
       setIsRefreshing(false);
@@ -87,7 +100,7 @@ export default function Dashboard() {
       setAgentInfo(`Queued quick scrape for ${category} in ${city}.`);
       return true;
     } catch (err) {
-      setError("Failed to start scrape. Make sure the API is running.");
+      setError(getUserFacingApiError(err, "Failed to start scrape. Make sure the API is running."));
       console.error("Failed to start scrape:", err);
       return false;
     } finally {
@@ -113,7 +126,7 @@ export default function Dashboard() {
       setAgentInfo(`Generated ${result.google_maps_targets.length} target(s) using ${result.source.toUpperCase()} strategy.`);
     } catch (err) {
       console.error("Failed to generate targets:", err);
-      setError("Target Builder failed. Try a clearer objective with city + industry.");
+      setError(getUserFacingApiError(err, "Target Builder failed. Try a clearer objective with city + industry."));
       setGeneratedTargets([]);
       setAgentWarnings([]);
     } finally {
@@ -134,7 +147,7 @@ export default function Dashboard() {
       setTimeout(loadData, 2000);
     } catch (err) {
       console.error("Failed to queue generated targets:", err);
-      setError("Failed to queue generated targets.");
+      setError(getUserFacingApiError(err, "Failed to queue generated targets."));
     } finally {
       setIsBatchLoading(false);
     }
@@ -173,9 +186,13 @@ export default function Dashboard() {
     });
   };
 
+  const isStale =
+    !lastUpdatedAt || Date.now() - new Date(lastUpdatedAt).getTime() > STALE_AFTER_MS;
+
   const getStatusDot = (status: string) => {
     switch (status) {
       case "completed": return "status-dot-success";
+      case "completed_with_errors": return "status-dot-warning";
       case "running": return "status-dot-gold";
       case "failed": return "status-dot-error";
       default: return "status-dot-warning";
@@ -185,6 +202,7 @@ export default function Dashboard() {
   const getStatusPill = (status: string) => {
     switch (status) {
       case "completed": return "bg-[var(--success-dim)] text-[var(--success)]";
+      case "completed_with_errors": return "bg-[var(--warning-dim)] text-[var(--warning)]";
       case "running": return "bg-[var(--accent-dim)] text-[var(--accent)]";
       case "failed": return "bg-[var(--error-dim)] text-[var(--error)]";
       default: return "bg-[var(--warning-dim)] text-[var(--warning)]";
@@ -214,6 +232,11 @@ export default function Dashboard() {
             </span>
             <span className="font-mono text-[10px] text-[var(--success)] uppercase tracking-wider">Live</span>
           </div>
+          {isStale && (
+            <span className="tag font-mono text-[10px] text-[var(--warning)] bg-[var(--warning-dim)] border border-[var(--warning)]/25">
+              stale
+            </span>
+          )}
         </div>
       </div>
       <p className="mb-4 text-xs text-[var(--text-muted)]">
@@ -334,7 +357,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className={`px-2.5 py-1 rounded-lg font-mono text-[10px] uppercase tracking-wider ${getStatusPill(job.status)}`}>
-                      {job.status}
+                      {job.status.replace(/_/g, " ")}
                     </span>
                     <span className="font-mono text-[10px] text-[var(--text-dim)] min-w-[60px] text-right">
                       {formatDate(job.created_at)}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AgentTemplate, getAgentTemplates, scrapeBatch } from "@/lib/api";
+import { AgentTemplate, getAgentTemplates, getUserFacingApiError, scrapeBatch } from "@/lib/api";
 
 interface Target {
   city: string;
@@ -156,7 +156,7 @@ export default function BatchQueue() {
     } catch (err) {
       setMessage({
         type: "error",
-        text: "Failed to start batch job. Make sure the API is running.",
+        text: getUserFacingApiError(err, "Failed to start batch job. Make sure the API is running."),
       });
       console.error("Failed to start batch job:", err);
     } finally {
