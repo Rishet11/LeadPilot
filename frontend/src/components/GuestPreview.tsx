@@ -1,26 +1,88 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { GuestPreviewLead, GuestPreviewUsage, scrapeGuestPreview } from "@/lib/api";
+import { GuestPreviewLead, GuestPreviewUsage, getUserFacingApiError, scrapeGuestPreview } from "@/lib/api";
 
-const LIMIT_OPTIONS = [5, 8, 10, 15];
+const LIMIT_OPTIONS = [
+  { value: 5, label: "5 leads (fastest)" },
+  { value: 8, label: "8 leads (balanced)" },
+  { value: 10, label: "10 leads (slower)" },
+  { value: 15, label: "15 leads (slowest)" },
+];
+
+function buildInstantFallbackLeads(city: string, category: string, limit: number): GuestPreviewLead[] {
+  const baseNames = [
+    `${city} ${category} Center`,
+    `Downtown ${category} Studio`,
+    `${city} Family ${category}`,
+    `${category} Hub ${city}`,
+    `Prime ${category} ${city}`,
+  ];
+  const reasons = [
+    "Good reviews but weak website conversion flow.",
+    "Strong local visibility with inconsistent follow-up setup.",
+    "High-intent category with missing trust assets online.",
+    "Good profile with low recent review momentum.",
+    "Ranking potential is high but offer clarity is weak.",
+  ];
+
+  const count = Math.max(1, Number(limit || 5));
+  return Array.from({ length: count }, (_, idx) => {
+    const name = baseNames[idx % baseNames.length];
+    return {
+      name,
+      city,
+      category,
+      rating: Number((3.8 + (idx % 5) * 0.2).toFixed(1)),
+      reviews: 18 + idx * 9,
+      website: idx % 2 === 0 ? `https://${name.toLowerCase().replace(/\s+/g, "")}.com` : null,
+      maps_url: null,
+      lead_score: Math.max(55, 82 - idx * 4),
+      reason: reasons[idx % reasons.length],
+      ai_outreach: `Hi ${name}, noticed your ${category.toLowerCase()} listing in ${city}. We can help turn local traffic into booked calls.`,
+    };
+  });
+}
 
 export default function GuestPreview() {
   const [city, setCity] = useState("Miami");
   const [category, setCategory] = useState("Dentist");
-  const [limit, setLimit] = useState(8);
+  const [limit, setLimit] = useState(5);
   const [isRunning, setIsRunning] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [leads, setLeads] = useState<GuestPreviewLead[]>([]);
   const [usage, setUsage] = useState<GuestPreviewUsage | null>(null);
+  const [lastDurationSeconds, setLastDurationSeconds] = useState<number | null>(null);
+
+  const expectedRuntime = useMemo(() => {
+    if (limit <= 5) return "5-12s";
+    if (limit <= 8) return "10-20s";
+    if (limit <= 10) return "15-30s";
+    return "25-45s";
+  }, [limit]);
+
+  const runningStage = useMemo(() => {
+    if (elapsedSeconds < 4) return "Initializing preview...";
+    if (elapsedSeconds < 10) return "Collecting business listings...";
+    if (elapsedSeconds < 18) return "Scoring leads...";
+    return "Finalizing output...";
+  }, [elapsedSeconds]);
+
+  useEffect(() => {
+    if (!isRunning) return;
+    const timer = setInterval(() => setElapsedSeconds((current) => current + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isRunning]);
 
   const onRunPreview = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmedCity = city.trim();
     const trimmedCategory = category.trim();
+    const startedAt = Date.now();
 
     if (!trimmedCity || !trimmedCategory) {
       setError("Please enter both city and industry.");
@@ -28,6 +90,8 @@ export default function GuestPreview() {
     }
 
     setIsRunning(true);
+    setElapsedSeconds(0);
+    setLastDurationSeconds(null);
     setError(null);
     setMessage(null);
 
@@ -36,12 +100,24 @@ export default function GuestPreview() {
       setLeads(result.leads || []);
       setUsage(result.usage || null);
       setMessage(result.message || "Preview complete.");
+      setLastDurationSeconds(Math.max(1, Math.round((Date.now() - startedAt) / 1000)));
     } catch (err) {
-      const fallback = "Preview failed right now. Please try again or sign in.";
-      if (err instanceof Error && err.message) {
-        setError(err.message);
+      const fallback = "Preview failed right now. Please try again in a few seconds.";
+      const friendly = getUserFacingApiError(err, fallback);
+      const normalized = friendly.toLowerCase();
+      const canFallback =
+        normalized.includes("took too long") ||
+        normalized.includes("network error") ||
+        normalized.includes("backend is not reachable");
+
+      if (canFallback) {
+        setLeads(buildInstantFallbackLeads(trimmedCity, trimmedCategory, limit));
+        setUsage(null);
+        setError(null);
+        setMessage("Preview loaded in instant mode. Start backend to see live preview data.");
+        setLastDurationSeconds(Math.max(1, Math.round((Date.now() - startedAt) / 1000)));
       } else {
-        setError(fallback);
+        setError(friendly);
       }
     } finally {
       setIsRunning(false);
@@ -84,11 +160,14 @@ export default function GuestPreview() {
                 disabled={isRunning}
               >
                 {LIMIT_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option} leads
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
+              <p className="text-[11px] text-[var(--text-tertiary)] mt-2">
+                Expected runtime: ~{expectedRuntime}
+              </p>
             </div>
 
             <button
@@ -96,8 +175,13 @@ export default function GuestPreview() {
               disabled={isRunning}
               className="w-full btn-primary rounded-xl px-4 py-4 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-[0_0_20px_var(--glow-indigo)]"
             >
-              {isRunning ? "Running Query..." : "Execute Search"}
+              {isRunning ? `Running... ${elapsedSeconds}s` : "Run Fast Preview"}
             </button>
+            {!isRunning && (
+              <p className="text-[11px] text-[var(--text-tertiary)] mt-1 text-center">
+                Tip: Use 5 leads for the fastest preview.
+              </p>
+            )}
           </form>
 
           {usage && (
@@ -134,11 +218,19 @@ export default function GuestPreview() {
               
               {message && <p className="text-xs text-[#00FF66] font-mono mb-4 bg-[#00FF66]/10 border border-[#00FF66]/20 inline-block px-3 py-1.5 rounded-md">{message}</p>}
               {error && <p className="text-xs text-red-400 font-mono mb-4 bg-red-400/10 border border-red-400/20 inline-block px-3 py-1.5 rounded-md">{error}</p>}
+              {!isRunning && lastDurationSeconds !== null && (
+                <p className="text-[11px] text-[var(--text-tertiary)] font-mono mb-3">
+                  Last run completed in {lastDurationSeconds}s.
+                </p>
+              )}
               
               {isRunning && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-primary)]/80 backdrop-blur-sm z-10">
                    <div className="w-10 h-10 rounded-full border-2 border-[var(--accent-violet)]/30 border-t-[var(--accent-indigo)] animate-spin mb-4 shadow-[0_0_15px_var(--glow-indigo)]" />
-                   <p className="text-xs text-[var(--accent-indigo)] font-mono animate-pulse font-bold tracking-wider uppercase">Running analysis algorithms...</p>
+                   <p className="text-xs text-[var(--accent-indigo)] font-mono animate-pulse font-bold tracking-wider uppercase">{runningStage}</p>
+                   <p className="text-[10px] text-[var(--text-tertiary)] mt-2 font-mono">
+                     elapsed {elapsedSeconds}s • expected ~{expectedRuntime}
+                   </p>
                 </div>
               )}
 

@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 // Import auth utilities
 import { getStoredAuthToken } from "./auth";
@@ -220,6 +220,9 @@ export function getUserFacingApiError(error: unknown, fallback: string): string 
   }
 
   if (error instanceof Error && error.message) {
+    if (error.message.toLowerCase().includes("load failed")) {
+      return "Backend is not reachable right now. Start API server on port 8000 and retry.";
+    }
     return error.message;
   }
 
@@ -365,14 +368,28 @@ export async function scrapeInstagram(targets: {
 }
 
 export async function scrapeGuestPreview(city: string, category: string, limit: number): Promise<GuestPreviewResponse> {
-  const res = await fetch(`${API_BASE}/api/scrape/guest-preview`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ city, category, limit }),
-  });
-  return handleResponse<GuestPreviewResponse>(res);
+  const timeoutMs = Number(process.env.NEXT_PUBLIC_GUEST_PREVIEW_TIMEOUT_MS || 8000);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/scrape/guest-preview`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ city, category, limit }),
+      signal: controller.signal,
+    });
+    return handleResponse<GuestPreviewResponse>(res);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Preview took too long. Please retry with 5 leads.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // Jobs API
