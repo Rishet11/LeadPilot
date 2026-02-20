@@ -12,8 +12,9 @@ import json
 import logging
 import os
 import time
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Callable, Dict, Iterable, Optional
+from typing import Callable, Dict, Iterable, List, Optional
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -22,6 +23,13 @@ from .database import Job, JobStatus, Lead, SessionLocal
 from .plans import increment_usage
 
 logger = logging.getLogger("leadpilot")
+
+
+@dataclass
+class JobRunOutcome:
+    total_leads: int = 0
+    failed_targets: int = 0
+    target_errors: Optional[List[str]] = None
 
 
 def _env_int(name: str, default: int, minimum: int = 1) -> int:
@@ -121,40 +129,52 @@ def _persist_instagram_lead(db: Session, customer_id: Optional[int], lead_dict: 
     db.add(lead)
 
 
-def _run_google_maps_job(db: Session, job: Job, targets: list, customer_id: Optional[int]) -> int:
+def _format_target_error(target: dict, exc: Exception) -> str:
+    city = str(target.get("city") or "").strip()
+    category = str(target.get("category") or "").strip()
+    keyword = str(target.get("keyword") or "").strip()
+    label = keyword or " / ".join(part for part in (city, category) if part) or "target"
+    return f"{label}: {str(exc).strip()[:120] or 'Unknown error'}"
+
+
+def _run_google_maps_job(db: Session, job: Job, targets: list, customer_id: Optional[int]) -> JobRunOutcome:
     from batch_processor import process_batch_targets
 
-    total_leads = 0
+    outcome = JobRunOutcome(total_leads=0, failed_targets=0, target_errors=[])
     for target in targets:
         try:
             leads_data = process_batch_targets([target])
             for lead_dict in leads_data:
                 _persist_google_map_lead(db, customer_id, lead_dict)
-                total_leads += 1
+                outcome.total_leads += 1
             db.commit()
         except Exception as exc:
             logger.error("Error processing Google Maps target %s: %s", target, exc)
             db.rollback()
+            outcome.failed_targets += 1
+            outcome.target_errors.append(_format_target_error(target, exc))
             continue
-    return total_leads
+    return outcome
 
 
-def _run_instagram_job(db: Session, job: Job, targets: list, customer_id: Optional[int]) -> int:
+def _run_instagram_job(db: Session, job: Job, targets: list, customer_id: Optional[int]) -> JobRunOutcome:
     from instagram_pipeline import process_instagram_targets
 
-    total_leads = 0
+    outcome = JobRunOutcome(total_leads=0, failed_targets=0, target_errors=[])
     for target in targets:
         try:
             leads_data = process_instagram_targets([target])
             for lead_dict in leads_data:
                 _persist_instagram_lead(db, customer_id, lead_dict)
-                total_leads += 1
+                outcome.total_leads += 1
             db.commit()
         except Exception as exc:
             logger.error("Error processing Instagram target %s: %s", target, exc)
             db.rollback()
+            outcome.failed_targets += 1
+            outcome.target_errors.append(_format_target_error(target, exc))
             continue
-    return total_leads
+    return outcome
 
 
 def _mark_job_running(job: Job) -> int:
@@ -259,7 +279,7 @@ def process_job(job_id: int) -> None:
         customer_id = job.customer_id
         targets = json.loads(job.targets or "[]")
 
-        handlers: Dict[str, Callable[[Session, Job, list, Optional[int]], int]] = {
+        handlers: Dict[str, Callable[[Session, Job, list, Optional[int]], JobRunOutcome]] = {
             "google_maps": _run_google_maps_job,
             "instagram": _run_instagram_job,
         }
@@ -267,17 +287,32 @@ def process_job(job_id: int) -> None:
         if not handler:
             raise ValueError(f"Unknown job type: {job.job_type}")
 
-        total_leads = handler(db, job, targets, customer_id)
+        run_outcome = handler(db, job, targets, customer_id)
 
-        job.status = JobStatus.COMPLETED.value
-        job.leads_found = total_leads
+        if run_outcome.failed_targets > 0 and run_outcome.total_leads == 0:
+            example_errors = "; ".join((run_outcome.target_errors or [])[:3])
+            raise RuntimeError(
+                f"All {run_outcome.failed_targets} target(s) failed. {example_errors}".strip()
+            )
+
+        if run_outcome.failed_targets > 0:
+            job.status = JobStatus.COMPLETED_WITH_ERRORS.value
+            preview_errors = "; ".join((run_outcome.target_errors or [])[:3])
+            job.error_message = (
+                f"{run_outcome.failed_targets}/{len(targets)} target(s) failed. "
+                f"{preview_errors}".strip()
+            )[:480]
+        else:
+            job.status = JobStatus.COMPLETED.value
+            job.error_message = None
+
+        job.leads_found = run_outcome.total_leads
         job.completed_at = datetime.utcnow()
         job.next_retry_at = None
-        job.error_message = None
         db.commit()
 
         if customer_id:
-            increment_usage(db, customer_id, leads_delta=total_leads)
+            increment_usage(db, customer_id, leads_delta=run_outcome.total_leads)
     except Exception as exc:
         db.rollback()
         job = db.query(Job).filter(Job.id == job_id).first()

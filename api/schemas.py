@@ -45,6 +45,13 @@ class LeadResponse(LeadBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LeadListResponse(BaseModel):
+    items: List[LeadResponse]
+    total: int
+    skip: int
+    limit: int
+
+
 class LeadStatusUpdate(BaseModel):
     status: LeadStatus
 
@@ -158,6 +165,22 @@ class SettingUpdate(BaseModel):
         if not re.match(r'^[a-z][a-z0-9_]*$', v):
             raise ValueError('Key must be lowercase alphanumeric with underscores')
         return v
+
+
+class SettingBulkUpdate(BaseModel):
+    key: str = Field(..., min_length=1, max_length=100)
+    value: str = Field(..., max_length=10000)
+
+    @field_validator('key')
+    @classmethod
+    def validate_key(cls, v: str) -> str:
+        if not re.match(r'^[a-z][a-z0-9_]*$', v):
+            raise ValueError('Key must be lowercase alphanumeric with underscores')
+        return v
+
+
+class SettingBulkUpdateRequest(BaseModel):
+    items: List[SettingBulkUpdate] = Field(..., min_length=1, max_length=200)
 
 
 class SettingResponse(BaseModel):

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from ..database import get_db, Settings
-from ..schemas import SettingUpdate, SettingResponse
+from ..schemas import SettingBulkUpdateRequest, SettingUpdate, SettingResponse
 from ..auth import get_current_customer
 from ..rate_limit import limiter, SETTINGS_LIMIT, READ_LIMIT
 from constants import DEFAULT_AI_SYSTEM_PROMPT
@@ -96,6 +96,64 @@ def get_setting(
     if not setting:
         raise HTTPException(status_code=404, detail="Setting not found")
     return setting
+
+
+@router.put("/bulk", response_model=List[SettingResponse])
+@limiter.limit(SETTINGS_LIMIT)
+def bulk_update_settings(
+    request: Request,
+    payload: SettingBulkUpdateRequest,
+    db: Session = Depends(get_db),
+    customer: dict = Depends(get_current_customer),
+):
+    """
+    Update multiple settings in a single transaction.
+
+    If any key is invalid or write fails, no setting is committed.
+    """
+    incoming = payload.items
+    invalid_keys = sorted({item.key for item in incoming if item.key not in ALLOWED_KEYS})
+    if invalid_keys:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid setting key(s): {', '.join(invalid_keys)}"
+        )
+
+    customer_id = customer["id"] if customer else None
+
+    # Last value for duplicate keys wins while preserving order.
+    values_by_key = {}
+    ordered_keys: List[str] = []
+    for item in incoming:
+        if item.key not in values_by_key:
+            ordered_keys.append(item.key)
+        values_by_key[item.key] = item.value
+
+    try:
+        existing = db.query(Settings).filter(
+            Settings.customer_id == customer_id,
+            Settings.key.in_(list(values_by_key.keys()))
+        ).all()
+        existing_by_key = {setting.key: setting for setting in existing}
+
+        updated = []
+        for key in ordered_keys:
+            value = values_by_key[key]
+            setting = existing_by_key.get(key)
+            if setting:
+                setting.value = value
+            else:
+                setting = Settings(customer_id=customer_id, key=key, value=value)
+                db.add(setting)
+            updated.append(setting)
+
+        db.commit()
+        for setting in updated:
+            db.refresh(setting)
+        return updated
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to save settings") from exc
 
 
 @router.put("/{key}", response_model=SettingResponse)

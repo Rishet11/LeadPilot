@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
-from ..auth import create_session_token, generate_api_key
+from ..auth import create_session_token, generate_api_key, get_current_customer
 from ..database import Customer, get_db
-from ..rate_limit import limiter
+from ..rate_limit import limiter, READ_LIMIT
 from ..schemas import GoogleAuthRequest, GoogleAuthResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -91,3 +91,19 @@ def google_auth_login(
         plan_tier=customer.plan_tier or "free",
         is_new_customer=is_new_customer,
     )
+
+
+@router.get("/me")
+@limiter.limit(READ_LIMIT)
+def auth_me(
+    request: Request,
+    customer: dict = Depends(get_current_customer),
+):
+    if not customer:
+        return {
+            "id": None,
+            "name": None,
+            "email": None,
+            "is_admin": False,
+        }
+    return customer

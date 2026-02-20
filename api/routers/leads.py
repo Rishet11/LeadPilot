@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import re
 
 from ..database import get_db, Lead
-from ..schemas import LeadResponse, LeadStatusUpdate, LeadStatus
+from ..schemas import LeadListResponse, LeadResponse, LeadStatusUpdate, LeadStatus
 from ..auth import get_current_customer
 from ..rate_limit import limiter, READ_LIMIT, WRITE_LIMIT
 
@@ -24,6 +24,30 @@ def _filter_by_customer(query, customer: dict):
     if customer.get("is_admin"):
         return query
     return query.filter(Lead.customer_id == customer["id"])
+
+
+def _apply_lead_filters(
+    query,
+    status: Optional[str],
+    source: Optional[str],
+    min_score: Optional[int],
+    city: Optional[str],
+    category: Optional[str],
+    no_website: Optional[bool],
+):
+    if status:
+        query = query.filter(Lead.status == status)
+    if source:
+        query = query.filter(Lead.source == source)
+    if min_score:
+        query = query.filter(Lead.lead_score >= min_score)
+    if city:
+        query = query.filter(Lead.city.ilike(f"%{city[:100]}%"))
+    if category:
+        query = query.filter(Lead.category.ilike(f"%{category[:100]}%"))
+    if no_website:
+        query = query.filter(Lead.website.is_(None) | (Lead.website == ""))
+    return query
 
 
 def _qa_sanitize_outreach(text: str) -> str:
@@ -92,21 +116,33 @@ def get_leads(
 ):
     query = db.query(Lead)
     query = _filter_by_customer(query, customer)
-    
-    if status:
-        query = query.filter(Lead.status == status)
-    if source:
-        query = query.filter(Lead.source == source)
-    if min_score:
-        query = query.filter(Lead.lead_score >= min_score)
-    if city:
-        query = query.filter(Lead.city.ilike(f"%{city[:100]}%"))
-    if category:
-        query = query.filter(Lead.category.ilike(f"%{category[:100]}%"))
-    if no_website:
-        query = query.filter(Lead.website.is_(None) | (Lead.website == ""))
-    
+    query = _apply_lead_filters(query, status, source, min_score, city, category, no_website)
+
     return query.order_by(desc(Lead.lead_score)).offset(skip).limit(limit).all()
+
+
+@router.get("/page", response_model=LeadListResponse)
+@limiter.limit(READ_LIMIT)
+def get_leads_page(
+    request: Request,
+    skip: int = Query(0, ge=0, le=100000),
+    limit: int = Query(50, ge=1, le=200),
+    status: Optional[str] = Query(None, max_length=50),
+    source: Optional[str] = Query(None, max_length=50),
+    min_score: Optional[int] = Query(None, ge=0, le=100),
+    city: Optional[str] = Query(None, max_length=100),
+    category: Optional[str] = Query(None, max_length=100),
+    no_website: Optional[bool] = Query(None),
+    db: Session = Depends(get_db),
+    customer: dict = Depends(get_current_customer),
+):
+    query = db.query(Lead)
+    query = _filter_by_customer(query, customer)
+    query = _apply_lead_filters(query, status, source, min_score, city, category, no_website)
+
+    total = query.count()
+    items = query.order_by(desc(Lead.lead_score)).offset(skip).limit(limit).all()
+    return LeadListResponse(items=items, total=total, skip=skip, limit=limit)
 
 
 @router.get("/stats")
