@@ -74,45 +74,41 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="sidebar w-60 flex flex-col h-screen sticky top-0">
+    <aside className="sidebar w-64 flex flex-col h-screen sticky top-0 bg-[var(--bg-primary)] border-r border-[var(--border-secondary)] z-40">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 h-16 border-b border-[var(--border-subtle)]">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
+      <div className="flex items-center gap-3.5 px-6 h-16 border-b border-[var(--border-secondary)]">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-white to-gray-400 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+           <div className="w-3.5 h-3.5 bg-[#030712] rounded-sm" />
         </div>
         <div>
-          <span className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">LeadPilot</span>
-          <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider">v1.0</p>
+          <span className="text-sm font-bold text-white tracking-tight">LeadPilot</span>
+          <p className="text-[10px] font-mono text-[var(--accent-indigo)] font-bold uppercase tracking-widest mt-0.5">Console</p>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        <p className="text-[10px] font-mono text-[var(--text-dim)] uppercase tracking-wider px-3 mb-3">Navigation</p>
-        <ul className="space-y-1">
+      <nav className="flex-1 px-4 py-6 overflow-y-auto">
+        <p className="text-[10px] font-bold font-mono text-[var(--text-tertiary)] uppercase tracking-widest px-3 mb-4">Navigation</p>
+        <ul className="space-y-1.5">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`sidebar-item relative flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium transition-all ${
+                  className={`group relative flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     isActive
-                      ? "sidebar-item-active"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      ? "bg-[var(--bg-secondary)] text-white shadow-inner border border-[var(--border-secondary)]"
+                      : "text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-secondary)]/50 border border-transparent"
                   }`}
                 >
                   {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-[var(--accent)] rounded-r-full shadow-[0_0_8px_var(--accent)]" />
+                    <span className="absolute left-[-16px] top-1/2 -translate-y-1/2 w-1 h-6 bg-[var(--accent-indigo)] rounded-r-md shadow-[0_0_10px_var(--glow-indigo)]" />
                   )}
-                  <span className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                  <span className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-300 ${
                     isActive
-                      ? "bg-[var(--accent-dim)]"
-                      : "bg-[var(--surface-elevated)]"
+                      ? "bg-gradient-to-br from-[var(--accent-indigo)] to-[var(--accent-violet)] text-white shadow-[0_0_15px_var(--glow-indigo)] scale-110"
+                      : "bg-[var(--bg-tertiary)] group-hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] group-hover:text-white"
                   }`}>
                     {item.icon}
                   </span>
@@ -124,17 +120,17 @@ export default function Sidebar() {
         </ul>
 
         {/* Upgrade Plan Link */}
-        <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+        <div className="mt-8 pt-6 border-t border-[var(--border-secondary)]">
           <Link
             href="/pricing"
-            className={`sidebar-item relative flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium transition-all ${
+            className={`group flex items-center gap-3.5 px-3 py-3 rounded-xl text-sm font-semibold transition-all border border-transparent hover:border-yellow-500/20 hover:bg-yellow-500/5 ${
               pathname === "/pricing"
-                ? "sidebar-item-active"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                ? "bg-[var(--bg-secondary)] text-white border-yellow-500/30"
+                : "text-[var(--text-secondary)] hover:text-white"
             }`}
           >
-            <span className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors bg-gradient-to-br from-yellow-400/20 to-orange-500/20 text-yellow-500`}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <span className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all bg-gradient-to-br from-yellow-500/20 to-orange-500/20 text-yellow-500 group-hover:scale-110 group-hover:shadow-[0_0_15px_rgba(234,179,8,0.3)]`}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
@@ -146,27 +142,27 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 pb-4 space-y-2">
+      <div className="px-4 pb-6 space-y-2 mt-auto">
         <Link
           href="/"
-          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-all group"
+          className="flex items-center gap-3 px-3 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-secondary)] hover:border-[var(--border-highlight)] transition-all group"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--text-secondary)] group-hover:text-[var(--accent-indigo)] transition-colors">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
-          <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">Home</span>
+          <span className="text-xs font-semibold text-[var(--text-secondary)] group-hover:text-white transition-colors">Home</span>
         </Link>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] hover:border-red-500/50 transition-all group"
+          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-secondary)] hover:border-red-500/30 hover:bg-red-500/5 transition-all group lg:min-w-[max-content]"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--text-muted)] group-hover:text-red-400 transition-colors">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--text-secondary)] group-hover:text-red-400 transition-colors">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
-          <span className="text-xs text-[var(--text-muted)] group-hover:text-red-400 transition-colors">Log Out</span>
+          <span className="text-xs font-semibold text-[var(--text-secondary)] group-hover:text-red-400 transition-colors">Log Out</span>
         </button>
       </div>
     </aside>

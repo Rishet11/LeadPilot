@@ -2,27 +2,32 @@
 
 :root {
   /* -- Base Colors -- */
-  --bg-primary: #050505;  /* Slightly lighter deep black */
-  --bg-secondary: #121212;  /* Visible card background */
-  --bg-tertiary: #1E1E1E;   /* Lighter hover state */
+  --bg-primary: #030712;  /* Deep Space Slate */
+  --bg-secondary: #0f172a; /* Lighter slate for cards */
+  --bg-tertiary: #1e293b;
 
   /* -- Text Colors -- */
-  --text-primary: #EDEDED;
-  --text-secondary: #A3A3A3;
-  --text-tertiary: #525252;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+
+  /* -- Accent Colors -- */
+  --accent-indigo: #4F46E5;
+  --accent-violet: #8B5CF6;
+  --accent-emerald: #10B981;
+  
+  /* Glow variations for box-shadows */
+  --glow-indigo: rgba(79, 70, 229, 0.5);
+  --glow-violet: rgba(139, 92, 246, 0.5);
 
   /* -- Borders & Lines -- */
-  --border-primary: rgba(255, 255, 255, 0.12); /* More visible */
-  --border-secondary: rgba(255, 255, 255, 0.08);
-  --border-highlight: rgba(255, 255, 255, 0.3);
-
-  /* -- Accents (Monochrome/Subtle) -- */
-  --accent-glow: rgba(255, 255, 255, 0.15);
-  --accent-primary: #FFFFFF;
+  --border-primary: rgba(255, 255, 255, 0.1);
+  --border-secondary: rgba(255, 255, 255, 0.05);
+  --border-highlight: rgba(139, 92, 246, 0.4); /* Violet tinted highlight */
 
   /* -- Effects -- */
-  --shadow-key: 0px 4px 24px -1px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0px 0px 80px -20px rgba(255, 255, 255, 0.1);
+  --shadow-key: 0px 4px 24px -1px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0px 0px 80px -20px var(--glow-indigo);
 
   /* -- Animations -- */
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
@@ -46,14 +51,21 @@
 @layer utilities {
   /* -- Typography -- */
   .text-gradient {
-    background: linear-gradient(180deg, #FFFFFF 0%, #A1A1A1 100%);
+    background: linear-gradient(to right, #ffffff, #a5b4fc);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   
+  .text-gradient-purple {
+    background: linear-gradient(to right, #c4b5fd, #818cf8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   .text-gradient-subtle {
-    background: linear-gradient(180deg, #A1A1A1 0%, #525252 100%);
+    background: linear-gradient(180deg, #94A3B8 0%, #475569 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -61,10 +73,18 @@
 
   /* -- Glassmorphism -- */
   .glass {
-    background: rgba(8, 8, 8, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-secondary);
+  }
+  
+  .glass-glow {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-highlight);
+    box-shadow: 0 0 40px -10px var(--glow-indigo);
   }
 
   /* -- Spotlight/Glow Cards -- */
@@ -73,7 +93,7 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
     overflow: hidden;
-    transition: border-color 0.3s ease;
+    transition: all 0.3s ease;
   }
 
   .spotlight-card::before {
@@ -85,18 +105,24 @@
     transition: opacity 0.5s ease;
   }
 
+  .spotlight-card:hover {
+    border-color: var(--border-highlight);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px -10px var(--glow-violet);
+  }
+
   .spotlight-card:hover::before {
     opacity: 1;
   }
 
   /* -- Animations -- */
   .animate-float {
-    animation: float 10s ease-in-out infinite;
+    animation: float 8s ease-in-out infinite;
   }
 
   @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+    50% { transform: translateY(-15px); }
   }
 
   .animate-reveal {
@@ -109,26 +135,52 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* -- Grid Background -- */
-  .bg-grid {
-    background-size: 50px 50px;
-    background-image: 
-      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    mask-image: radial-gradient(ellipse at center, black 40%, transparent 70%);
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.4; transform: scale(1); filter: blur(40px); }
+    50% { opacity: 0.8; transform: scale(1.1); filter: blur(60px); }
+  }
+  .animate-pulse-glow {
+    animation: pulse-glow 6s ease-in-out infinite;
   }
 
   /* -- Component Utilities -- */
   .btn-primary {
-    background-color: var(--text-primary);
-    color: black;
-    font-weight: 500;
+    background: linear-gradient(135deg, var(--accent-indigo), var(--accent-violet));
+    color: white;
+    font-weight: 600;
     border-radius: 0.5rem;
-    transition: all 0.2s;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.1);
   }
+  
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, var(--accent-violet), var(--accent-indigo));
+    z-index: -1;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+  }
+  
+  .btn-primary:hover::before {
+    opacity: 1;
+  }
+  
   .btn-primary:hover {
-    background-color: white;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 0 20px var(--glow-indigo);
   }
 
   .card-static {
@@ -140,17 +192,18 @@
 
   .field {
     width: 100%;
-    background-color: #111;
+    background-color: #0f172a;
     border: 1px solid var(--border-secondary);
     border-radius: 0.5rem;
     padding: 0.625rem 0.75rem;
     font-size: 0.875rem;
     color: white;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
   }
   .field:focus {
     outline: none;
-    border-color: var(--text-secondary);
+    border-color: var(--accent-indigo);
+    box-shadow: 0 0 0 1px var(--accent-indigo);
   }
   .field::placeholder {
     color: var(--text-tertiary);

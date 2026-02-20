@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 import Sidebar from "@/components/Sidebar";
@@ -12,15 +12,17 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const isAuthenticated = isLoggedIn();
 
   useEffect(() => {
+    setMounted(true);
     if (!isAuthenticated) {
       router.replace("/login");
     }
   }, [isAuthenticated, router]);
 
-  if (!isAuthenticated) {
+  if (!mounted || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)]">
         <div className="flex items-center gap-3">
