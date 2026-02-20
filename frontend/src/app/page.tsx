@@ -189,24 +189,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social Proof Marquee */}
-      <section className="py-12 border-y border-[var(--border-secondary)] bg-[var(--bg-secondary)]/50 relative z-20 overflow-hidden flex items-center backdrop-blur-md">
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[var(--bg-primary)] to-transparent z-10" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[var(--bg-primary)] to-transparent z-10" />
-        <div className="flex w-max animate-marquee items-center gap-16 pr-16">
-          {[...Array(2)].map((_, idx) => (
-             <div key={idx} className="flex items-center gap-16">
-               <span className="text-xs font-bold tracking-[0.2em] uppercase text-[var(--text-tertiary)] shrink-0">Engineered for high-volume local outbound</span>
-               <div className="flex items-center gap-2 grayscale opacity-40"><span className="text-xl">⚡️</span><span className="font-extrabold text-base tracking-tight">FastScrape</span></div>
-               <span className="text-xs font-bold tracking-[0.2em] uppercase text-[var(--text-tertiary)] shrink-0">Over 50,000 queries processed</span>
-               <div className="flex items-center gap-2 grayscale opacity-40"><span className="text-xl">🛡️</span><span className="font-extrabold text-base tracking-tight">MoR Compliant</span></div>
-               <span className="text-xs font-bold tracking-[0.2em] uppercase text-[var(--text-tertiary)] shrink-0">B2B SaaS Infrastructure</span>
-               <div className="flex items-center gap-2 grayscale opacity-40"><span className="text-xl">🌐</span><span className="font-extrabold text-base tracking-tight">Global Data Hub</span></div>
-             </div>
-          ))}
-        </div>
-      </section>
-
       {/* Guest Preview Section */}
       <section id="preview" className="relative z-10 py-24 sm:py-32 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)]">
         <div className="max-w-4xl mx-auto px-4 lg:px-0">

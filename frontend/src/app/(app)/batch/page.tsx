@@ -175,10 +175,16 @@ export default function BatchQueue() {
   const totalLeadBudget = targets.reduce((sum, target) => sum + target.limit, 0);
 
   return (
-    <div className="stagger-children">
+    <div className="stagger-children relative">
+      {/* Background ambient glows */}
+      <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-[var(--accent-indigo)] to-[var(--accent-violet)] rounded-full blur-[150px] opacity-10 animate-pulse-glow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-gradient-to-tl from-[var(--accent-violet)] to-[var(--accent-indigo)] rounded-full blur-[150px] opacity-10" />
+      </div>
+
       <div className="mb-8">
-        <p className="font-mono text-[10px] text-[var(--accent)] tracking-[0.2em] uppercase mb-2">Multi-Target</p>
-        <h1 className="font-display text-2xl text-[var(--text-primary)] tracking-[-0.02em]">Batch Queue</h1>
+        <p className="font-mono text-[10px] text-[var(--accent-indigo)] drop-shadow-[0_0_8px_var(--glow-indigo)] tracking-widest uppercase mb-2 font-bold">Multi-Target</p>
+        <h1 className="font-display text-3xl text-white font-bold tracking-tight drop-shadow-md">Batch Queue</h1>
       </div>
 
       {message && (
@@ -193,17 +199,18 @@ export default function BatchQueue() {
         </div>
       )}
 
-      <div className="card-static p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="glass-glow rounded-2xl p-7 relative overflow-hidden transition-all hover:-translate-y-1 mb-6">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[var(--accent-indigo)] to-[var(--accent-violet)] opacity-50" />
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[var(--accent-indigo)]/20 to-[var(--accent-violet)]/20 border border-[var(--border-highlight)] shadow-[0_0_15px_var(--glow-indigo)]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_8px_white]">
               <path d="M4 7h16M4 12h16M4 17h10" />
               <circle cx="19" cy="17" r="2" />
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Niche Playbooks</h3>
-            <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Prebuilt queue templates</p>
+            <h3 className="text-base font-bold text-white tracking-tight">Niche Playbooks</h3>
+            <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest drop-shadow-[0_0_8px_var(--glow-indigo)]">Prebuilt queue templates</p>
           </div>
         </div>
 
@@ -212,21 +219,21 @@ export default function BatchQueue() {
         ) : templates.length === 0 ? (
           <p className="text-xs text-[var(--text-muted)]">No playbooks available for this plan.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {templates.map((template) => (
-              <div key={template.id} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] p-3">
-                <p className="text-xs font-medium text-[var(--text-primary)]">{template.name}</p>
-                <p className="text-[11px] text-[var(--text-muted)] mt-1">{template.expected_outcome}</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="tag font-mono text-[10px]">{template.vertical}</span>
-                  <span className="tag font-mono text-[10px]">{template.google_maps_targets.length} targets</span>
+              <div key={template.id} className="rounded-xl border border-[var(--border-secondary)] bg-black/40 p-4 shadow-inner hover:border-[var(--border-highlight)] transition-colors group">
+                <p className="text-sm font-bold text-white group-hover:text-[var(--accent-indigo)] transition-colors">{template.name}</p>
+                <p className="text-xs text-[var(--text-secondary)] mt-1.5">{template.expected_outcome}</p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="font-mono text-[10px] bg-black/50 border border-[var(--border-secondary)] text-[var(--text-dim)] px-2 py-0.5 rounded-md drop-shadow-sm">{template.vertical}</span>
+                  <span className="font-mono text-[10px] bg-[var(--accent-dim)] border border-[var(--accent)]/20 text-[var(--accent-indigo)] px-2 py-0.5 rounded-md drop-shadow-sm">{template.google_maps_targets.length} targets</span>
                 </div>
                 <button
                   onClick={() => applyTemplate(template)}
                   disabled={isLoading || applyingTemplateId === template.id}
-                  className="mt-3 btn-secondary w-full py-2 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="mt-4 btn-secondary w-full py-2.5 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed border border-[var(--border-highlight)] shadow-[0_0_15px_transparent] hover:shadow-[0_0_15px_var(--glow-indigo)]"
                 >
-                  {applyingTemplateId === template.id ? "Adding..." : "Add Template to Queue"}
+                  {applyingTemplateId === template.id ? "Adding..." : "Add to Queue"}
                 </button>
               </div>
             ))}
@@ -234,119 +241,122 @@ export default function BatchQueue() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="card-static p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--accent)] shadow-[0_0_20px_var(--accent-glow)]">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass-glow rounded-2xl p-7 relative transition-all hover:-translate-y-1">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[var(--accent-indigo)]/20 to-transparent border border-[var(--border-highlight)] shadow-[0_0_15px_var(--glow-indigo)]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_8px_white]">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v8M8 12h8" />
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Add Target</h3>
-              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Single entry</p>
+              <h3 className="text-base font-bold text-white tracking-tight">Add Target</h3>
+              <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest drop-shadow-[0_0_8px_var(--glow-indigo)]">Single entry</p>
             </div>
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">City</label>
+              <label className="block font-mono text-[10px] text-[var(--text-secondary)] uppercase tracking-widest mb-2 font-bold">City</label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="e.g., London, UK"
-                className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
+                className="w-full px-4 py-3 text-sm bg-black/40 border border-[var(--border-secondary)] rounded-xl text-white placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent-indigo)] focus:ring-1 focus:ring-[var(--accent-indigo)] shadow-inner transition-all"
               />
             </div>
             <div>
-              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Industry</label>
+              <label className="block font-mono text-[10px] text-[var(--text-secondary)] uppercase tracking-widest mb-2 font-bold">Industry</label>
               <input
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="e.g., Dentist"
-                className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none"
+                className="w-full px-4 py-3 text-sm bg-black/40 border border-[var(--border-secondary)] rounded-xl text-white placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent-indigo)] focus:ring-1 focus:ring-[var(--accent-indigo)] shadow-inner transition-all"
               />
             </div>
             <div>
-              <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Limit</label>
-              <select
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="field w-full px-4 py-3 text-sm focus:outline-none"
-              >
-                <option value={10}>10 leads</option>
-                <option value={20}>20 leads</option>
-                <option value={50}>50 leads</option>
-                <option value={100}>100 leads</option>
-              </select>
+              <label className="block font-mono text-[10px] text-[var(--text-secondary)] uppercase tracking-widest mb-2 font-bold">Limit</label>
+              <div className="relative">
+                <select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  className="w-full px-4 py-3 text-sm bg-black/40 border border-[var(--border-secondary)] rounded-xl text-white focus:outline-none focus:border-[var(--accent-indigo)] focus:ring-1 focus:ring-[var(--accent-indigo)] shadow-inner transition-all appearance-none"
+                >
+                  <option value={10}>10 leads</option>
+                  <option value={20}>20 leads</option>
+                  <option value={50}>50 leads</option>
+                  <option value={100}>100 leads</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-white/50">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+              </div>
             </div>
             <button
               onClick={addTarget}
               disabled={isLoading || !city || !category}
-              className="btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-3 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_var(--glow-indigo)] hover:shadow-[0_0_30px_var(--glow-violet)]"
             >
               + Add to Queue
             </button>
           </div>
         </div>
 
-        <div className="card-static p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="glass-glow rounded-2xl p-7 relative transition-all hover:-translate-y-1">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[var(--bg-tertiary)] to-transparent border border-[var(--border-secondary)] shadow-inner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
                 <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Quick Paste</h3>
-              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Bulk import</p>
+              <h3 className="text-base font-bold text-white tracking-tight">Quick Paste</h3>
+              <p className="font-mono text-[10px] text-[var(--accent-violet)] font-bold uppercase tracking-widest drop-shadow-[0_0_8px_var(--glow-violet)]">Bulk import</p>
             </div>
           </div>
-          <p className="text-xs text-[var(--text-secondary)] mb-4">
+          <p className="text-xs text-[var(--text-secondary)] mb-4 font-medium">
             Paste multiple targets (City, Industry, Limit per line)
           </p>
           <textarea
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
-            placeholder="London, Dentist, 50
-Mumbai, Gym, 30
-Sydney, Plumber, 20"
+            placeholder="London, Dentist, 50&#10;Mumbai, Gym, 30&#10;Sydney, Plumber, 20"
             rows={6}
-            className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none resize-none font-mono"
+            className="w-full px-4 py-3 text-sm bg-black/40 border border-[var(--border-secondary)] rounded-xl text-white placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent-indigo)] focus:ring-1 focus:ring-[var(--accent-indigo)] shadow-inner transition-all resize-none font-mono"
           />
           <button
             onClick={parseAndAdd}
             disabled={isLoading || !pasteText.trim()}
-            className="mt-4 btn-secondary w-full py-3 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            className="mt-4 btn-secondary w-full py-3.5 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed border border-[var(--border-highlight)] shadow-[0_0_15px_transparent] hover:shadow-[0_0_15px_var(--glow-violet)]"
           >
             Parse & Add
           </button>
         </div>
       </div>
 
-      <div className="mt-6 card-static p-6">
+      <div className="mt-6 glass-glow rounded-2xl p-7 relative">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[var(--bg-tertiary)] to-transparent border border-[var(--border-secondary)] shadow-inner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Queue</h3>
-              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{targets.length} targets</p>
+              <h3 className="text-xl font-bold text-white tracking-tight">Queue</h3>
+              <p className="font-mono text-[10px] text-[var(--text-secondary)] uppercase tracking-widest mt-0.5">{targets.length} targets</p>
             </div>
           </div>
           {targets.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="tag font-mono text-[10px]">{totalLeadBudget} lead budget</span>
-              <span className="tag tag-gold font-mono text-[10px]">Ready</span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[10px] bg-black/50 border border-[var(--border-secondary)] text-[var(--text-dim)] px-2 py-0.5 rounded-md drop-shadow-sm">{totalLeadBudget} lead budget</span>
+              <span className="font-mono text-[10px] bg-[var(--success-dim)] border border-[var(--success)]/20 text-[var(--success)] px-3 py-1 rounded-md drop-shadow-sm font-bold">Ready</span>
               <button
                 onClick={clearQueue}
-                className="btn-secondary px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider"
+                className="btn-secondary px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-[var(--border-secondary)] hover:border-[var(--error-dim)] hover:bg-[var(--error-dim)]/50 hover:text-[var(--error)] transition-colors"
               >
                 Clear
               </button>
@@ -355,27 +365,27 @@ Sydney, Plumber, 20"
         </div>
 
         {targets.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-[var(--text-muted)] text-sm mb-1">No targets in queue</p>
+          <div className="text-center py-10 border border-dashed border-[var(--border-secondary)] rounded-xl bg-black/20">
+            <p className="text-[var(--text-secondary)] text-sm font-medium mb-1">No targets in queue</p>
             <p className="text-[var(--text-dim)] text-xs">Add targets above to get started</p>
           </div>
         ) : (
-          <div className="space-y-2 mb-6">
+          <div className="space-y-3 mb-8">
             {targets.map((target, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]"
+                className="flex items-center justify-between p-4 bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] hover:border-[var(--border-highlight)] transition-colors glass rounded-xl shadow-sm hover:shadow-[0_0_15px_var(--glow-indigo)]"
               >
                 <div className="flex items-center gap-4">
-                  <span className="font-mono text-[10px] text-[var(--text-dim)] w-6">#{index + 1}</span>
-                  <span className="text-sm font-medium text-[var(--text-primary)]">{target.city}</span>
-                  <span className="text-[var(--text-dim)]">/</span>
-                  <span className="text-sm text-[var(--text-secondary)]">{target.category}</span>
-                  <span className="tag tag-gold font-mono text-[10px]">{target.limit}</span>
+                  <span className="font-mono text-[10px] text-[var(--text-dim)] w-8 tracking-widest">#{String(index + 1).padStart(2, '0')}</span>
+                  <span className="text-sm font-bold text-white drop-shadow-sm">{target.city}</span>
+                  <span className="text-[var(--accent-indigo)] font-bold">/</span>
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">{target.category}</span>
+                  <span className="font-mono text-[10px] bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-secondary)] px-2 py-0.5 rounded-md drop-shadow-sm ml-2">Limit {target.limit}</span>
                 </div>
                 <button
                   onClick={() => removeTarget(index)}
-                  className="text-[var(--text-muted)] hover:text-[var(--error)] transition-colors text-xs font-medium"
+                  className="text-[var(--text-dim)] hover:text-red-400 transition-colors text-xs font-semibold px-2"
                 >
                   Remove
                 </button>
@@ -387,11 +397,11 @@ Sydney, Plumber, 20"
         <button
           onClick={runBatch}
           disabled={targets.length === 0 || isLoading}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+          className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_var(--glow-indigo)] hover:shadow-[0_0_30px_var(--glow-violet)]"
         >
           {isLoading ? (
             <>
-              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 drop-shadow-[0_0_8px_white]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -400,7 +410,7 @@ Sydney, Plumber, 20"
           ) : (
             <>
               <span>Run Batch ({targets.length} targets / {totalLeadBudget} leads)</span>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <svg className="w-5 h-5 drop-shadow-[0_0_8px_white]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
             </>

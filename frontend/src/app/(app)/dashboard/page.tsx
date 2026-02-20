@@ -210,12 +210,18 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="max-w-6xl animate-fade-up">
+    <div className="max-w-6xl animate-fade-up relative">
+      {/* Background ambient glows */}
+      <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gradient-to-br from-[var(--accent-indigo)] to-[var(--accent-violet)] rounded-full blur-[150px] opacity-10 animate-pulse-glow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-gradient-to-tl from-[var(--accent-violet)] to-[var(--accent-indigo)] rounded-full blur-[150px] opacity-10" />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
-          <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Overview</p>
-          <h1 className="font-display text-3xl text-[var(--text-primary)] tracking-[-0.02em]">Dashboard</h1>
+          <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest mb-1 drop-shadow-[0_0_8px_var(--glow-indigo)]">Overview</p>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-white drop-shadow-md">Dashboard</h1>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -282,44 +288,56 @@ export default function Dashboard() {
       )}
 
       {/* Metrics grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 stagger-children">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8 stagger-children">
         <MetricCard
           title="Total Leads"
           value={stats?.total_leads ?? 0}
+          className="glass-glow relative overflow-hidden transition-all hover:-translate-y-1 shadow-[0_0_15px_rgba(0,0,0,0.5)] border border-[var(--border-secondary)] rounded-2xl p-7"
+          titleClassName="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest mb-2 drop-shadow-md"
+          valueClassName="text-4xl font-display font-bold text-white tracking-tight drop-shadow-lg"
+          iconClassName="text-[var(--text-secondary)] drop-shadow-md"
           icon={
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--accent-indigo)]/20 to-transparent border border-[var(--border-highlight)] flex items-center justify-center shadow-inner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-indigo)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
           }
         />
         <MetricCard
           title="High Priority"
           value={stats?.high_priority_leads ?? 0}
+          className="glass-glow relative overflow-hidden transition-all hover:-translate-y-1 shadow-[0_0_15px_rgba(0,0,0,0.5)] border border-[var(--border-secondary)] rounded-2xl p-7"
+          titleClassName="font-mono text-[10px] text-[var(--accent-violet)] font-bold uppercase tracking-widest mb-2 drop-shadow-md"
+          valueClassName="text-4xl font-display font-bold text-white tracking-tight drop-shadow-lg"
+          iconClassName="text-[var(--text-secondary)] drop-shadow-md"
           icon={
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="6" />
-              <circle cx="12" cy="12" r="2" />
-            </svg>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--accent-violet)]/20 to-transparent border border-[var(--border-highlight)] flex items-center justify-center shadow-inner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-violet)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="6" />
+                <circle cx="12" cy="12" r="2" />
+              </svg>
+            </div>
           }
         />
         {/* MetricCard for Potential Revenue Removed */}
       </div>
 
       {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Activity feed */}
-        <div className="lg:col-span-2 card-static p-6">
+        <div className="lg:col-span-2 glass-glow rounded-2xl p-7 relative overflow-hidden group transition-all hover:-translate-y-1">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Activity</p>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Recent Jobs</h3>
+              <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest mb-1">Activity</p>
+              <h3 className="text-lg font-bold text-white">Recent Jobs</h3>
             </div>
             {isRefreshing && (
-              <svg className="animate-spin h-4 w-4 text-[var(--text-muted)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 text-[var(--accent-indigo)] drop-shadow-[0_0_8px_var(--glow-indigo)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -338,16 +356,16 @@ export default function Dashboard() {
               <p className="text-[var(--text-dim)] text-xs mt-1">Run a scrape to get started</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {jobs.map((job) => (
                 <div
                   key={job.id}
-                  className="flex items-center justify-between p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-all"
+                  className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] hover:border-[var(--border-highlight)] hover:bg-[var(--bg-secondary)] transition-all glass hover:shadow-[0_0_20px_var(--glow-indigo)]"
                 >
                   <div className="flex items-center gap-4">
                     <span className={`status-dot ${getStatusDot(job.status)} ${job.status === "running" ? "animate-pulse" : ""}`} />
                     <div>
-                      <p className="text-sm font-medium text-[var(--text-primary)]">
+                      <p className="text-sm font-bold text-white shadow-sm">
                         {job.job_type === "google_maps" ? "Google Maps" : "Instagram"}
                       </p>
                       <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
@@ -369,12 +387,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           <QuickScrape onScrape={handleScrape} isLoading={isLoading} />
 
-          <div className="card-static p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--surface-elevated)] border border-[var(--border-subtle)]">
+          <div className="glass-glow rounded-2xl p-7 relative overflow-hidden transition-all hover:-translate-y-1">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[var(--accent-violet)] to-[var(--accent-indigo)] opacity-50" />
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-[var(--accent-indigo)]/20 to-[var(--accent-violet)]/20 border border-[var(--border-highlight)] shadow-[0_0_15px_var(--glow-indigo)]">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2a5 5 0 0 0-5 5v2H6a2 2 0 0 0-2 2v3a8 8 0 0 0 16 0v-3a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5z" />
                   <circle cx="9" cy="14" r="1" />
@@ -383,8 +402,8 @@ export default function Dashboard() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Target Builder Agent</h3>
-                <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Objective to targets</p>
+                <h3 className="text-base font-bold text-white tracking-tight">Target Builder Agent</h3>
+                <p className="font-mono text-[10px] text-[var(--accent-violet)] font-bold uppercase tracking-widest">Objective to targets</p>
               </div>
             </div>
 
@@ -393,13 +412,13 @@ export default function Dashboard() {
               onChange={(e) => setAgentObjective(e.target.value)}
               rows={3}
               placeholder="e.g., Find dentists and med spas in Miami and Fort Lauderdale with weak digital presence"
-              className="field w-full px-4 py-3 text-sm placeholder:text-[var(--text-dim)] focus:outline-none resize-none"
+              className="w-full px-4 py-3 text-sm bg-black/40 border border-[var(--border-secondary)] rounded-xl text-white placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent-indigo)] focus:ring-1 focus:ring-[var(--accent-indigo)] shadow-inner resize-none transition-all"
             />
 
             <button
               onClick={handleGenerateTargets}
               disabled={isGeneratingTargets || !agentObjective.trim()}
-              className="btn-secondary w-full mt-3 py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full mt-4 py-3.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_var(--glow-indigo)] hover:shadow-[0_0_30px_var(--glow-violet)]"
             >
               {isGeneratingTargets ? "Generating..." : "Generate Targets"}
             </button>
@@ -430,7 +449,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleRunGeneratedBatch}
                   disabled={isBatchLoading}
-                  className="btn-primary w-full mt-3 py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary w-full mt-4 py-3.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_var(--glow-indigo)] hover:shadow-[0_0_30px_var(--glow-violet)]"
                 >
                   {isBatchLoading ? "Queueing..." : `Queue Batch (${generatedTargets.length} targets)`}
                 </button>
@@ -443,53 +462,66 @@ export default function Dashboard() {
       </div>
 
       {/* Stats cards */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card-static p-6">
-          <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Breakdown</p>
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-5">Leads by Source</h3>
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="glass-glow rounded-2xl p-7 relative transition-all hover:-translate-y-1">
+          <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest mb-1">Breakdown</p>
+          <h3 className="text-lg font-bold text-white mb-6">Leads by Source</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[var(--accent-dim)] flex items-center justify-center">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] flex items-center justify-center shadow-inner">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#gradient-maps)" strokeWidth="2">
+                    <defs>
+                      <linearGradient id="gradient-maps" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="var(--accent-indigo)" />
+                        <stop offset="100%" stopColor="var(--accent-violet)" />
+                      </linearGradient>
+                    </defs>
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
                   </svg>
                 </div>
-                <span className="text-sm text-[var(--text-secondary)]">Google Maps</span>
+                <span className="text-sm font-semibold text-[var(--text-secondary)]">Google Maps</span>
               </div>
-              <span className="font-mono text-sm text-[var(--text-primary)]">
+              <span className="font-mono text-base font-bold text-white drop-shadow-sm">
                 {stats?.leads_by_source?.google_maps ?? 0}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[var(--accent-dim)] flex items-center justify-center">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] flex items-center justify-center shadow-inner">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#gradient-ig)" strokeWidth="2">
+                    <defs>
+                      <linearGradient id="gradient-ig" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#f59e0b" />
+                        <stop offset="50%" stopColor="#ec4899" />
+                        <stop offset="100%" stopColor="#8b5cf6" />
+                      </linearGradient>
+                    </defs>
                     <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
                   </svg>
                 </div>
-                <span className="text-sm text-[var(--text-secondary)]">Instagram</span>
+                <span className="text-sm font-semibold text-[var(--text-secondary)]">Instagram</span>
               </div>
-              <span className="font-mono text-sm text-[var(--text-primary)]">
+              <span className="font-mono text-base font-bold text-white drop-shadow-sm">
                 {stats?.leads_by_source?.instagram ?? 0}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="card-static p-6">
-          <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Pipeline</p>
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-5">Leads by Status</h3>
-          <div className="space-y-3">
+        <div className="glass-glow rounded-2xl p-7 relative transition-all hover:-translate-y-1">
+          <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest mb-1">Pipeline</p>
+          <h3 className="text-lg font-bold text-white mb-6">Leads by Status</h3>
+          <div className="space-y-4">
             {Object.entries(stats?.leads_by_status ?? {}).slice(0, 4).map(([status, count]) => (
-              <div key={status} className="flex items-center justify-between">
-                <span className="text-sm text-[var(--text-secondary)] capitalize">
+              <div key={status} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-[var(--border-secondary)]">
+                <span className="text-sm font-medium text-[var(--text-secondary)] capitalize drop-shadow-sm">
                   {status.replace("_", " ")}
                 </span>
-                <span className="font-mono text-sm text-[var(--text-primary)]">{count}</span>
+                <span className="font-mono text-base font-bold text-white drop-shadow-sm">{count}</span>
               </div>
             ))}
           </div>
