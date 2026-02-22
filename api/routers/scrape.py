@@ -13,9 +13,9 @@ import json
 import logging
 import hashlib
 import os
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+import time
 from datetime import date, datetime, timedelta
-from typing import Optional
+from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -33,10 +33,13 @@ from ..schemas import (
     ScrapeResponse,
     ScrapeTarget,
 )
+from apify_client import fetch_dataset, poll_run_status, run_google_maps_scraper
+from cleaner import add_derived_columns, clean_dataframe
+from scorer import score_dataframe
 
 logger = logging.getLogger("leadpilot")
 router = APIRouter(prefix="/scrape", tags=["scrape"])
-_GUEST_PREVIEW_CACHE: dict[str, tuple[datetime, list]] = {}
+_GUEST_PREVIEW_CACHE: dict[str, tuple[datetime, dict[str, Any]]] = {}
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -85,24 +88,29 @@ def _guest_preview_cache_key(city: str, category: str, limit: int, dry_run: bool
     return f"{city.strip().lower()}|{category.strip().lower()}|{int(limit)}|{mode}"
 
 
-def _guest_preview_cache_get(cache_key: str) -> Optional[list]:
+def _guest_preview_cache_get(cache_key: str) -> Optional[dict[str, Any]]:
     cached = _GUEST_PREVIEW_CACHE.get(cache_key)
     if not cached:
         return None
-    expires_at, leads_data = cached
+    expires_at, payload = cached
     if expires_at <= datetime.utcnow():
         _GUEST_PREVIEW_CACHE.pop(cache_key, None)
         return None
-    # Return a shallow copy to avoid accidental mutation of cached objects.
-    return list(leads_data)
+    return dict(payload)
 
 
-def _guest_preview_cache_set(cache_key: str, leads_data: list) -> None:
+def _guest_preview_cache_set(cache_key: str, payload: dict[str, Any]) -> None:
     ttl = _guest_preview_cache_ttl_seconds()
-    _GUEST_PREVIEW_CACHE[cache_key] = (
-        datetime.utcnow() + timedelta(seconds=ttl),
-        list(leads_data or []),
-    )
+    _GUEST_PREVIEW_CACHE[cache_key] = (datetime.utcnow() + timedelta(seconds=ttl), dict(payload))
+
+
+def _should_cache_guest_preview(payload: dict[str, Any]) -> bool:
+    source = str(payload.get("data_source") or "")
+    # Cache only trustworthy deterministic payloads:
+    # - apify_live: successful live run output
+    # - demo: explicit demo mode output
+    # Do not cache fallback_timeout/fallback_error, so next attempt can retry live run.
+    return source in {"apify_live", "demo"}
 
 
 def _guest_preview_max_jobs() -> int:
@@ -152,45 +160,196 @@ def _build_guest_preview_fallback_leads(city: str, category: str, limit: int) ->
     return leads
 
 
-def _run_guest_preview_with_timeout(city: str, category: str, limit: int, dry_run: bool) -> tuple[list, str]:
-    # In demo mode we should always return immediately.
+def _run_guest_preview_live(city: str, category: str, limit: int, dry_run: bool) -> dict[str, Any]:
+    started = time.monotonic()
+    execution_mode = "demo" if dry_run else "live"
+
+    def _elapsed() -> int:
+        return max(1, int(time.monotonic() - started))
+
+    def _fallback(reason: str, source: str, run_id: Optional[str] = None, dataset_id: Optional[str] = None, status: Optional[str] = None) -> dict[str, Any]:
+        return {
+            "execution_mode": execution_mode,
+            "data_source": source,
+            "apify_run_id": run_id,
+            "apify_dataset_id": dataset_id,
+            "apify_final_status": status,
+            "elapsed_seconds": _elapsed(),
+            "fallback_reason": reason,
+            "leads_data": _build_guest_preview_fallback_leads(city, category, limit),
+        }
+
+    # Demo mode returns static sample only.
     if dry_run:
-        return _build_guest_preview_fallback_leads(city, category, limit), "demo_fast"
-
-    timeout_seconds = _guest_preview_timeout_seconds()
-    payload = [{
-        "city": city,
-        "category": category,
-        "limit": limit,
-        "agent_mode": False,
-        "dry_run": dry_run,
-    }]
-
-    def _run_pipeline_payload() -> list:
-        # Keep import inside the worker so timeout also covers import cost.
-        from batch_processor import process_batch_targets
-        return process_batch_targets(payload)
-
-    executor = ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(_run_pipeline_payload)
-    try:
-        result = future.result(timeout=timeout_seconds)
-        return list(result or []), "pipeline"
-    except FuturesTimeoutError:
-        future.cancel()
-        logger.warning(
-            "Guest preview timed out after %ss for city=%s category=%s dry_run=%s",
-            timeout_seconds,
+        logger.info(
+            "[guest-preview] Demo preview generated city=%s category=%s limit=%s",
             city,
             category,
-            dry_run,
+            limit,
         )
-        return _build_guest_preview_fallback_leads(city, category, limit), "fallback_timeout"
+        return {
+            "execution_mode": execution_mode,
+            "data_source": "demo",
+            "apify_run_id": None,
+            "apify_dataset_id": None,
+            "apify_final_status": None,
+            "elapsed_seconds": _elapsed(),
+            "fallback_reason": None,
+            "leads_data": _build_guest_preview_fallback_leads(city, category, limit),
+        }
+
+    timeout_seconds = _guest_preview_timeout_seconds()
+    logger.info(
+        "[guest-preview] Live preview started city=%s category=%s limit=%s timeout=%ss",
+        city,
+        category,
+        limit,
+        timeout_seconds,
+    )
+
+    run_id: Optional[str] = None
+    dataset_id: Optional[str] = None
+    final_status: Optional[str] = None
+
+    try:
+        run_info = run_google_maps_scraper(city=city, category=category, limit=limit)
+        run_id = run_info.get("run_id")
+        dataset_id = run_info.get("dataset_id")
+        logger.info(
+            "[guest-preview] Apify run created city=%s category=%s run_id=%s dataset_id=%s",
+            city,
+            category,
+            run_id,
+            dataset_id,
+        )
     except Exception as exc:
-        logger.error("Guest preview scrape failed: %s", exc)
-        return _build_guest_preview_fallback_leads(city, category, limit), "fallback_error"
-    finally:
-        executor.shutdown(wait=False, cancel_futures=True)
+        logger.error(
+            "[guest-preview] Live run creation failed city=%s category=%s err=%s",
+            city,
+            category,
+            exc,
+        )
+        return _fallback("run_creation_failed", "fallback_error")
+
+    try:
+        final_status = poll_run_status(
+            run_id=run_id or "",
+            max_wait=timeout_seconds,
+            poll_interval=5,
+        )
+        logger.info(
+            "[guest-preview] Apify run finished run_id=%s status=%s elapsed=%ss",
+            run_id,
+            final_status,
+            _elapsed(),
+        )
+    except TimeoutError:
+        logger.warning(
+            "[guest-preview] Live run status timeout run_id=%s city=%s category=%s timeout=%ss",
+            run_id,
+            city,
+            category,
+            timeout_seconds,
+        )
+        return _fallback("run_status_timeout", "fallback_timeout", run_id=run_id, dataset_id=dataset_id)
+    except Exception as exc:
+        logger.error(
+            "[guest-preview] Live run status failed run_id=%s err=%s",
+            run_id,
+            exc,
+        )
+        return _fallback("run_status_failed", "fallback_error", run_id=run_id, dataset_id=dataset_id)
+
+    if final_status != "SUCCEEDED":
+        logger.warning(
+            "[guest-preview] Live run ended without success run_id=%s status=%s",
+            run_id,
+            final_status,
+        )
+        return _fallback(
+            f"run_final_status_{str(final_status or 'unknown').lower()}",
+            "fallback_error",
+            run_id=run_id,
+            dataset_id=dataset_id,
+            status=final_status,
+        )
+
+    try:
+        raw_rows = fetch_dataset(dataset_id=dataset_id or "")
+        logger.info(
+            "[guest-preview] Dataset rows fetched run_id=%s dataset_id=%s rows=%s",
+            run_id,
+            dataset_id,
+            len(raw_rows or []),
+        )
+    except Exception as exc:
+        logger.error(
+            "[guest-preview] Dataset fetch failed run_id=%s dataset_id=%s err=%s",
+            run_id,
+            dataset_id,
+            exc,
+        )
+        return _fallback(
+            "dataset_fetch_failed",
+            "fallback_error",
+            run_id=run_id,
+            dataset_id=dataset_id,
+            status=final_status,
+        )
+
+    try:
+        df = clean_dataframe(raw_rows or [])
+        if df.empty:
+            logger.warning("[guest-preview] Cleaned dataset is empty run_id=%s dataset_id=%s", run_id, dataset_id)
+            return _fallback(
+                "no_rows_after_clean",
+                "fallback_error",
+                run_id=run_id,
+                dataset_id=dataset_id,
+                status=final_status,
+            )
+        df = add_derived_columns(df)
+        df = score_dataframe(df, check_websites=False)
+        result = df.head(max(1, int(limit))).to_dict("records")
+        logger.info(
+            "[guest-preview] Live preview finished city=%s category=%s rows=%s run_id=%s",
+            city,
+            category,
+            len(result or []),
+            run_id,
+        )
+        if not result:
+            return _fallback(
+                "no_rows_after_score",
+                "fallback_error",
+                run_id=run_id,
+                dataset_id=dataset_id,
+                status=final_status,
+            )
+        return {
+            "execution_mode": execution_mode,
+            "data_source": "apify_live",
+            "apify_run_id": run_id,
+            "apify_dataset_id": dataset_id,
+            "apify_final_status": final_status,
+            "elapsed_seconds": _elapsed(),
+            "fallback_reason": None,
+            "leads_data": list(result),
+        }
+    except Exception as exc:
+        logger.error(
+            "[guest-preview] Normalization/scoring failed run_id=%s dataset_id=%s err=%s",
+            run_id,
+            dataset_id,
+            exc,
+        )
+        return _fallback(
+            "normalization_failed",
+            "fallback_error",
+            run_id=run_id,
+            dataset_id=dataset_id,
+            status=final_status,
+        )
 
 
 def _guest_fingerprint(request: Request) -> str:
@@ -231,6 +390,11 @@ def _build_guest_usage_payload(usage: GuestPreviewUsage) -> GuestPreviewUsageRes
         jobs_remaining=max(0, max_jobs - int(usage.preview_jobs or 0)),
         leads_remaining=max(0, max_leads - int(usage.preview_leads or 0)),
     )
+
+
+def _guest_usage_reset_date(period_start: date) -> date:
+    next_month = period_start.replace(day=28) + timedelta(days=4)
+    return next_month.replace(day=1)
 
 
 def _get_customer_orm(db: Session, customer: dict):
@@ -402,6 +566,12 @@ def scrape_guest_preview(
     target: GuestScrapeTarget,
     db: Session = Depends(get_db),
 ):
+    logger.info(
+        "[guest-preview] Request received city=%s category=%s limit=%s",
+        target.city,
+        target.category,
+        target.limit,
+    )
     if not _guest_preview_enabled():
         raise HTTPException(status_code=403, detail="Guest preview is disabled right now.")
 
@@ -414,40 +584,61 @@ def scrape_guest_preview(
 
     if int(usage.preview_jobs or 0) >= max_jobs:
         usage_payload = _build_guest_usage_payload(usage)
+        reset_on = _guest_usage_reset_date(usage.period_start)
         raise HTTPException(
             status_code=429,
             detail=(
                 "Guest preview limit reached. "
-                f"Used {usage_payload.jobs_used}/{usage_payload.monthly_job_limit} monthly preview runs."
+                f"Used {usage_payload.jobs_used}/{usage_payload.monthly_job_limit} monthly preview runs. "
+                f"Resets on {reset_on.isoformat()}."
             ),
         )
 
     remaining_leads = max_leads - int(usage.preview_leads or 0)
     if requested_limit > remaining_leads:
         usage_payload = _build_guest_usage_payload(usage)
+        reset_on = _guest_usage_reset_date(usage.period_start)
         raise HTTPException(
             status_code=429,
             detail=(
                 "Guest preview lead budget reached. "
-                f"Only {usage_payload.leads_remaining} preview lead(s) left this month."
+                f"Only {usage_payload.leads_remaining} preview lead(s) left this month. "
+                f"Resets on {reset_on.isoformat()}."
             ),
         )
 
     dry_run = not _guest_preview_live_enabled()
     cache_key = _guest_preview_cache_key(target.city, target.category, requested_limit, dry_run)
-    leads_data = _guest_preview_cache_get(cache_key)
-    used_cache = leads_data is not None
-    source = "cache"
+    cached_payload = _guest_preview_cache_get(cache_key)
+    used_cache = cached_payload is not None
+    response_meta: dict[str, Any]
 
-    if leads_data is None:
-        leads_data, source = _run_guest_preview_with_timeout(
+    if cached_payload is None:
+        response_meta = _run_guest_preview_live(
             city=target.city,
             category=target.category,
             limit=requested_limit,
             dry_run=dry_run,
         )
-        _guest_preview_cache_set(cache_key, leads_data or [])
+        if _should_cache_guest_preview(response_meta):
+            _guest_preview_cache_set(cache_key, response_meta)
+    else:
+        response_meta = dict(cached_payload)
+        original_source = str(response_meta.get("data_source") or "")
+        if original_source == "apify_live":
+            response_meta["data_source"] = "cache_live"
+            response_meta["fallback_reason"] = None
+        elif original_source == "demo":
+            response_meta["data_source"] = "demo"
+        logger.info(
+            "[guest-preview] Cache hit city=%s category=%s limit=%s dry_run=%s",
+            target.city,
+            target.category,
+            requested_limit,
+            dry_run,
+        )
 
+    leads_data = list(response_meta.get("leads_data") or [])
     try:
         leads = []
         for lead in (leads_data or [])[:requested_limit]:
@@ -477,19 +668,43 @@ def scrape_guest_preview(
     db.commit()
     db.refresh(usage)
 
-    mode_label = "demo mode" if dry_run else "live mode"
-    if source == "fallback_timeout":
-        preview_message = "Preview complete in fast mode (live query timed out)."
-    elif source == "fallback_error":
-        preview_message = "Preview complete in fast mode (fallback data used)."
-    elif source == "demo_fast":
-        preview_message = "Preview complete in demo mode."
+    data_source = str(response_meta.get("data_source") or "demo")
+    if data_source == "apify_live":
+        preview_message = "Live run completed."
+    elif data_source == "cache_live":
+        preview_message = "Loaded recent live preview from cache."
+    elif data_source == "fallback_timeout":
+        preview_message = (
+            f"Live run timed out after {_guest_preview_timeout_seconds()}s; showing fallback sample."
+        )
+    elif data_source == "fallback_error":
+        fallback_reason = response_meta.get("fallback_reason") or "unknown"
+        preview_message = f"Live run failed ({fallback_reason}); showing fallback sample."
     else:
         cache_label = " (cached)" if used_cache else ""
-        preview_message = f"Preview complete in {mode_label}{cache_label}."
+        preview_message = f"Preview complete in demo mode{cache_label}."
+    logger.info(
+        "[guest-preview] Response ready city=%s category=%s source=%s run_id=%s dataset_id=%s status=%s elapsed=%ss leads=%s fallback_reason=%s",
+        target.city,
+        target.category,
+        data_source,
+        response_meta.get("apify_run_id"),
+        response_meta.get("apify_dataset_id"),
+        response_meta.get("apify_final_status"),
+        response_meta.get("elapsed_seconds"),
+        len(leads),
+        response_meta.get("fallback_reason"),
+    )
     return GuestScrapeResponse(
         status="completed",
         message=preview_message,
         leads=leads,
         usage=_build_guest_usage_payload(usage),
+        execution_mode=str(response_meta.get("execution_mode") or ("demo" if dry_run else "live")),
+        data_source=data_source,
+        apify_run_id=response_meta.get("apify_run_id"),
+        apify_dataset_id=response_meta.get("apify_dataset_id"),
+        apify_final_status=response_meta.get("apify_final_status"),
+        elapsed_seconds=int(response_meta.get("elapsed_seconds") or 0),
+        fallback_reason=response_meta.get("fallback_reason"),
     )

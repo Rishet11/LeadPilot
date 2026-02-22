@@ -137,6 +137,13 @@ class GuestScrapeResponse(BaseModel):
     message: str
     leads: List[GuestPreviewLead]
     usage: GuestPreviewUsageResponse
+    execution_mode: str = "demo"
+    data_source: str = "demo"
+    apify_run_id: Optional[str] = None
+    apify_dataset_id: Optional[str] = None
+    apify_final_status: Optional[str] = None
+    elapsed_seconds: int = 0
+    fallback_reason: Optional[str] = None
 
 
 class JobResponse(BaseModel):

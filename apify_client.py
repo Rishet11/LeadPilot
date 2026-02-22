@@ -18,6 +18,7 @@ logger = logging.getLogger("leadpilot")
 
 APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN")
 APIFY_BASE_URL = "https://api.apify.com/v2"
+APIFY_HTTP_TIMEOUT_SECONDS = int(os.getenv("APIFY_HTTP_TIMEOUT_SECONDS", "30"))
 
 # Google Maps Scraper Actor ID
 GOOGLE_MAPS_ACTOR = "compass~crawler-google-places"
@@ -37,6 +38,13 @@ def run_google_maps_scraper(city: str, category: str, limit: int = 100) -> dict:
     """
     if not APIFY_API_TOKEN:
         raise ValueError("APIFY_API_TOKEN not found in environment variables")
+    logger.info(
+        "[apify] Starting Google Maps actor city=%s category=%s limit=%s timeout=%ss",
+        city,
+        category,
+        limit,
+        APIFY_HTTP_TIMEOUT_SECONDS,
+    )
     
     url = f"{APIFY_BASE_URL}/acts/{GOOGLE_MAPS_ACTOR}/runs"
     
@@ -54,10 +62,15 @@ def run_google_maps_scraper(city: str, category: str, limit: int = 100) -> dict:
         "deeperCityScrape": False
     }
     
-    response = requests.post(url, headers=headers, json=payload)
+    response = requests.post(url, headers=headers, json=payload, timeout=APIFY_HTTP_TIMEOUT_SECONDS)
     response.raise_for_status()
-    
+
     data = response.json()["data"]
+    logger.info(
+        "[apify] Actor run created run_id=%s dataset_id=%s",
+        data.get("id"),
+        data.get("defaultDatasetId"),
+    )
     return {
         "run_id": data["id"],
         "dataset_id": data["defaultDatasetId"]
@@ -78,10 +91,16 @@ def poll_run_status(run_id: str, max_wait: int = 300, poll_interval: int = 10) -
     """
     url = f"{APIFY_BASE_URL}/actor-runs/{run_id}"
     headers = {"Authorization": f"Bearer {APIFY_API_TOKEN}"}
+    logger.info(
+        "[apify] Polling run status run_id=%s max_wait=%ss interval=%ss",
+        run_id,
+        max_wait,
+        poll_interval,
+    )
     
     elapsed = 0
     while elapsed < max_wait:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=APIFY_HTTP_TIMEOUT_SECONDS)
         response.raise_for_status()
         
         status = response.json()["data"]["status"]
@@ -108,11 +127,14 @@ def fetch_dataset(dataset_id: str) -> list:
     """
     url = f"{APIFY_BASE_URL}/datasets/{dataset_id}/items"
     headers = {"Authorization": f"Bearer {APIFY_API_TOKEN}"}
-    
-    response = requests.get(url, headers=headers)
+    logger.info("[apify] Fetching dataset items dataset_id=%s", dataset_id)
+
+    response = requests.get(url, headers=headers, timeout=APIFY_HTTP_TIMEOUT_SECONDS)
     response.raise_for_status()
-    
-    return response.json()
+
+    data = response.json()
+    logger.info("[apify] Dataset fetched dataset_id=%s rows=%s", dataset_id, len(data))
+    return data
 
 
 def save_raw_data(data: list, path: str = "data/raw.json"):
@@ -265,4 +287,3 @@ def run_instagram_search(keyword: str, limit: int = 30) -> dict:
         "run_id": data["id"],
         "dataset_id": data["defaultDatasetId"]
     }
-
