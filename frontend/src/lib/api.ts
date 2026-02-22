@@ -166,6 +166,13 @@ export interface GuestPreviewResponse {
   message: string;
   leads: GuestPreviewLead[];
   usage: GuestPreviewUsage;
+  execution_mode: "live" | "demo" | string;
+  data_source: "apify_live" | "cache_live" | "fallback_timeout" | "fallback_error" | "demo" | string;
+  apify_run_id: string | null;
+  apify_dataset_id: string | null;
+  apify_final_status: string | null;
+  elapsed_seconds: number;
+  fallback_reason: string | null;
 }
 
 export class ApiError extends Error {
@@ -216,7 +223,7 @@ export function getUserFacingApiError(error: unknown, fallback: string): string 
   }
 
   if (error instanceof TypeError) {
-    return "Network error. Check your connection and API URL.";
+    return `Network error. Backend is likely not running at ${API_BASE}. Start \`make api\` or \`make dev\`.`;
   }
 
   if (error instanceof Error && error.message) {
@@ -368,7 +375,7 @@ export async function scrapeInstagram(targets: {
 }
 
 export async function scrapeGuestPreview(city: string, category: string, limit: number): Promise<GuestPreviewResponse> {
-  const timeoutMs = Number(process.env.NEXT_PUBLIC_GUEST_PREVIEW_TIMEOUT_MS || 8000);
+  const timeoutMs = Number(process.env.NEXT_PUBLIC_GUEST_PREVIEW_TIMEOUT_MS || 70000);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -384,9 +391,25 @@ export async function scrapeGuestPreview(city: string, category: string, limit: 
     return handleResponse<GuestPreviewResponse>(res);
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Preview took too long. Please retry with 5 leads.");
+      throw new Error("Preview request timed out in browser. Increase NEXT_PUBLIC_GUEST_PREVIEW_TIMEOUT_MS and retry.");
     }
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function pingApiHealth(timeoutMs = 3500): Promise<boolean> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${API_BASE}/api/health`, {
+      method: "GET",
+      signal: controller.signal,
+    });
+    return res.ok;
+  } catch {
+    return false;
   } finally {
     clearTimeout(timeoutId);
   }

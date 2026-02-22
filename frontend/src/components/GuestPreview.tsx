@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { GuestPreviewLead, GuestPreviewUsage, getUserFacingApiError, scrapeGuestPreview } from "@/lib/api";
+import { GuestPreviewLead, GuestPreviewUsage, getUserFacingApiError, pingApiHealth, scrapeGuestPreview } from "@/lib/api";
 
 const LIMIT_OPTIONS = [
   { value: 5, label: "5 leads (fastest)" },
@@ -57,6 +57,10 @@ export default function GuestPreview() {
   const [leads, setLeads] = useState<GuestPreviewLead[]>([]);
   const [usage, setUsage] = useState<GuestPreviewUsage | null>(null);
   const [lastDurationSeconds, setLastDurationSeconds] = useState<number | null>(null);
+  const [executionMode, setExecutionMode] = useState<"live" | "demo" | null>(null);
+  const [dataSource, setDataSource] = useState<string | null>(null);
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
 
   const expectedRuntime = useMemo(() => {
     if (limit <= 5) return "5-12s";
@@ -78,6 +82,25 @@ export default function GuestPreview() {
     return () => clearInterval(timer);
   }, [isRunning]);
 
+  useEffect(() => {
+    let active = true;
+    pingApiHealth()
+      .then((healthy) => {
+        if (active) {
+          setApiHealthy(healthy);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setApiHealthy(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const onRunPreview = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmedCity = city.trim();
@@ -94,12 +117,32 @@ export default function GuestPreview() {
     setLastDurationSeconds(null);
     setError(null);
     setMessage(null);
+    setExecutionMode(null);
+    setDataSource(null);
+    setFallbackReason(null);
 
     try {
+      const healthOk = await pingApiHealth(2200);
+      setApiHealthy(healthOk);
+      if (!healthOk) {
+        setLeads(buildInstantFallbackLeads(trimmedCity, trimmedCategory, limit));
+        setUsage(null);
+        setExecutionMode("demo");
+        setDataSource("fallback_error");
+        setFallbackReason("api_unreachable");
+        setMessage("Backend is unreachable. Showing instant demo mode results.");
+        setLastDurationSeconds(Math.max(1, Math.round((Date.now() - startedAt) / 1000)));
+        return;
+      }
+
       const result = await scrapeGuestPreview(trimmedCity, trimmedCategory, limit);
       setLeads(result.leads || []);
       setUsage(result.usage || null);
       setMessage(result.message || "Preview complete.");
+      setExecutionMode(result.execution_mode === "demo" ? "demo" : "live");
+      setDataSource(result.data_source || null);
+      setFallbackReason(result.fallback_reason || null);
+      setApiHealthy(true);
       setLastDurationSeconds(Math.max(1, Math.round((Date.now() - startedAt) / 1000)));
     } catch (err) {
       const fallback = "Preview failed right now. Please try again in a few seconds.";
@@ -107,16 +150,25 @@ export default function GuestPreview() {
       const normalized = friendly.toLowerCase();
       const canFallback =
         normalized.includes("took too long") ||
+        normalized.includes("timed out") ||
         normalized.includes("network error") ||
+        normalized.includes("backend is likely not running") ||
         normalized.includes("backend is not reachable");
 
       if (canFallback) {
         setLeads(buildInstantFallbackLeads(trimmedCity, trimmedCategory, limit));
         setUsage(null);
+        setExecutionMode("demo");
+        setDataSource("fallback_error");
+        setFallbackReason("client_network_fallback");
+        setApiHealthy(false);
         setError(null);
-        setMessage("Preview loaded in instant mode. Start backend to see live preview data.");
+        setMessage("Preview loaded in instant demo mode. Start backend to see live preview data.");
         setLastDurationSeconds(Math.max(1, Math.round((Date.now() - startedAt) / 1000)));
       } else {
+        setExecutionMode(null);
+        setDataSource(null);
+        setFallbackReason(null);
         setError(friendly);
       }
     } finally {
@@ -218,6 +270,42 @@ export default function GuestPreview() {
               
               {message && <p className="text-xs text-[#00FF66] font-mono mb-4 bg-[#00FF66]/10 border border-[#00FF66]/20 inline-block px-3 py-1.5 rounded-md">{message}</p>}
               {error && <p className="text-xs text-red-400 font-mono mb-4 bg-red-400/10 border border-red-400/20 inline-block px-3 py-1.5 rounded-md">{error}</p>}
+              {(executionMode || dataSource || fallbackReason || apiHealthy !== null) && (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  {executionMode && (
+                    <span
+                      className={`text-[10px] font-mono px-2.5 py-1 rounded-md border uppercase tracking-wider ${
+                        executionMode === "live"
+                          ? "text-[var(--success)] bg-[var(--success-dim)] border-[var(--success)]/30"
+                          : "text-[var(--warning)] bg-[var(--warning-dim)] border-[var(--warning)]/30"
+                      }`}
+                    >
+                      {executionMode} mode
+                    </span>
+                  )}
+                  {dataSource && (
+                    <span className="text-[10px] font-mono px-2.5 py-1 rounded-md border border-[var(--border-secondary)] bg-black/40 text-[var(--text-secondary)]">
+                      source: {dataSource.replace(/_/g, " ")}
+                    </span>
+                  )}
+                  {fallbackReason && (
+                    <span className="text-[10px] font-mono px-2.5 py-1 rounded-md border border-[var(--border-secondary)] bg-black/40 text-[var(--text-dim)]">
+                      reason: {fallbackReason.replace(/_/g, " ")}
+                    </span>
+                  )}
+                  {apiHealthy !== null && (
+                    <span
+                      className={`text-[10px] font-mono px-2.5 py-1 rounded-md border ${
+                        apiHealthy
+                          ? "text-[var(--success)] bg-[var(--success-dim)] border-[var(--success)]/20"
+                          : "text-[var(--warning)] bg-[var(--warning-dim)] border-[var(--warning)]/20"
+                      }`}
+                    >
+                      API: {apiHealthy ? "reachable" : "offline"}
+                    </span>
+                  )}
+                </div>
+              )}
               {!isRunning && lastDurationSeconds !== null && (
                 <p className="text-[11px] text-[var(--text-tertiary)] font-mono mb-3">
                   Last run completed in {lastDurationSeconds}s.
