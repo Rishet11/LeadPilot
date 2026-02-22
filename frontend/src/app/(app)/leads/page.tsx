@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { batchDeleteLeads, getLeadsPage, getUserFacingApiError, Lead, regenerateLeadOutreach, updateLeadStatus } from "@/lib/api";
 import { toInstagramProfileUrl, toSafeExternalUrl } from "@/lib/urls";
 
@@ -105,7 +105,7 @@ export default function LeadsCRM() {
 
   const selectAllRef = useRef<HTMLInputElement | null>(null);
 
-  const loadLeads = async (activeFilters: Filters, page = currentPage) => {
+  const loadLeads = useCallback(async (activeFilters: Filters, page: number) => {
     setIsLoading(true);
     setSelectedIds(new Set());
 
@@ -134,7 +134,7 @@ export default function LeadsCRM() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -146,7 +146,7 @@ export default function LeadsCRM() {
 
   useEffect(() => {
     void loadLeads(effectiveFilters, currentPage);
-  }, [effectiveFilters, currentPage]);
+  }, [effectiveFilters, currentPage, loadLeads]);
 
   useEffect(() => {
     if (!selectAllRef.current) return;

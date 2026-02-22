@@ -1,4 +1,8 @@
 VENV_BIN := $(CURDIR)/venv/bin
+PY39_FALLBACK_BIN := $(CURDIR)/venv_py39_backup_20260219_130346/bin
+ifneq ("$(wildcard $(PY39_FALLBACK_BIN)/python3)","")
+VENV_BIN := $(PY39_FALLBACK_BIN)
+endif
 VENV_PY := $(VENV_BIN)/python3
 NODE22_BIN := /opt/homebrew/opt/node@22/bin
 NODE_PATH_PREFIX := $(if $(wildcard $(NODE22_BIN)/node),$(NODE22_BIN):,)
@@ -7,8 +11,12 @@ NODE_PATH_PREFIX := $(if $(wildcard $(NODE22_BIN)/node),$(NODE22_BIN):,)
 
 # Development
 dev:
+	@echo "Clearing stale local processes (if any)..."
+	-@$(MAKE) stop >/dev/null 2>&1 || true
+	-@find frontend -maxdepth 1 -type d -name "node_modules_corrupt_*" -exec rm -rf {} + 2>/dev/null || true
+	-@rm -rf frontend/.next
 	@echo "Starting API, Worker, and Frontend..."
-	@make -j3 api worker frontend
+	@$(MAKE) -j3 api worker frontend
 
 stop:
 	@echo "Stopping local API, Worker, and Frontend processes..."
@@ -20,13 +28,13 @@ stop:
 	@echo "Done."
 
 api:
-	$(VENV_PY) -m uvicorn api.main:app --reload --reload-dir api --reload-include "*.py" --reload-exclude "venv*" --reload-exclude "venv_py313_backup_*" --reload-exclude "frontend/*" --reload-exclude "data/*" --reload-exclude "logs/*" --reload-exclude ".git/*"
+	$(VENV_PY) -m uvicorn api.main:app --host 127.0.0.1 --port 8000
 
 worker:
 	$(VENV_PY) worker.py
 
 frontend:
-	cd frontend && NEXT_TELEMETRY_DISABLED=1 PATH="$(NODE_PATH_PREFIX)$$PATH" npm run dev -- --hostname 127.0.0.1 --port 3000
+	cd frontend && NEXT_TELEMETRY_DISABLED=1 NEXT_DISABLE_WEBPACK_CACHE=1 PATH="$(NODE_PATH_PREFIX)$$PATH" npm run dev -- --hostname 127.0.0.1 --port 3000
 
 # Testing
 test:
