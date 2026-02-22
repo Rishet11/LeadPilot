@@ -13,10 +13,12 @@ type PlanConfig = {
   monthlyPrice: number;
   yearlyPrice: number;
   monthlyLeadCredits: string;
+  leadCreditsRaw: number;
   concurrentJobs: string;
   sources: string;
   support: string;
   cta: string;
+  bestFor: string;
   highlighted?: boolean;
   features: string[];
 };
@@ -29,10 +31,12 @@ const PLAN_CONFIGS: PlanConfig[] = [
     monthlyPrice: 0,
     yearlyPrice: 0,
     monthlyLeadCredits: "100 / month",
+    leadCreditsRaw: 100,
     concurrentJobs: "1 running job",
     sources: "Google Maps",
     support: "Email support",
     cta: "Start Free",
+    bestFor: "Validating lead quality",
     features: [
       "100 lead credits per month",
       "Google Maps scraping",
@@ -48,10 +52,12 @@ const PLAN_CONFIGS: PlanConfig[] = [
     monthlyPrice: 29,
     yearlyPrice: 290,
     monthlyLeadCredits: "500 / month",
+    leadCreditsRaw: 500,
     concurrentJobs: "2 running jobs",
     sources: "Google Maps",
     support: "Standard support",
     cta: "Get Starter",
+    bestFor: "Weekly outbound execution",
     features: [
       "500 lead credits per month",
       "2 concurrent scrape jobs",
@@ -67,10 +73,12 @@ const PLAN_CONFIGS: PlanConfig[] = [
     monthlyPrice: 79,
     yearlyPrice: 790,
     monthlyLeadCredits: "2,000 / month",
+    leadCreditsRaw: 2000,
     concurrentJobs: "3 running jobs",
     sources: "Google Maps + Instagram",
     support: "Priority support",
     cta: "Upgrade to Growth",
+    bestFor: "Team-based prospecting at scale",
     highlighted: true,
     features: [
       "2,000 lead credits per month",
@@ -141,6 +149,13 @@ export default function PricingPage() {
     window.open(link, "_blank", "noopener,noreferrer");
   };
 
+  const getLeadUnitCost = (plan: PlanConfig): string => {
+    const billedPrice = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice / 12;
+    if (billedPrice <= 0 || plan.leadCreditsRaw <= 0) return "Free";
+    const perLead = billedPrice / plan.leadCreditsRaw;
+    return `$${perLead.toFixed(2)} / lead`;
+  };
+
   return (
     <div className="min-h-screen bg-[var(--surface-base)] text-[var(--text-primary)]">
       <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-base)]/95 backdrop-blur-xl">
@@ -167,11 +182,16 @@ export default function PricingPage() {
         <section className="max-w-5xl mx-auto px-6 pt-16 pb-8 text-center">
           <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-5">Pricing</p>
           <h1 className="font-display text-4xl md:text-5xl font-medium tracking-[-0.03em] leading-tight mb-4">
-            Simple plans for local outbound teams
+            Plans designed to turn prospecting into signed clients
           </h1>
           <p className="text-[var(--text-secondary)] max-w-3xl mx-auto text-lg">
-            Pick a plan, log in with Google, generate targets, queue jobs, and ship outreach-ready lists in minutes.
+            Choose based on your monthly outreach volume. Start free, validate quality, then scale only when lead flow is working.
           </p>
+
+          <div className="mt-8 inline-flex flex-col sm:flex-row items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] px-4 py-3 text-xs text-[var(--text-secondary)]">
+            <span className="font-semibold text-[var(--text-primary)]">Simple ROI benchmark:</span>
+            <span>If 1 client is worth $1,500+ MRR, you only need one close to pay for Growth many times over.</span>
+          </div>
 
           <div className="mt-10 inline-flex items-center gap-2 bg-[var(--surface-elevated)] border border-[var(--border-default)] rounded-full p-1">
             <button
@@ -221,12 +241,18 @@ export default function PricingPage() {
                   <div className="mb-5">
                     <h2 className="text-2xl font-semibold">{plan.name}</h2>
                     <p className="text-sm text-[var(--text-secondary)] mt-2">{plan.description}</p>
+                    <p className="text-[11px] text-[var(--text-tertiary)] mt-2 uppercase tracking-wider font-mono">
+                      Best for: {plan.bestFor}
+                    </p>
                   </div>
 
                   <div className="mb-6">
                     <p className="text-4xl font-semibold tracking-tight">{formatPrice(price)}</p>
                     <p className="text-sm text-[var(--text-muted)]">{period}</p>
                     {monthEquivalent && <p className="text-xs text-[var(--text-muted)] mt-1">{monthEquivalent}</p>}
+                    <p className="text-xs text-[var(--text-secondary)] mt-2">
+                      Effective rate: <span className="text-[var(--text-primary)] font-semibold">{getLeadUnitCost(plan)}</span>
+                    </p>
                   </div>
 
                   <ul className="space-y-2.5 text-sm text-[var(--text-secondary)] mb-6">
@@ -309,6 +335,15 @@ export default function PricingPage() {
         </section>
 
         <section className="max-w-4xl mx-auto px-6 pb-14">
+          <div className="mb-10 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 md:p-6">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">What happens after purchase?</h3>
+            <ul className="mt-3 space-y-2 text-sm text-[var(--text-secondary)]">
+              <li>1. You sign in and start scraping immediately with your plan limits.</li>
+              <li>2. You can queue targets, review scoring, and export CSV in the same session.</li>
+              <li>3. If setup blocks you, onboarding support is available via email.</li>
+            </ul>
+          </div>
+
           <h3 className="text-2xl font-semibold mb-4">FAQ</h3>
           <div className="space-y-3">
             {FAQS.map((item, idx) => {

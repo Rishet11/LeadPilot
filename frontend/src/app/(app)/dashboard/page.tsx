@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import MetricCard from "@/components/MetricCard";
 import QuickScrape from "@/components/QuickScrape";
@@ -225,6 +226,23 @@ export default function Dashboard() {
   const isStale =
     !lastUpdatedAt || Date.now() - new Date(lastUpdatedAt).getTime() > STALE_AFTER_MS;
 
+  const hasFiniteCredits =
+    usage?.remaining_credits !== null &&
+    usage?.remaining_credits !== undefined &&
+    usage?.monthly_quota !== null &&
+    usage?.monthly_quota !== undefined &&
+    usage.monthly_quota > 0;
+  const usedCredits = hasFiniteCredits ? Math.max(0, Number(usage?.leads_generated || 0)) : 0;
+  const totalCredits = hasFiniteCredits ? Number(usage?.monthly_quota || 0) : 0;
+  const remainingCredits = hasFiniteCredits ? Math.max(0, Number(usage?.remaining_credits || 0)) : 0;
+  const usagePct = hasFiniteCredits
+    ? Math.min(100, Math.max(0, Math.round((usedCredits / totalCredits) * 100)))
+    : 0;
+  const lowCreditThreshold = hasFiniteCredits
+    ? Math.max(50, Math.round(totalCredits * 0.15))
+    : 0;
+  const isLowCredit = hasFiniteCredits && remainingCredits <= lowCreditThreshold;
+
   const getStatusDot = (status: string) => {
     switch (status) {
       case "completed": return "status-dot-success";
@@ -293,6 +311,44 @@ export default function Dashboard() {
               remaining: {usage.remaining_credits === null ? "unlimited" : usage.remaining_credits}
             </span>
           )}
+        </div>
+      )}
+      {hasFiniteCredits && (
+        <div className={`mb-6 rounded-2xl border p-4 ${isLowCredit ? "border-[var(--warning)]/35 bg-[var(--warning-dim)]/35" : "border-[var(--border-subtle)] bg-[var(--surface-card)]"}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Credit runway</p>
+              <p className="text-sm text-white mt-1">
+                {remainingCredits} credits remaining this cycle
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                Used {usedCredits} of {totalCredits} ({usagePct}%)
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {isLowCredit ? (
+                <Link
+                  href="/pricing"
+                  className="btn-primary px-4 py-2 text-xs font-semibold"
+                >
+                  Upgrade Before You Stall
+                </Link>
+              ) : (
+                <Link
+                  href="/pricing"
+                  className="btn-secondary px-4 py-2 text-xs font-semibold"
+                >
+                  Compare Plans
+                </Link>
+              )}
+            </div>
+          </div>
+          <div className="mt-3 h-2 rounded-full bg-black/40 border border-[var(--border-secondary)] overflow-hidden">
+            <div
+              className={`h-full ${isLowCredit ? "bg-[var(--warning)]" : "bg-gradient-to-r from-[var(--accent-indigo)] to-[var(--accent-violet)]"}`}
+              style={{ width: `${usagePct}%` }}
+            />
+          </div>
         </div>
       )}
 

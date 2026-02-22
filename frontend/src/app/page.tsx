@@ -46,6 +46,18 @@ const HERO_STEPS = [
   "3. Sign in and scale",
 ];
 
+const TRUST_POINTS = [
+  "No credit card required for preview",
+  "Built for agencies, freelancers, and local growth operators",
+  "Export-ready CSV with scoring + outreach angles",
+];
+
+const ICP_ROWS = [
+  { role: "Agency owners", pain: "Need qualified prospects every week without manual list building.", outcome: "Consistent outbound pipeline" },
+  { role: "Freelancers", pain: "Spend too long finding local leads who actually need help.", outcome: "Faster client acquisition" },
+  { role: "Sales teams", pain: "Generic lists convert poorly and waste outreach cycles.", outcome: "Higher reply quality" },
+];
+
 const FAQS = [
   {
     q: "Is LeadPilot an agency or a done-for-you service?",
@@ -150,21 +162,21 @@ export default function LandingPage() {
           
           {/* Headline */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 animate-reveal leading-[1.05] max-w-4xl text-white">
-            Extract your first <span className="text-gradient-purple">20 local business contacts</span> <br className="hidden md:block" />in under 10 minutes.
+            Turn local search demand into <span className="text-gradient-purple">qualified leads you can close</span> <br className="hidden md:block" />in under 10 minutes.
           </h1>
           
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed animate-reveal [animation-delay:100ms] font-medium">
-             Try the no-login preview first, see real data quality, then sign in with Google to save, format, and export.
+             Find businesses with weak digital conversion setup, prioritize them with scoring, and export outreach-ready lists your team can act on today.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto animate-reveal [animation-delay:200ms]">
             <a href="#preview" className="w-full sm:w-auto btn-primary px-8 py-4 text-[15px] shadow-[0_0_30px_var(--glow-indigo)]">
-              Try No-Login Preview
+              Run Free Lead Preview
             </a>
             <Link href="/login" className="w-full sm:w-auto px-8 py-4 rounded-xl text-[15px] font-bold text-white border border-[var(--border-primary)] hover:border-[var(--border-highlight)] hover:bg-[var(--bg-tertiary)] bg-[var(--bg-secondary)] text-center transition-all glass">
-              Sign In
+              Open Workspace
             </Link>
           </div>
 
@@ -173,6 +185,15 @@ export default function LandingPage() {
               <div key={step} className="bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2.5 text-xs text-[var(--text-secondary)]">
                 {step}
               </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 animate-reveal [animation-delay:300ms]">
+            {TRUST_POINTS.map((point) => (
+              <span key={point} className="inline-flex items-center gap-2 rounded-full border border-[var(--border-secondary)] bg-black/35 px-3 py-1.5 text-[11px] text-[var(--text-secondary)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
+                {point}
+              </span>
             ))}
           </div>
 
@@ -185,6 +206,29 @@ export default function LandingPage() {
                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-1000" />
                 </div>
              </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ICP Section */}
+      <section className="relative z-10 py-20 border-t border-[var(--border-secondary)] bg-black/80">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="text-center mb-10">
+            <p className="font-mono text-[10px] text-[var(--accent-indigo)] uppercase tracking-widest mb-2">Who It Is For</p>
+            <h2 className="text-3xl md:text-4xl font-semibold text-white">Built for teams that need pipeline now, not “eventually”.</h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {ICP_ROWS.map((row) => (
+              <article key={row.role} className="rounded-2xl border border-[var(--border-secondary)] bg-[var(--bg-secondary)]/45 p-5">
+                <p className="text-white font-semibold">{row.role}</p>
+                <p className="text-[13px] text-[var(--text-secondary)] mt-2 leading-relaxed">
+                  {row.pain}
+                </p>
+                <p className="mt-4 inline-flex rounded-md border border-[var(--success)]/25 bg-[var(--success-dim)] px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider text-[var(--success)]">
+                  {row.outcome}
+                </p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -292,11 +336,19 @@ export default function LandingPage() {
          <div className="max-w-3xl mx-auto px-4 text-center relative z-20">
             <h2 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-white leading-[1.1]">Ready to fill your calendar?</h2>
             <p className="text-[var(--text-secondary)] text-lg md:text-xl mb-12 font-medium max-w-xl mx-auto">
-               Access the platform and generate your first targeted list in under 10 minutes.
+               Start with the free preview. If you like the lead quality, activate a paid plan and scale immediately.
             </p>
-            <a href="#preview" className="inline-block px-10 py-5 rounded-xl btn-primary text-[15px] shadow-[0_0_40px_var(--glow-indigo)]">
-               Try No-Login Preview <span className="ml-2">→</span>
-            </a>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <a href="#preview" className="inline-block px-10 py-5 rounded-xl btn-primary text-[15px] shadow-[0_0_40px_var(--glow-indigo)]">
+                 Try No-Login Preview <span className="ml-2">→</span>
+              </a>
+              <Link href="/pricing" className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-[14px] font-semibold text-white border border-[var(--border-primary)] hover:border-[var(--border-highlight)] hover:bg-[var(--bg-secondary)] transition-all">
+                 View Plans
+              </Link>
+            </div>
+            <p className="mt-4 text-xs text-[var(--text-tertiary)]">
+              7-day onboarding support available via email for paid plans.
+            </p>
          </div>
       </section>
 

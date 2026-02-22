@@ -119,6 +119,15 @@ export default function LoginPage() {
           </p>
         </div>
 
+        <div className="mb-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] p-4">
+          <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--accent)] mb-2">Inside your workspace</p>
+          <ul className="space-y-1.5 text-xs text-[var(--text-secondary)]">
+            <li>• Run Google Maps + Instagram scraping queues</li>
+            <li>• Prioritize leads by digital-gap scoring</li>
+            <li>• Export outreach-ready CSV for your sales flow</li>
+          </ul>
+        </div>
+
         <div className="p-5 bg-[var(--surface-card)] border border-[var(--border-default)] rounded-xl">
           <p className="text-sm font-medium text-[var(--text-primary)] mb-3">Google Sign-In</p>
           {googleClientId ? (
@@ -143,6 +152,10 @@ export default function LoginPage() {
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
+
+        <p className="mt-5 text-center text-[11px] text-[var(--text-tertiary)]">
+          We use Google only for secure authentication. No password stored by LeadPilot.
+        </p>
 
       </div>
     </div>

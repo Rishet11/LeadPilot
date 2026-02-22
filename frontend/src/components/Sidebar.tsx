@@ -136,8 +136,11 @@ export default function Sidebar() {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </span>
-            Upgrade Plan
+            Upgrade for More Credits
           </Link>
+          <p className="px-3 mt-2 text-[10px] text-[var(--text-dim)] font-mono uppercase tracking-wider">
+            Unlock higher monthly lead volume
+          </p>
         </div>
       </nav>
 
