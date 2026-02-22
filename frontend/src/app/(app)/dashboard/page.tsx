@@ -91,9 +91,26 @@ export default function Dashboard() {
     }
   };
 
+  const hasEnoughCredits = (requiredCredits: number, context: string) => {
+    if (usage?.remaining_credits === null || usage?.remaining_credits === undefined) {
+      return true;
+    }
+    if (requiredCredits <= usage.remaining_credits) {
+      return true;
+    }
+    setError(
+      `Not enough credits for ${context}. Need ${requiredCredits}, but only ${usage.remaining_credits} remaining.`,
+    );
+    return false;
+  };
+
   const handleScrape = async (city: string, category: string, limit: number) => {
-    setIsLoading(true);
     setError(null);
+    const requestedCredits = Math.max(1, Math.min(200, Number(limit) || 1));
+    if (!hasEnoughCredits(requestedCredits, "quick scrape")) {
+      return false;
+    }
+    setIsLoading(true);
     try {
       await scrapeSingle(city.trim(), category.trim(), limit);
       setTimeout(loadData, 2000);
@@ -136,9 +153,16 @@ export default function Dashboard() {
 
   const handleRunGeneratedBatch = async () => {
     if (generatedTargets.length === 0) return;
-    setIsBatchLoading(true);
     setError(null);
     setAgentInfo(null);
+    const requiredCredits = generatedTargets.reduce(
+      (sum, target) => sum + Math.max(1, Math.min(200, Number(target.limit) || 1)),
+      0,
+    );
+    if (!hasEnoughCredits(requiredCredits, "generated batch")) {
+      return;
+    }
+    setIsBatchLoading(true);
 
     try {
       const result = await scrapeBatch(generatedTargets);
@@ -180,6 +204,18 @@ export default function Dashboard() {
     const utcStr = dateStr.endsWith("Z") ? dateStr : dateStr + "Z";
     const date = new Date(utcStr);
     return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatDateTime = (dateStr: string) => {
+    const utcStr = dateStr.endsWith("Z") ? dateStr : dateStr + "Z";
+    const date = new Date(utcStr);
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -360,27 +396,49 @@ export default function Dashboard() {
               {jobs.map((job) => (
                 <div
                   key={job.id}
-                  className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] hover:border-[var(--border-highlight)] hover:bg-[var(--bg-secondary)] transition-all glass hover:shadow-[0_0_20px_var(--glow-indigo)]"
+                  className="p-4 rounded-xl bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] hover:border-[var(--border-highlight)] hover:bg-[var(--bg-secondary)] transition-all glass hover:shadow-[0_0_20px_var(--glow-indigo)]"
                 >
-                  <div className="flex items-center gap-4">
-                    <span className={`status-dot ${getStatusDot(job.status)} ${job.status === "running" ? "animate-pulse" : ""}`} />
-                    <div>
-                      <p className="text-sm font-bold text-white shadow-sm">
-                        {job.job_type === "google_maps" ? "Google Maps" : "Instagram"}
-                      </p>
-                      <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
-                        {job.leads_found} leads found
-                      </p>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <span className={`status-dot ${getStatusDot(job.status)} ${job.status === "running" ? "animate-pulse" : ""}`} />
+                      <div>
+                        <p className="text-sm font-bold text-white shadow-sm">
+                          {job.job_type === "google_maps" ? "Google Maps" : "Instagram"}
+                        </p>
+                        <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                          {job.leads_found} leads found
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`px-2.5 py-1 rounded-lg font-mono text-[10px] uppercase tracking-wider ${getStatusPill(job.status)}`}>
+                        {job.status.replace(/_/g, " ")}
+                      </span>
+                      <span className="font-mono text-[10px] text-[var(--text-dim)] min-w-[60px] text-right">
+                        {formatDate(job.created_at)}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`px-2.5 py-1 rounded-lg font-mono text-[10px] uppercase tracking-wider ${getStatusPill(job.status)}`}>
-                      {job.status.replace(/_/g, " ")}
-                    </span>
-                    <span className="font-mono text-[10px] text-[var(--text-dim)] min-w-[60px] text-right">
-                      {formatDate(job.created_at)}
-                    </span>
-                  </div>
+
+                  {(job.error_message || job.next_retry_at || job.attempt_count) && (
+                    <div className="mt-3 pl-6 space-y-1">
+                      {job.error_message && (
+                        <p className="text-[11px] text-[var(--error)] break-words">
+                          {job.error_message}
+                        </p>
+                      )}
+                      {job.next_retry_at && (
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--warning)]">
+                          Retry scheduled: {formatDateTime(job.next_retry_at)}
+                        </p>
+                      )}
+                      {job.attempt_count !== undefined && job.attempt_count > 1 && (
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-dim)]">
+                          Attempt {job.attempt_count}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

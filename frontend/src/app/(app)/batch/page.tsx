@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AgentTemplate, getAgentTemplates, getUserFacingApiError, scrapeBatch } from "@/lib/api";
+import { AgentTemplate, getAgentTemplates, getCurrentUsage, getUserFacingApiError, scrapeBatch } from "@/lib/api";
 
 interface Target {
   city: string;
@@ -142,15 +142,27 @@ export default function BatchQueue() {
 
   const runBatch = async () => {
     if (targets.length === 0) return;
+    const requiredCredits = targets.reduce(
+      (sum, target) => sum + Math.max(1, Math.min(200, Number(target.limit) || 1)),
+      0,
+    );
 
     setIsLoading(true);
     setMessage(null);
 
     try {
+      const usage = await getCurrentUsage().catch(() => null);
+      if (usage && usage.remaining_credits !== null && requiredCredits > usage.remaining_credits) {
+        setMessage({
+          type: "error",
+          text: `This batch needs ${requiredCredits} credits, but only ${usage.remaining_credits} are remaining.`,
+        });
+        return;
+      }
       const result = await scrapeBatch(targets);
       setMessage({
         type: "success",
-        text: `Batch job started. Job ID: ${result.job_id}. Processing ${targets.length} targets.`,
+        text: `Batch job started. Job ID: ${result.job_id}. Processing ${targets.length} targets (${requiredCredits} credits).`,
       });
       setTargets([]);
     } catch (err) {

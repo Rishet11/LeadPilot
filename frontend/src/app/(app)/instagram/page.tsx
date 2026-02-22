@@ -7,6 +7,7 @@ import {
   getSettings,
   getJobs,
   getLeads,
+  getCurrentUsage,
   getCurrentPlan,
   getUserFacingApiError,
   Setting,
@@ -281,15 +282,27 @@ export default function InstagramPage() {
 
   const runBatch = async () => {
     if (targets.length === 0 || (currentPlan && !currentPlan.instagram_enabled)) return;
+    const requiredCredits = targets.reduce(
+      (sum, target) => sum + Math.max(1, Math.min(200, Number(target.limit) || 1)),
+      0,
+    );
 
     setIsLoading(true);
     setMessage(null);
 
     try {
+      const usage = await getCurrentUsage().catch(() => null);
+      if (usage && usage.remaining_credits !== null && requiredCredits > usage.remaining_credits) {
+        setMessage({
+          type: "error",
+          text: `This Instagram batch needs ${requiredCredits} credits, but only ${usage.remaining_credits} are remaining.`,
+        });
+        return;
+      }
       const result = await scrapeInstagram(targets);
       setMessage({
         type: "success",
-        text: `Instagram job started. Job ID: ${result.job_id}. Processing ${targets.length} keywords.`,
+        text: `Instagram job started. Job ID: ${result.job_id}. Processing ${targets.length} keywords (${requiredCredits} credits).`,
       });
       setTargets([]);
       setTimeout(loadJobs, 2000);
@@ -328,6 +341,18 @@ export default function InstagramPage() {
     const utcStr = dateStr.endsWith("Z") ? dateStr : dateStr + "Z";
     const date = new Date(utcStr);
     return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatDateTime = (dateStr: string) => {
+    const utcStr = dateStr.endsWith("Z") ? dateStr : dateStr + "Z";
+    const date = new Date(utcStr);
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -897,27 +922,49 @@ export default function InstagramPage() {
                 {jobs.map((job) => (
                   <div
                     key={job.id}
-                    className="flex items-center justify-between p-4 bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] hover:border-[var(--border-highlight)] transition-colors glass rounded-xl shadow-sm hover:shadow-[0_0_15px_var(--glow-indigo)]"
+                    className="p-4 bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] hover:border-[var(--border-highlight)] transition-colors glass rounded-xl shadow-sm hover:shadow-[0_0_15px_var(--glow-indigo)]"
                   >
-                    <div className="flex items-center gap-4">
-                      <span className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-sm ${getStatusDot(job.status)} ${job.status === "running" ? "animate-pulse shadow-[0_0_8px_currentColor]" : ""}`} />
-                      <div>
-                        <p className="text-sm font-bold text-white drop-shadow-sm">
-                          Job #{job.id}
-                        </p>
-                        <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold mt-0.5">
-                          {job.leads_found} leads found
-                        </p>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-sm ${getStatusDot(job.status)} ${job.status === "running" ? "animate-pulse shadow-[0_0_8px_currentColor]" : ""}`} />
+                        <div>
+                          <p className="text-sm font-bold text-white drop-shadow-sm">
+                            Job #{job.id}
+                          </p>
+                          <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold mt-0.5">
+                            {job.leads_found} leads found
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className={`px-3 py-1 rounded-md font-mono text-[10px] uppercase tracking-widest font-bold ${getStatusPill(job.status)}`}>
+                          {job.status.replace(/_/g, " ")}
+                        </span>
+                        <span className="font-mono text-[10px] text-[var(--text-dim)] min-w-[55px] text-right">
+                          {formatDate(job.created_at)}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className={`px-3 py-1 rounded-md font-mono text-[10px] uppercase tracking-widest font-bold ${getStatusPill(job.status)}`}>
-                        {job.status.replace(/_/g, " ")}
-                      </span>
-                      <span className="font-mono text-[10px] text-[var(--text-dim)] min-w-[55px] text-right">
-                        {formatDate(job.created_at)}
-                      </span>
-                    </div>
+
+                    {(job.error_message || job.next_retry_at || job.attempt_count) && (
+                      <div className="mt-3 pl-6 space-y-1">
+                        {job.error_message && (
+                          <p className="text-[11px] text-[var(--error)] break-words">
+                            {job.error_message}
+                          </p>
+                        )}
+                        {job.next_retry_at && (
+                          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--warning)]">
+                            Retry scheduled: {formatDateTime(job.next_retry_at)}
+                          </p>
+                        )}
+                        {job.attempt_count !== undefined && job.attempt_count > 1 && (
+                          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-dim)]">
+                            Attempt {job.attempt_count}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
