@@ -12,12 +12,12 @@ const WORKFLOW = [
   },
   {
     title: "Run and review results",
-    text: "LeadPilot finds leads, scores quality, and drafts first outreach lines.",
+    text: "The software extracts business data, scores quality, and generates personalized AI opening lines.",
     step: "02"
   },
   {
     title: "Save and export",
-    text: "Sign in with Google, save leads, and export CSV for your outreach stack.",
+    text: "Sign in with Google, save records, and export CSV for your CRM.",
     step: "03"
   },
 ];
@@ -29,13 +29,13 @@ const FEATURES = [
     icon: "📊",
   },
   {
-    title: "Fast outreach drafts",
-    desc: "Get a ready first message and regenerate it with one click.",
+    title: "AI Opening Lines",
+    desc: "Get personalized first sentences generated instantly from real review data.",
     icon: "⚙️",
   },
   {
     title: "Simple CSV exports",
-    desc: "Export clean lead lists and plug them into your current tools.",
+    desc: "Export clean contact lists and plug them into your current workflows.",
     icon: "📥",
   },
 ];
@@ -49,11 +49,11 @@ const HERO_STEPS = [
 const FAQS = [
   {
     q: "Is LeadPilot an agency or a done-for-you service?",
-    a: "No. LeadPilot is strictly a self-serve Software-as-a-Service (SaaS) tool. You manage your own subscription, configure your own searches, and export the data yourself via our dashboard.",
+    a: "No. LeadPilot is strictly a self-serve Software-as-a-Service (SaaS) data extraction tool. You manage your own subscription, configure your own searches, and export the data yourself via our dashboard.",
   },
   {
-    q: "Do you send the cold emails for me?",
-    a: "No. We provide the data discovery and formatting software. You export the lists and use your own third-party email sending tools.",
+    q: "Do you send emails or contact businesses for me?",
+    a: "No. We provide the data discovery and formatting software. You export the lists and use your own third-party tools. We are a data aggregator.",
   },
   {
     q: "Do I need technical skills to install this?",
@@ -150,12 +150,12 @@ export default function LandingPage() {
           
           {/* Headline */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 animate-reveal leading-[1.05] max-w-4xl text-white">
-            Get your first <span className="text-gradient-purple">20 local leads</span> <br className="hidden md:block" />in under 10 minutes.
+            Extract your first <span className="text-gradient-purple">20 local business contacts</span> <br className="hidden md:block" />in under 10 minutes.
           </h1>
           
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed animate-reveal [animation-delay:100ms] font-medium">
-             Try the no-login preview first, see real lead quality, then sign in with Google to save, regenerate outreach, and export.
+             Try the no-login preview first, see real data quality, then sign in with Google to save, format, and export.
           </p>
 
           {/* CTA Buttons */}
@@ -195,11 +195,11 @@ export default function LandingPage() {
             <div className="text-center mb-12">
                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[var(--border-secondary)] bg-[var(--bg-primary)] mb-6">
                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF66] animate-pulse" />
-                 <span className="text-[10px] uppercase font-mono text-[var(--text-secondary)] tracking-wider">Live Software Demo</span>
+                 <span className="text-[10px] uppercase font-mono text-[var(--text-secondary)] tracking-wider">Live + Demo Preview</span>
                </div>
                <h2 className="text-3xl font-semibold mb-4 text-[var(--text-primary)]">Experience the engine.</h2>
                <p className="text-[var(--text-secondary)] text-sm max-w-sm mx-auto leading-relaxed">
-                  Test the scraping tool right now. Enter a city and niche to see the live data output format.
+                  Test the scraping tool right now. If backend is unavailable, the preview automatically switches to instant demo mode.
                </p>
             </div>
             <GuestPreview />
@@ -210,7 +210,7 @@ export default function LandingPage() {
       <section className="py-24 sm:py-32 relative border-t border-[var(--border-secondary)] bg-black">
         <div className="max-w-3xl mx-auto px-4 relative">
            <div className="text-center mb-20 animate-reveal">
-             <h2 className="text-3xl md:text-5xl font-semibold text-gradient mb-4">From empty pipeline to ready-to-contact in 3 steps.</h2>
+             <h2 className="text-3xl md:text-5xl font-semibold text-gradient mb-4">From empty database to formatted CSV in 3 steps.</h2>
            </div>
 
            <div className="relative">
@@ -270,14 +270,14 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-24 border-t border-[var(--border-secondary)] bg-black">
+      <section className="relative z-10 py-24 border-t border-[var(--border-secondary)] bg-black">
          <div className="max-w-3xl mx-auto px-4">
-            <h2 className="text-3xl font-semibold mb-12 text-center text-[var(--text-primary)]">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-semibold mb-12 text-center text-white">Frequently Asked Questions</h2>
             <div className="space-y-4">
                {FAQS.map((faq, i) => (
-                 <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border-secondary)] p-6 rounded-xl hover:border-[var(--border-highlight)] transition-colors">
-                    <h3 className="text-base font-medium mb-3 text-[var(--text-primary)]">{faq.q}</h3>
-                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{faq.a}</p>
+                 <div key={i} className="bg-[#0b1020]/90 border border-[#2a3356] p-6 rounded-xl hover:border-[#4a5ca3] transition-colors">
+                    <h3 className="text-base font-semibold mb-3 text-white">{faq.q}</h3>
+                    <p className="text-sm text-slate-300 leading-relaxed">{faq.a}</p>
                  </div>
                ))}
             </div>
@@ -308,10 +308,13 @@ export default function LandingPage() {
                <span className="font-semibold text-sm tracking-tight text-[var(--text-primary)]">LeadPilot</span>
             </div>
             
-            <div className="flex gap-6 text-sm text-[var(--text-secondary)]">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--text-secondary)]">
                <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
                <Link href="/login" className="hover:text-white transition-colors">Login</Link>
                <a href="mailto:rishetmehra11@gmail.com" className="hover:text-white transition-colors">Contact</a>
+               <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+               <Link href="/acceptable-use" className="hover:text-white transition-colors">Acceptable Use</Link>
             </div>
 
             <p className="text-xs text-[var(--text-tertiary)]">

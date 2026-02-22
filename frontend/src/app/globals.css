@@ -5,25 +5,47 @@
   --bg-primary: #030712;  /* Deep Space Slate */
   --bg-secondary: #0f172a; /* Lighter slate for cards */
   --bg-tertiary: #1e293b;
+  --bg-base: var(--bg-primary);
 
   /* -- Text Colors -- */
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-tertiary: #64748B;
+  --text-muted: var(--text-secondary);
+  --text-dim: var(--text-tertiary);
+  --fg-primary: var(--text-primary);
 
   /* -- Accent Colors -- */
   --accent-indigo: #4F46E5;
   --accent-violet: #8B5CF6;
   --accent-emerald: #10B981;
+  --accent: var(--accent-indigo);
+  --accent-primary: var(--accent-indigo);
+  --accent-dim: rgba(79, 70, 229, 0.18);
+  --accent-muted: rgba(79, 70, 229, 0.32);
+  --accent-glow: rgba(79, 70, 229, 0.45);
   
   /* Glow variations for box-shadows */
   --glow-indigo: rgba(79, 70, 229, 0.5);
   --glow-violet: rgba(139, 92, 246, 0.5);
 
   /* -- Borders & Lines -- */
+  --border: rgba(255, 255, 255, 0.14);
+  --border-default: rgba(255, 255, 255, 0.14);
   --border-primary: rgba(255, 255, 255, 0.1);
   --border-secondary: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.08);
   --border-highlight: rgba(139, 92, 246, 0.4); /* Violet tinted highlight */
+  --surface-base: var(--bg-primary);
+  --surface-card: rgba(15, 23, 42, 0.74);
+  --surface-elevated: rgba(30, 41, 59, 0.72);
+
+  --success: #22c55e;
+  --success-dim: rgba(34, 197, 94, 0.16);
+  --warning: #f59e0b;
+  --warning-dim: rgba(245, 158, 11, 0.16);
+  --error: #ef4444;
+  --error-dim: rgba(239, 68, 68, 0.16);
 
   /* -- Effects -- */
   --shadow-key: 0px 4px 24px -1px rgba(0, 0, 0, 0.6);
@@ -37,7 +59,7 @@
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
@@ -143,6 +165,48 @@
     animation: pulse-glow 6s ease-in-out infinite;
   }
 
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-page-in {
+    animation: page-in 0.32s var(--ease-out-quint) both;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.42s var(--ease-out-quint) both;
+  }
+
+  .stagger-children > * {
+    opacity: 0;
+    animation: fade-up 0.5s var(--ease-out-quint) both;
+  }
+
+  .stagger-children > *:nth-child(1) { animation-delay: 40ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 90ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 140ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 190ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 290ms; }
+
   /* -- Component Utilities -- */
   .btn-primary {
     background: linear-gradient(135deg, var(--accent-indigo), var(--accent-violet));
@@ -175,6 +239,20 @@
     box-shadow: 0 0 20px var(--glow-indigo);
   }
 
+  .btn-secondary {
+    background: rgba(15, 23, 42, 0.75);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .btn-secondary:hover {
+    border-color: var(--border-highlight);
+    background: rgba(30, 41, 59, 0.82);
+    box-shadow: 0 0 14px rgba(79, 70, 229, 0.25);
+  }
+
   .card-static {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-primary);
@@ -199,5 +277,77 @@
   }
   .field::placeholder {
     color: var(--text-tertiary);
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.52rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-default);
+    background: rgba(15, 23, 42, 0.72);
+    color: var(--text-secondary);
+    line-height: 1;
+  }
+
+  .status-dot {
+    width: 0.52rem;
+    height: 0.52rem;
+    border-radius: 9999px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .status-dot-success { background: var(--success); box-shadow: 0 0 10px rgba(34, 197, 94, 0.45); }
+  .status-dot-warning { background: var(--warning); box-shadow: 0 0 10px rgba(245, 158, 11, 0.45); }
+  .status-dot-gold { background: var(--accent); box-shadow: 0 0 10px rgba(79, 70, 229, 0.45); }
+  .status-dot-error { background: var(--error); box-shadow: 0 0 10px rgba(239, 68, 68, 0.45); }
+
+  .impact-box {
+    border-radius: 0.8rem;
+    border: 1px solid var(--border-subtle);
+    background: rgba(15, 23, 42, 0.55);
+    padding: 0.75rem 0.9rem;
+  }
+
+  .font-display {
+    font-family: "Space Grotesk", "Satoshi", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  @keyframes beam-flow {
+    0% { transform: translateY(-140%); opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateY(250%); opacity: 0; }
+  }
+
+  .border-beam {
+    background: linear-gradient(
+      180deg,
+      rgba(79, 70, 229, 0) 0%,
+      rgba(79, 70, 229, 0.95) 45%,
+      rgba(139, 92, 246, 0.85) 55%,
+      rgba(139, 92, 246, 0) 100%
+    );
+    animation: beam-flow 2.4s linear infinite;
+  }
+
+  .noise-overlay {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.08;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.14) 0 0.8px, transparent 1px),
+      radial-gradient(circle at 60% 70%, rgba(255, 255, 255, 0.14) 0 0.8px, transparent 1px);
+    background-size: 3px 3px, 4px 4px;
   }
 }
