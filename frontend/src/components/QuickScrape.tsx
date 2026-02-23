@@ -20,7 +20,7 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
     const trimmedCategory = category.trim();
 
     if (!trimmedCity || !trimmedCategory) {
-      setLocalError("Please add both city and industry.");
+      setLocalError("Please add both city and category.");
       return;
     }
 
@@ -63,7 +63,7 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
           />
         </div>
         <div>
-          <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Industry</label>
+          <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Category</label>
           <input
             type="text"
             value={category}
@@ -82,10 +82,10 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
               disabled={isLoading}
               className="w-full px-4 py-3 text-sm bg-black/40 border border-[var(--border-secondary)] rounded-xl text-white focus:outline-none focus:border-[var(--accent-indigo)] focus:ring-1 focus:ring-[var(--accent-indigo)] shadow-inner transition-all appearance-none"
             >
-              <option value={10}>10 leads</option>
-              <option value={20}>20 leads</option>
-              <option value={50}>50 leads</option>
-              <option value={100}>100 leads</option>
+              <option value={10}>10 records</option>
+              <option value={20}>20 records</option>
+              <option value={50}>50 records</option>
+              <option value={100}>100 records</option>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-white/50">
               <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
@@ -110,7 +110,7 @@ export default function QuickScrape({ onScrape, isLoading }: QuickScrapeProps) {
             </>
           ) : (
             <>
-              <span>Run Scraper</span>
+              <span>Run Collection</span>
               <svg className="w-5 h-5 drop-shadow-[0_0_8px_white]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>

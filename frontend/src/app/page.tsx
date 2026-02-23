@@ -6,56 +6,56 @@ import GuestPreview from "@/components/GuestPreview";
 // --- Data Constants ---
 const WORKFLOW = [
   {
-    title: "Choose your city and niche",
-    text: "Pick the local market and business type you want to target.",
+    title: "Define your query scope",
+    text: "Choose a city and business keyword to define the exact dataset you want.",
     step: "01"
   },
   {
-    title: "Run and review results",
-    text: "The software extracts business data, scores quality, and generates personalized AI opening lines.",
+    title: "Run collection and scoring",
+    text: "LeadPilot collects public records, normalizes fields, and applies configurable scoring.",
     step: "02"
   },
   {
-    title: "Save and export",
-    text: "Sign in with Google, save records, and export CSV for your CRM.",
+    title: "Review and export",
+    text: "Store records in your workspace, filter status, and export clean CSV output.",
     step: "03"
   },
 ];
 
 const FEATURES = [
   {
-    title: "Digital Gap Scoring",
-    desc: "Quickly spot businesses with demand but weak online conversion setup.",
+    title: "Multi-source collection",
+    desc: "Run structured data jobs for Google Maps and Instagram from one workspace.",
     icon: "📊",
   },
   {
-    title: "AI Opening Lines",
-    desc: "Get personalized first sentences generated instantly from real review data.",
+    title: "Configurable scoring",
+    desc: "Apply transparent scoring rules so teams can prioritize records consistently.",
     icon: "⚙️",
   },
   {
-    title: "Simple CSV exports",
-    desc: "Export clean contact lists and plug them into your current workflows.",
+    title: "Portable exports",
+    desc: "Export clean CSV records for internal tools, reporting, and downstream workflows.",
     icon: "📥",
   },
 ];
 
 const HERO_STEPS = [
-  "1. Pick city + niche",
+  "1. Define city + query",
   "2. Run no-login preview",
-  "3. Sign in and scale",
+  "3. Open your workspace",
 ];
 
 const TRUST_POINTS = [
   "No credit card required for preview",
-  "Built for agencies, freelancers, and local growth operators",
-  "Export-ready CSV with scoring + outreach angles",
+  "Self-serve SaaS workspace",
+  "Google Maps + Instagram data in one console",
 ];
 
 const ICP_ROWS = [
-  { role: "Agency owners", pain: "Need qualified prospects every week without manual list building.", outcome: "Consistent outbound pipeline" },
-  { role: "Freelancers", pain: "Spend too long finding local leads who actually need help.", outcome: "Faster client acquisition" },
-  { role: "Sales teams", pain: "Generic lists convert poorly and waste outreach cycles.", outcome: "Higher reply quality" },
+  { role: "Solo operators", pain: "Need local data quickly without writing custom scripts.", outcome: "Faster execution" },
+  { role: "Operations teams", pain: "Need repeatable datasets and predictable exports each week.", outcome: "Consistent handoff" },
+  { role: "Analysts and researchers", pain: "Need structured local records for decisions and reporting.", outcome: "Cleaner inputs" },
 ];
 
 const FAQS = [
@@ -162,18 +162,18 @@ export default function LandingPage() {
           
           {/* Headline */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 animate-reveal leading-[1.05] max-w-4xl text-white">
-            Turn local search demand into <span className="text-gradient-purple">qualified leads you can close</span> <br className="hidden md:block" />in under 10 minutes.
+            Collect and structure <span className="text-gradient-purple">local business data</span> <br className="hidden md:block" />in minutes.
           </h1>
           
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed animate-reveal [animation-delay:100ms] font-medium">
-             Find businesses with weak digital conversion setup, prioritize them with scoring, and export outreach-ready lists your team can act on today.
+             Run location-based queries, score records with your own rules, and export clean datasets from a single SaaS workspace.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto animate-reveal [animation-delay:200ms]">
             <a href="#preview" className="w-full sm:w-auto btn-primary px-8 py-4 text-[15px] shadow-[0_0_30px_var(--glow-indigo)]">
-              Run Free Lead Preview
+              Run Free Data Preview
             </a>
             <Link href="/login" className="w-full sm:w-auto px-8 py-4 rounded-xl text-[15px] font-bold text-white border border-[var(--border-primary)] hover:border-[var(--border-highlight)] hover:bg-[var(--bg-tertiary)] bg-[var(--bg-secondary)] text-center transition-all glass">
               Open Workspace
@@ -215,7 +215,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-10">
             <p className="font-mono text-[10px] text-[var(--accent-indigo)] uppercase tracking-widest mb-2">Who It Is For</p>
-            <h2 className="text-3xl md:text-4xl font-semibold text-white">Built for teams that need pipeline now, not “eventually”.</h2>
+            <h2 className="text-3xl md:text-4xl font-semibold text-white">Built for teams that need reliable local business data.</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {ICP_ROWS.map((row) => (
@@ -241,9 +241,9 @@ export default function LandingPage() {
                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF66] animate-pulse" />
                  <span className="text-[10px] uppercase font-mono text-[var(--text-secondary)] tracking-wider">Live + Demo Preview</span>
                </div>
-               <h2 className="text-3xl font-semibold mb-4 text-[var(--text-primary)]">Experience the engine.</h2>
+               <h2 className="text-3xl font-semibold mb-4 text-[var(--text-primary)]">Experience the workspace.</h2>
                <p className="text-[var(--text-secondary)] text-sm max-w-sm mx-auto leading-relaxed">
-                  Test the scraping tool right now. If backend is unavailable, the preview automatically switches to instant demo mode.
+                  Run a real preview now. If backend is unavailable, the UI switches to instant demo mode automatically.
                </p>
             </div>
             <GuestPreview />
@@ -254,7 +254,7 @@ export default function LandingPage() {
       <section className="py-24 sm:py-32 relative border-t border-[var(--border-secondary)] bg-black">
         <div className="max-w-3xl mx-auto px-4 relative">
            <div className="text-center mb-20 animate-reveal">
-             <h2 className="text-3xl md:text-5xl font-semibold text-gradient mb-4">From empty database to formatted CSV in 3 steps.</h2>
+             <h2 className="text-3xl md:text-5xl font-semibold text-gradient mb-4">From query to structured dataset in 3 steps.</h2>
            </div>
 
            <div className="relative">
@@ -291,7 +291,7 @@ export default function LandingPage() {
               <div className="inline-block px-4 py-1.5 rounded-full border border-[var(--border-secondary)] bg-[var(--bg-secondary)] mb-6 shadow-xl">
                  <span className="text-[10px] font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-indigo)] to-[var(--accent-violet)]">Core Infrastructure</span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">Built to eliminate manual database scrubbing.</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">Built for repeatable data operations.</h2>
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -334,13 +334,13 @@ export default function LandingPage() {
          <div className="absolute bottom-[-30%] left-1/2 -translate-x-1/2 w-[80%] h-[70%] rounded-[100%] bg-[var(--glow-violet)] blur-[150px] opacity-30 animate-pulse-glow pointer-events-none" />
          
          <div className="max-w-3xl mx-auto px-4 text-center relative z-20">
-            <h2 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-white leading-[1.1]">Ready to fill your calendar?</h2>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-white leading-[1.1]">Ready to run your first dataset?</h2>
             <p className="text-[var(--text-secondary)] text-lg md:text-xl mb-12 font-medium max-w-xl mx-auto">
-               Start with the free preview. If you like the lead quality, activate a paid plan and scale immediately.
+               Start with the free preview. When it fits your workflow, activate a plan and scale your data volume.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a href="#preview" className="inline-block px-10 py-5 rounded-xl btn-primary text-[15px] shadow-[0_0_40px_var(--glow-indigo)]">
-                 Try No-Login Preview <span className="ml-2">→</span>
+                 Try Free Preview <span className="ml-2">→</span>
               </a>
               <Link href="/pricing" className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-[14px] font-semibold text-white border border-[var(--border-primary)] hover:border-[var(--border-highlight)] hover:bg-[var(--bg-secondary)] transition-all">
                  View Plans

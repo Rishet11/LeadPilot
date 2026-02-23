@@ -27,74 +27,74 @@ const PLAN_CONFIGS: PlanConfig[] = [
   {
     key: "free",
     name: "Free",
-    description: "For testing your local outbound workflow.",
+    description: "For validating data quality and workflow fit.",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    monthlyLeadCredits: "100 / month",
+    monthlyLeadCredits: "100 records / month",
     leadCreditsRaw: 100,
     concurrentJobs: "1 running job",
     sources: "Google Maps",
     support: "Email support",
     cta: "Start Free",
-    bestFor: "Validating lead quality",
+    bestFor: "Initial evaluation",
     features: [
-      "100 lead credits per month",
-      "Google Maps scraping",
+      "100 record credits per month",
+      "Google Maps collection",
       "Target Builder agent",
-      "Lead scoring + notes",
+      "Record scoring + notes",
       "CSV export",
     ],
   },
   {
     key: "starter",
     name: "Starter",
-    description: "For freelancers and solo operators closing local clients.",
+    description: "For individual operators running recurring data jobs.",
     monthlyPrice: 29,
     yearlyPrice: 290,
-    monthlyLeadCredits: "500 / month",
+    monthlyLeadCredits: "500 records / month",
     leadCreditsRaw: 500,
     concurrentJobs: "2 running jobs",
     sources: "Google Maps",
     support: "Standard support",
     cta: "Get Starter",
-    bestFor: "Weekly outbound execution",
+    bestFor: "Recurring collection workflows",
     features: [
-      "500 lead credits per month",
-      "2 concurrent scrape jobs",
+      "500 record credits per month",
+      "2 concurrent collection jobs",
       "Target Builder agent",
-      "AI outreach first-draft generation",
-      "Export-ready prospect lists",
+      "AI record note generation",
+      "Export-ready structured datasets",
     ],
   },
   {
     key: "growth",
     name: "Growth",
-    description: "For small teams running outbound every week.",
+    description: "For teams processing higher monthly volume.",
     monthlyPrice: 79,
     yearlyPrice: 790,
-    monthlyLeadCredits: "2,000 / month",
+    monthlyLeadCredits: "2,000 records / month",
     leadCreditsRaw: 2000,
     concurrentJobs: "3 running jobs",
     sources: "Google Maps + Instagram",
     support: "Priority support",
     cta: "Upgrade to Growth",
-    bestFor: "Team-based prospecting at scale",
+    bestFor: "Team-scale data operations",
     highlighted: true,
     features: [
-      "2,000 lead credits per month",
-      "Google Maps + Instagram scraping",
-      "3 concurrent scrape jobs",
-      "Target Builder + niche presets",
-      "Priority support + faster export flow",
+      "2,000 record credits per month",
+      "Google Maps + Instagram collection",
+      "3 concurrent collection jobs",
+      "Target Builder + higher throughput",
+      "Priority support",
     ],
   },
 ];
 
 const FAQS = [
   {
-    question: "What counts as a lead credit?",
+    question: "What counts as a record credit?",
     answer:
-      "Each lead record created in your workspace counts as one credit. Scrape jobs are blocked only when your monthly credit pool is exhausted.",
+      "Each record created in your workspace counts as one credit. New jobs are blocked only when your monthly credit pool is exhausted.",
   },
   {
     question: "Can I change plans anytime?",
@@ -104,7 +104,7 @@ const FAQS = [
   {
     question: "Do you send emails from LeadPilot?",
     answer:
-      "LeadPilot focuses on qualified lead discovery and outreach draft generation. Most customers export to their preferred deliverability-safe outreach stack.",
+      "No. LeadPilot is a data workspace for collection, scoring, and exports. Messaging is handled in your own external tools.",
   },
   {
     question: "Is there a refund policy?",
@@ -153,7 +153,7 @@ export default function PricingPage() {
     const billedPrice = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice / 12;
     if (billedPrice <= 0 || plan.leadCreditsRaw <= 0) return "Free";
     const perLead = billedPrice / plan.leadCreditsRaw;
-    return `$${perLead.toFixed(2)} / lead`;
+    return `$${perLead.toFixed(2)} / record`;
   };
 
   return (
@@ -182,15 +182,15 @@ export default function PricingPage() {
         <section className="max-w-5xl mx-auto px-6 pt-16 pb-8 text-center">
           <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-5">Pricing</p>
           <h1 className="font-display text-4xl md:text-5xl font-medium tracking-[-0.03em] leading-tight mb-4">
-            Plans designed to turn prospecting into signed clients
+            Plans for reliable local data operations
           </h1>
           <p className="text-[var(--text-secondary)] max-w-3xl mx-auto text-lg">
-            Choose based on your monthly outreach volume. Start free, validate quality, then scale only when lead flow is working.
+            Choose based on your monthly data volume. Start free, validate quality, then scale when the workflow is proven.
           </p>
 
           <div className="mt-8 inline-flex flex-col sm:flex-row items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] px-4 py-3 text-xs text-[var(--text-secondary)]">
-            <span className="font-semibold text-[var(--text-primary)]">Simple ROI benchmark:</span>
-            <span>If 1 client is worth $1,500+ MRR, you only need one close to pay for Growth many times over.</span>
+            <span className="font-semibold text-[var(--text-primary)]">Simple benchmark:</span>
+            <span>If one job replaces hours of manual research, Growth usually pays for itself quickly.</span>
           </div>
 
           <div className="mt-10 inline-flex items-center gap-2 bg-[var(--surface-elevated)] border border-[var(--border-default)] rounded-full p-1">
@@ -305,7 +305,7 @@ export default function PricingPage() {
                 <tbody>
                   {[
                     {
-                      label: "Lead credits / month",
+                      label: "Record credits / month",
                       values: PLAN_CONFIGS.map((plan) => plan.monthlyLeadCredits),
                     },
                     {
@@ -338,7 +338,7 @@ export default function PricingPage() {
           <div className="mb-10 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 md:p-6">
             <h3 className="text-lg font-semibold text-[var(--text-primary)]">What happens after purchase?</h3>
             <ul className="mt-3 space-y-2 text-sm text-[var(--text-secondary)]">
-              <li>1. You sign in and start scraping immediately with your plan limits.</li>
+              <li>1. You sign in and start running collection jobs immediately within your plan limits.</li>
               <li>2. You can queue targets, review scoring, and export CSV in the same session.</li>
               <li>3. If setup blocks you, onboarding support is available via email.</li>
             </ul>

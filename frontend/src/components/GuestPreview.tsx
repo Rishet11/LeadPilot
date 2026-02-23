@@ -6,10 +6,10 @@ import { useEffect, useMemo, useState } from "react";
 import { GuestPreviewLead, GuestPreviewUsage, getUserFacingApiError, pingApiHealth, scrapeGuestPreview } from "@/lib/api";
 
 const LIMIT_OPTIONS = [
-  { value: 5, label: "5 leads (fastest)" },
-  { value: 8, label: "8 leads (balanced)" },
-  { value: 10, label: "10 leads (slower)" },
-  { value: 15, label: "15 leads (slowest)" },
+  { value: 5, label: "5 records (fastest)" },
+  { value: 8, label: "8 records (balanced)" },
+  { value: 10, label: "10 records (slower)" },
+  { value: 15, label: "15 records (slowest)" },
 ];
 
 function buildInstantFallbackLeads(city: string, category: string, limit: number): GuestPreviewLead[] {
@@ -21,11 +21,11 @@ function buildInstantFallbackLeads(city: string, category: string, limit: number
     `Prime ${category} ${city}`,
   ];
   const reasons = [
-    "Good reviews but weak website conversion flow.",
-    "Strong local visibility with inconsistent follow-up setup.",
-    "High-intent category with missing trust assets online.",
+    "High review activity with missing website metadata.",
+    "Strong local visibility with incomplete public profile fields.",
+    "Category has demand but inconsistent business information online.",
     "Good profile with low recent review momentum.",
-    "Ranking potential is high but offer clarity is weak.",
+    "Record has strong ranking signals with limited structured details.",
   ];
 
   const count = Math.max(1, Number(limit || 5));
@@ -41,7 +41,7 @@ function buildInstantFallbackLeads(city: string, category: string, limit: number
       maps_url: null,
       lead_score: Math.max(55, 82 - idx * 4),
       reason: reasons[idx % reasons.length],
-      ai_outreach: `Hi ${name}, noticed your ${category.toLowerCase()} listing in ${city}. We can help turn local traffic into booked calls.`,
+      ai_outreach: `Sample note for ${name}: listing metadata is present, but profile completeness can be improved.`,
     };
   });
 }
@@ -71,8 +71,8 @@ export default function GuestPreview() {
 
   const runningStage = useMemo(() => {
     if (elapsedSeconds < 4) return "Initializing preview...";
-    if (elapsedSeconds < 10) return "Collecting business listings...";
-    if (elapsedSeconds < 18) return "Scoring leads...";
+    if (elapsedSeconds < 10) return "Collecting public listings...";
+    if (elapsedSeconds < 18) return "Scoring records...";
     return "Finalizing output...";
   }, [elapsedSeconds]);
 
@@ -108,7 +108,7 @@ export default function GuestPreview() {
     const startedAt = Date.now();
 
     if (!trimmedCity || !trimmedCategory) {
-      setError("Please enter both city and industry.");
+      setError("Please enter both city and query.");
       return;
     }
 
@@ -184,7 +184,7 @@ export default function GuestPreview() {
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent-indigo)] to-transparent opacity-80" />
           <form onSubmit={onRunPreview} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider">Target City</label>
+              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider">City</label>
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
@@ -194,7 +194,7 @@ export default function GuestPreview() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider">Industry Niche</label>
+              <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5 uppercase tracking-wider">Query</label>
               <input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -227,24 +227,24 @@ export default function GuestPreview() {
               disabled={isRunning}
               className="w-full btn-primary rounded-xl px-4 py-4 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-[0_0_20px_var(--glow-indigo)]"
             >
-              {isRunning ? `Running... ${elapsedSeconds}s` : "Run Fast Preview"}
+              {isRunning ? `Running... ${elapsedSeconds}s` : "Run Data Preview"}
             </button>
             {!isRunning && (
               <p className="text-[11px] text-[var(--text-tertiary)] mt-1 text-center">
-                Tip: Use 5 leads for the fastest preview.
+                Tip: Use 5 records for the fastest preview.
               </p>
             )}
           </form>
 
           {usage && (
             <div className="mt-6 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-secondary)] p-4 text-xs">
-              <p className="text-[var(--text-secondary)] mb-2 uppercase tracking-wider text-[10px] font-semibold">Free Tier Usage</p>
+              <p className="text-[var(--text-secondary)] mb-2 uppercase tracking-wider text-[10px] font-semibold">Preview Usage</p>
               <div className="flex justify-between items-center text-[var(--text-primary)] mb-1">
                  <span>Queries:</span>
                  <span className="font-mono">{usage.jobs_remaining} / {usage.monthly_job_limit}</span>
               </div>
               <div className="flex justify-between items-center text-[var(--text-primary)]">
-                 <span>Rows Extracted:</span>
+                 <span>Records Extracted:</span>
                  <span className="font-mono">{usage.leads_remaining} / {usage.monthly_lead_limit}</span>
               </div>
             </div>
@@ -353,7 +353,7 @@ export default function GuestPreview() {
                     {lead.reason && (
                        <div className="mt-2 text-[11px] text-[var(--text-secondary)] font-mono bg-[#030712] border border-[var(--border-secondary)] p-2.5 rounded-md relative pl-7 leading-relaxed shadow-inner">
                           <span className="absolute left-2.5 top-2.5 text-[var(--accent-violet)]">&gt;</span>
-                          <span className="text-[var(--accent-indigo)] font-semibold">Gap Found:</span> {lead.reason}
+                          <span className="text-[var(--accent-indigo)] font-semibold">Signal:</span> {lead.reason}
                        </div>
                     )}
                   </article>
@@ -366,7 +366,7 @@ export default function GuestPreview() {
                     Want full structured exports?
                   </p>
                   <Link href="/login" className="whitespace-nowrap inline-flex items-center justify-center bg-white text-black text-xs font-semibold px-5 py-2 rounded-md hover:bg-gray-200 transition-colors shadow-lg">
-                    Sign In with Google
+                    Open Full Workspace
                   </Link>
                 </div>
               )}

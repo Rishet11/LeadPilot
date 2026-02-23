@@ -331,7 +331,7 @@ export default function Dashboard() {
                   href="/pricing"
                   className="btn-primary px-4 py-2 text-xs font-semibold"
                 >
-                  Upgrade Before You Stall
+                  Upgrade for More Credits
                 </Link>
               ) : (
                 <Link
@@ -372,9 +372,9 @@ export default function Dashboard() {
         <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/25 bg-[var(--accent-dim)]">
           <p className="font-mono text-[10px] text-[var(--accent)] uppercase tracking-wider mb-2">Quick start</p>
           <div className="grid md:grid-cols-3 gap-2 text-xs text-[var(--text-secondary)]">
-            <p>1. Run a quick scrape with city + niche.</p>
+            <p>1. Run a quick collection with city + category.</p>
             <p>2. Wait for the job to complete in Activity.</p>
-            <p>3. Open Leads, regenerate outreach, and export CSV.</p>
+            <p>3. Open Leads, review records, and export CSV.</p>
           </div>
         </div>
       )}
@@ -400,7 +400,7 @@ export default function Dashboard() {
           }
         />
         <MetricCard
-          title="High Priority"
+          title="High Score"
           value={stats?.high_priority_leads ?? 0}
           className="glass-glow relative overflow-hidden transition-all hover:-translate-y-1 shadow-[0_0_15px_rgba(0,0,0,0.5)] border border-[var(--border-secondary)] rounded-2xl p-7"
           titleClassName="font-mono text-[10px] text-[var(--accent-violet)] font-bold uppercase tracking-widest mb-2 drop-shadow-md"
@@ -462,7 +462,7 @@ export default function Dashboard() {
                           {job.job_type === "google_maps" ? "Google Maps" : "Instagram"}
                         </p>
                         <p className="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
-                          {job.leads_found} leads found
+                          {job.leads_found} records found
                         </p>
                       </div>
                     </div>
@@ -525,7 +525,7 @@ export default function Dashboard() {
               value={agentObjective}
               onChange={(e) => setAgentObjective(e.target.value)}
               rows={3}
-              placeholder="e.g., Find dentists and med spas in Miami and Fort Lauderdale with weak digital presence"
+              placeholder="e.g., Find HVAC contractors in Austin and San Antonio with missing websites"
               className="w-full px-4 py-3 text-sm bg-black/40 border border-[var(--border-secondary)] rounded-xl text-white placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent-indigo)] focus:ring-1 focus:ring-[var(--accent-indigo)] shadow-inner resize-none transition-all"
             />
 
@@ -571,7 +571,7 @@ export default function Dashboard() {
             )}
           </div>
           
-          {/* Niche Playbooks Widget Removed */}
+          {/* Widget intentionally removed */}
         </div>
       </div>
 
@@ -627,8 +627,8 @@ export default function Dashboard() {
         </div>
 
         <div className="glass-glow rounded-2xl p-7 relative transition-all hover:-translate-y-1">
-          <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest mb-1">Pipeline</p>
-          <h3 className="text-lg font-bold text-white mb-6">Leads by Status</h3>
+          <p className="font-mono text-[10px] text-[var(--accent-indigo)] font-bold uppercase tracking-widest mb-1">Status</p>
+          <h3 className="text-lg font-bold text-white mb-6">Records by Status</h3>
           <div className="space-y-4">
             {Object.entries(stats?.leads_by_status ?? {}).slice(0, 4).map(([status, count]) => (
               <div key={status} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-[var(--border-secondary)]">

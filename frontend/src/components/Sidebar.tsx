@@ -139,7 +139,7 @@ export default function Sidebar() {
             Upgrade for More Credits
           </Link>
           <p className="px-3 mt-2 text-[10px] text-[var(--text-dim)] font-mono uppercase tracking-wider">
-            Unlock higher monthly lead volume
+            Unlock higher monthly data volume
           </p>
         </div>
       </nav>

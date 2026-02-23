@@ -200,13 +200,13 @@ export default function SettingsPage() {
   }
 
   const scoringFields = [
-    { key: "no_website" as const, label: "No Website", desc: "Prime target — no online presence to capture search traffic" },
-    { key: "high_reviews" as const, label: "High Reviews (100+)", desc: "Big business — may already have marketing sorted, harder sell" },
-    { key: "medium_reviews" as const, label: "Established Local (30-99)", desc: "Sweet spot — proven demand, has budget, no digital presence yet" },
-    { key: "high_rating" as const, label: "High Rating (4.5+)", desc: "Strong reputation — website would showcase their quality" },
-    { key: "good_rating" as const, label: "Good Rating (4.0+)", desc: "Solid foundation — ready for online growth" },
-    { key: "high_value_category" as const, label: "High-Value Category", desc: "Dentists, salons, HVAC, lawyers — high ticket, need websites" },
-    { key: "low_rating_opportunity" as const, label: "Low Rating (<3.8)", desc: "Reputation fix — need a site to control the narrative" },
+    { key: "no_website" as const, label: "No Website", desc: "Record has no website URL." },
+    { key: "high_reviews" as const, label: "High Reviews (100+)", desc: "High review volume signal." },
+    { key: "medium_reviews" as const, label: "Medium Reviews (30-99)", desc: "Medium review volume signal." },
+    { key: "high_rating" as const, label: "High Rating (4.5+)", desc: "Rating quality signal for top-rated records." },
+    { key: "good_rating" as const, label: "Good Rating (4.0+)", desc: "Rating quality signal for generally positive records." },
+    { key: "high_value_category" as const, label: "Category Priority", desc: "Category weight based on your internal priority model." },
+    { key: "low_rating_opportunity" as const, label: "Low Rating (<3.8)", desc: "Low-rating signal for service-recovery opportunities." },
   ];
 
   return (
@@ -258,7 +258,7 @@ export default function SettingsPage() {
             <div>
               <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">AI System Prompt</h3>
               <p className="text-xs text-[var(--text-muted)]">
-                Controls how the AI qualifies leads and writes outreach messages
+                Controls how AI summarizes records and drafts notes
               </p>
             </div>
           </div>
@@ -356,7 +356,7 @@ export default function SettingsPage() {
             <div>
               <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-[-0.02em]">Instagram</h3>
               <p className="text-xs text-[var(--text-muted)]">
-                Filters for Instagram lead discovery
+                Filters for Instagram record collection
               </p>
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
               <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Min Followers</label>
-              <p className="text-[11px] text-[var(--text-dim)] mb-3">Below this = too small to convert</p>
+              <p className="text-[11px] text-[var(--text-dim)] mb-3">Exclude accounts below this follower count</p>
               <input
                 type="number"
                 value={instagramConfig.followers_min}
@@ -377,7 +377,7 @@ export default function SettingsPage() {
 
             <div className="p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
               <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Max Followers</label>
-              <p className="text-[11px] text-[var(--text-dim)] mb-3">Above this = already has agency or in-house</p>
+              <p className="text-[11px] text-[var(--text-dim)] mb-3">Exclude accounts above this follower count</p>
               <input
                 type="number"
                 value={instagramConfig.followers_max}
@@ -390,7 +390,7 @@ export default function SettingsPage() {
 
             <div className="p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
               <label className="block font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Score Threshold</label>
-              <p className="text-[11px] text-[var(--text-dim)] mb-3">Minimum score to qualify as a lead</p>
+              <p className="text-[11px] text-[var(--text-dim)] mb-3">Minimum score required to include a record</p>
               <input
                 type="number"
                 value={instagramConfig.score_threshold}
@@ -453,7 +453,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex items-center gap-3 p-4 bg-[var(--surface-elevated)] rounded-xl border border-[var(--border-subtle)]">
                 <code className="px-3 py-1.5 bg-[var(--surface-card)] rounded-lg text-[var(--text-primary)] font-mono text-xs">GEMINI_API_KEY</code>
-                <span className="text-xs text-[var(--text-muted)]">AI outreach generation</span>
+                <span className="text-xs text-[var(--text-muted)]">AI note generation</span>
               </div>
             </div>
           </div>

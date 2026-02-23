@@ -115,16 +115,16 @@ export default function LoginPage() {
             Lead<span className="text-[var(--accent)]">Pilot</span>
           </h1>
           <p className="text-[var(--text-secondary)] mt-2">
-            Sign in with Google to access your workspace
+            Sign in with Google to open your workspace
           </p>
         </div>
 
         <div className="mb-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] p-4">
           <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--accent)] mb-2">Inside your workspace</p>
           <ul className="space-y-1.5 text-xs text-[var(--text-secondary)]">
-            <li>• Run Google Maps + Instagram scraping queues</li>
-            <li>• Prioritize leads by digital-gap scoring</li>
-            <li>• Export outreach-ready CSV for your sales flow</li>
+            <li>• Run Google Maps + Instagram collection queues</li>
+            <li>• Score and review records with configurable rules</li>
+            <li>• Export structured CSV from one dashboard</li>
           </ul>
         </div>
 
