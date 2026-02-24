@@ -122,7 +122,7 @@ def test_usage_and_plan_endpoints(client):
     assert "instagram_enabled" in plan.json()
 
 
-def test_legacy_agency_tier_maps_to_growth(client, db_session):
+def test_legacy_agency_tier_maps_to_starter(client, db_session):
     customer = db_session.query(Customer).filter(Customer.id == 1).first()
     customer.plan_tier = "agency"
     customer.subscription_status = "active"
@@ -131,5 +131,5 @@ def test_legacy_agency_tier_maps_to_growth(client, db_session):
     plan = client.get("/api/plans/current")
     assert plan.status_code == 200
     payload = plan.json()
-    assert payload["plan_tier"] == "growth"
+    assert payload["plan_tier"] == "starter"
     assert payload["instagram_enabled"] is True

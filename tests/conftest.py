@@ -45,7 +45,7 @@ def db_session():
         api_key="lp_test_key",
         is_active=True,
         is_admin=True,
-        plan_tier="growth",
+        plan_tier="starter",
         subscription_status="active",
     ))
     session.commit()

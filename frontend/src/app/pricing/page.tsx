@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-type BillingCycle = "monthly" | "yearly";
-type PlanKey = "free" | "starter" | "growth";
+type PlanKey = "free" | "launch" | "starter";
 
 type PlanConfig = {
   key: PlanKey;
   name: string;
   description: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
+  monthlyPriceInr: number;
+  firstMonthPriceInr: number;
   monthlyLeadCredits: string;
   leadCreditsRaw: number;
   concurrentJobs: string;
@@ -20,112 +19,139 @@ type PlanConfig = {
   cta: string;
   bestFor: string;
   highlighted?: boolean;
+  recurringJobs: boolean;
+  customIcpScoring: boolean;
+  outreachPack: boolean;
+  smartCleanup: boolean;
+  priorityQueue: boolean;
   features: string[];
 };
+
+const FOUNDING_OFFER_CAP = 50;
+const TOPUP_PRICE_PER_1000 = 299;
 
 const PLAN_CONFIGS: PlanConfig[] = [
   {
     key: "free",
     name: "Free",
-    description: "For validating data quality and workflow fit.",
-    monthlyPrice: 0,
-    yearlyPrice: 0,
-    monthlyLeadCredits: "100 records / month",
+    description: "For testing data quality and workflow fit before paying.",
+    monthlyPriceInr: 0,
+    firstMonthPriceInr: 0,
+    monthlyLeadCredits: "100 credits / month",
     leadCreditsRaw: 100,
     concurrentJobs: "1 running job",
     sources: "Google Maps",
     support: "Email support",
     cta: "Start Free",
     bestFor: "Initial evaluation",
+    recurringJobs: false,
+    customIcpScoring: false,
+    outreachPack: false,
+    smartCleanup: false,
+    priorityQueue: false,
     features: [
-      "100 record credits per month",
+      "100 credits per month",
       "Google Maps collection",
       "Target Builder agent",
-      "Record scoring + notes",
+      "Basic record scoring + notes",
+      "CSV export",
+    ],
+  },
+  {
+    key: "launch",
+    name: "Launch",
+    description: "For solo operators running recurring prospecting campaigns.",
+    monthlyPriceInr: 499,
+    firstMonthPriceInr: 249,
+    monthlyLeadCredits: "500 credits / month",
+    leadCreditsRaw: 500,
+    concurrentJobs: "2 running jobs",
+    sources: "Google Maps + Instagram",
+    support: "Standard support",
+    cta: "Get Launch",
+    bestFor: "Manual prospecting",
+    highlighted: true,
+    recurringJobs: false,
+    customIcpScoring: false,
+    outreachPack: false,
+    smartCleanup: false,
+    priorityQueue: false,
+    features: [
+      "500 credits per month",
+      "Google Maps + Instagram collection",
+      "2 concurrent collection jobs",
+      "Basic AI scoring",
       "CSV export",
     ],
   },
   {
     key: "starter",
     name: "Starter",
-    description: "For individual operators running recurring data jobs.",
-    monthlyPrice: 29,
-    yearlyPrice: 290,
-    monthlyLeadCredits: "500 records / month",
-    leadCreditsRaw: 500,
-    concurrentJobs: "2 running jobs",
-    sources: "Google Maps",
-    support: "Standard support",
-    cta: "Get Starter",
-    bestFor: "Recurring collection workflows",
-    features: [
-      "500 record credits per month",
-      "2 concurrent collection jobs",
-      "Target Builder agent",
-      "AI record note generation",
-      "Export-ready structured datasets",
-    ],
-  },
-  {
-    key: "growth",
-    name: "Growth",
-    description: "For teams processing higher monthly volume.",
-    monthlyPrice: 79,
-    yearlyPrice: 790,
-    monthlyLeadCredits: "2,000 records / month",
-    leadCreditsRaw: 2000,
+    description: "For teams who want AI-assisted qualification and higher throughput.",
+    monthlyPriceInr: 1499,
+    firstMonthPriceInr: 749,
+    monthlyLeadCredits: "2,500 credits / month",
+    leadCreditsRaw: 2500,
     concurrentJobs: "3 running jobs",
     sources: "Google Maps + Instagram",
     support: "Priority support",
-    cta: "Upgrade to Growth",
-    bestFor: "Team-scale data operations",
-    highlighted: true,
+    cta: "Upgrade to Starter",
+    bestFor: "AI-automated pipeline",
+    recurringJobs: true,
+    customIcpScoring: true,
+    outreachPack: true,
+    smartCleanup: true,
+    priorityQueue: true,
     features: [
-      "2,000 record credits per month",
-      "Google Maps + Instagram collection",
-      "3 concurrent collection jobs",
-      "Target Builder + higher throughput",
-      "Priority support",
+      "2,500 credits per month",
+      "Recurring jobs (daily/weekly)",
+      "Custom AI ICP scoring (score + reason)",
+      "AI outreach pack (opener + angle + first message)",
+      "Smart cleanup (dedupe + quality filtering)",
+      "Priority queue",
     ],
   },
 ];
 
 const FAQS = [
   {
-    question: "What counts as a record credit?",
+    question: "How does the Founding 50 offer work?",
     answer:
-      "Each record created in your workspace counts as one credit. New jobs are blocked only when your monthly credit pool is exhausted.",
+      "The first 50 paying customers get 50% off the first billing cycle on paid plans. From the second month, regular plan pricing applies.",
+  },
+  {
+    question: "What counts as a credit?",
+    answer:
+      "Each record created in your workspace counts as one credit. If your plan quota is exhausted, you can buy top-ups without upgrading your plan.",
   },
   {
     question: "Can I change plans anytime?",
     answer:
-      "Yes. You can upgrade or downgrade at any time. Changes apply to your next billing cycle unless your billing provider supports immediate proration.",
+      "Yes. You can move between Launch and Starter at any time. Plan changes apply from the next billing cycle unless your payment provider supports proration.",
   },
   {
-    question: "Do you send emails from LeadPilot?",
+    question: "Do you send outreach emails from LeadPilot?",
     answer:
-      "No. LeadPilot is a data workspace for collection, scoring, and exports. Messaging is handled in your own external tools.",
-  },
-  {
-    question: "Is there a refund policy?",
-    answer:
-      "If onboarding is clearly blocked due to a product issue, contact rishetmehra11@gmail.com within 7 days and we will review your case quickly.",
+      "No. LeadPilot helps with collection, qualification, and export. Sending is handled in your existing outreach tools.",
   },
 ];
 
-function formatPrice(value: number): string {
-  if (value === 0) return "$0";
-  return `$${value.toLocaleString("en-US")}`;
+function formatInr(value: number): string {
+  if (value === 0) return "Rs 0";
+  return `Rs ${value.toLocaleString("en-IN")}`;
+}
+
+function capability(value: boolean): string {
+  return value ? "Included" : "Not included";
 }
 
 export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const checkoutLinks = useMemo(
     () => ({
-      starter: process.env.NEXT_PUBLIC_LEMON_STARTER_URL || "",
-      growth: process.env.NEXT_PUBLIC_LEMON_GROWTH_URL || "",
+      launch: process.env.NEXT_PUBLIC_DODO_LAUNCH_URL || "",
+      starter: process.env.NEXT_PUBLIC_DODO_STARTER_URL || "",
     }),
     []
   );
@@ -136,10 +162,7 @@ export default function PricingPage() {
       return;
     }
 
-    const link =
-      plan.key === "starter"
-        ? checkoutLinks.starter
-        : checkoutLinks.growth;
+    const link = plan.key === "launch" ? checkoutLinks.launch : checkoutLinks.starter;
 
     if (!link) {
       window.location.assign(`mailto:rishetmehra11@gmail.com?subject=${encodeURIComponent(`LeadPilot ${plan.name} plan`)}`);
@@ -149,11 +172,10 @@ export default function PricingPage() {
     window.open(link, "_blank", "noopener,noreferrer");
   };
 
-  const getLeadUnitCost = (plan: PlanConfig): string => {
-    const billedPrice = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice / 12;
-    if (billedPrice <= 0 || plan.leadCreditsRaw <= 0) return "Free";
-    const perLead = billedPrice / plan.leadCreditsRaw;
-    return `$${perLead.toFixed(2)} / record`;
+  const getPerThousandCost = (plan: PlanConfig): string => {
+    if (plan.monthlyPriceInr <= 0 || plan.leadCreditsRaw <= 0) return "Free";
+    const cost = (plan.monthlyPriceInr / plan.leadCreditsRaw) * 1000;
+    return `${formatInr(Math.round(cost))} / 1,000 credits`;
   };
 
   return (
@@ -182,46 +204,22 @@ export default function PricingPage() {
         <section className="max-w-5xl mx-auto px-6 pt-16 pb-8 text-center">
           <p className="font-mono text-xs text-[var(--accent)] tracking-[0.2em] uppercase mb-5">Pricing</p>
           <h1 className="font-display text-4xl md:text-5xl font-medium tracking-[-0.03em] leading-tight mb-4">
-            Plans for reliable local data operations
+            India launch pricing for local data ops
           </h1>
           <p className="text-[var(--text-secondary)] max-w-3xl mx-auto text-lg">
-            Choose based on your monthly data volume. Start free, validate quality, then scale when the workflow is proven.
+            Start with Free, move to Launch for live campaigns, and upgrade to Starter when you need automation and AI-qualified output.
           </p>
 
-          <div className="mt-8 inline-flex flex-col sm:flex-row items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] px-4 py-3 text-xs text-[var(--text-secondary)]">
-            <span className="font-semibold text-[var(--text-primary)]">Simple benchmark:</span>
-            <span>If one job replaces hours of manual research, Growth usually pays for itself quickly.</span>
-          </div>
-
-          <div className="mt-10 inline-flex items-center gap-2 bg-[var(--surface-elevated)] border border-[var(--border-default)] rounded-full p-1">
-            <button
-              onClick={() => setBillingCycle("monthly")}
-              className={`px-4 py-2 rounded-full text-sm transition-colors ${
-                billingCycle === "monthly" ? "bg-[var(--accent)] text-black" : "text-[var(--text-secondary)]"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle("yearly")}
-              className={`px-4 py-2 rounded-full text-sm transition-colors ${
-                billingCycle === "yearly" ? "bg-[var(--accent)] text-black" : "text-[var(--text-secondary)]"
-              }`}
-            >
-              Yearly (2 months free)
-            </button>
+          <div className="mt-8 inline-flex flex-col sm:flex-row items-center gap-2 rounded-xl border border-[var(--accent)] bg-[var(--surface-elevated)] px-4 py-3 text-xs text-[var(--text-secondary)]">
+            <span className="font-semibold text-[var(--text-primary)]">Founding {FOUNDING_OFFER_CAP} offer:</span>
+            <span>50% off first month on Launch and Starter. One redemption per account.</span>
           </div>
         </section>
 
         <section className="max-w-7xl mx-auto px-6 pb-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {PLAN_CONFIGS.map((plan) => {
-              const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
-              const period = billingCycle === "monthly" ? "/month" : "/year";
-              const monthEquivalent =
-                billingCycle === "yearly" && plan.yearlyPrice > 0
-                  ? `($${Math.round(plan.yearlyPrice / 12)}/mo equivalent)`
-                  : "";
+              const paid = plan.monthlyPriceInr > 0;
 
               return (
                 <article
@@ -234,7 +232,7 @@ export default function PricingPage() {
                 >
                   {plan.highlighted && (
                     <span className="absolute -top-3 left-6 text-[10px] uppercase tracking-[0.18em] font-mono rounded-full bg-[var(--accent)] text-black px-3 py-1">
-                      Most Popular
+                      Best Entry Paid Plan
                     </span>
                   )}
 
@@ -247,11 +245,20 @@ export default function PricingPage() {
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-4xl font-semibold tracking-tight">{formatPrice(price)}</p>
-                    <p className="text-sm text-[var(--text-muted)]">{period}</p>
-                    {monthEquivalent && <p className="text-xs text-[var(--text-muted)] mt-1">{monthEquivalent}</p>}
+                    {paid ? (
+                      <>
+                        <p className="text-4xl font-semibold tracking-tight">{formatInr(plan.firstMonthPriceInr)}</p>
+                        <p className="text-xs text-[var(--accent)] mt-1">first month with Founding {FOUNDING_OFFER_CAP}</p>
+                        <p className="text-sm text-[var(--text-muted)] mt-1">Then {formatInr(plan.monthlyPriceInr)} / month</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-4xl font-semibold tracking-tight">{formatInr(plan.monthlyPriceInr)}</p>
+                        <p className="text-sm text-[var(--text-muted)]">/ month</p>
+                      </>
+                    )}
                     <p className="text-xs text-[var(--text-secondary)] mt-2">
-                      Effective rate: <span className="text-[var(--text-primary)] font-semibold">{getLeadUnitCost(plan)}</span>
+                      Effective rate: <span className="text-[var(--text-primary)] font-semibold">{getPerThousandCost(plan)}</span>
                     </p>
                   </div>
 
@@ -284,7 +291,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-6 py-10">
+        <section className="max-w-7xl mx-auto px-6 pb-8">
           <div className="card-static p-6 md:p-7">
             <h3 className="text-xl font-semibold mb-4">Plan comparison</h3>
             <div className="overflow-x-auto">
@@ -293,19 +300,14 @@ export default function PricingPage() {
                   <tr className="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]">
                     <th className="py-3 pr-4 font-medium">Capability</th>
                     {PLAN_CONFIGS.map((plan) => (
-                      <th
-                        key={`head-${plan.key}`}
-                        className="py-3 px-4 font-medium"
-                      >
-                        {plan.name}
-                      </th>
+                      <th key={`head-${plan.key}`} className="py-3 px-4 font-medium">{plan.name}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {[
                     {
-                      label: "Record credits / month",
+                      label: "Credits / month",
                       values: PLAN_CONFIGS.map((plan) => plan.monthlyLeadCredits),
                     },
                     {
@@ -315,6 +317,26 @@ export default function PricingPage() {
                     {
                       label: "Data sources",
                       values: PLAN_CONFIGS.map((plan) => plan.sources),
+                    },
+                    {
+                      label: "Recurring jobs automation",
+                      values: PLAN_CONFIGS.map((plan) => capability(plan.recurringJobs)),
+                    },
+                    {
+                      label: "Custom AI ICP scoring",
+                      values: PLAN_CONFIGS.map((plan) => capability(plan.customIcpScoring)),
+                    },
+                    {
+                      label: "AI outreach pack",
+                      values: PLAN_CONFIGS.map((plan) => capability(plan.outreachPack)),
+                    },
+                    {
+                      label: "Smart cleanup",
+                      values: PLAN_CONFIGS.map((plan) => capability(plan.smartCleanup)),
+                    },
+                    {
+                      label: "Priority queue",
+                      values: PLAN_CONFIGS.map((plan) => capability(plan.priorityQueue)),
                     },
                     {
                       label: "Support",
@@ -334,12 +356,24 @@ export default function PricingPage() {
           </div>
         </section>
 
+        <section className="max-w-4xl mx-auto px-6 pb-10">
+          <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 md:p-6">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Credit top-ups</h3>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              Add credits without changing your plan: <span className="text-[var(--text-primary)] font-semibold">{formatInr(TOPUP_PRICE_PER_1000)} per 1,000 credits</span>.
+            </p>
+            <p className="mt-2 text-xs text-[var(--text-muted)]">
+              Top-ups are useful for seasonal spikes so your collection flow does not pause mid-campaign.
+            </p>
+          </div>
+        </section>
+
         <section className="max-w-4xl mx-auto px-6 pb-14">
           <div className="mb-10 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 md:p-6">
             <h3 className="text-lg font-semibold text-[var(--text-primary)]">What happens after purchase?</h3>
             <ul className="mt-3 space-y-2 text-sm text-[var(--text-secondary)]">
               <li>1. You sign in and start running collection jobs immediately within your plan limits.</li>
-              <li>2. You can queue targets, review scoring, and export CSV in the same session.</li>
+              <li>2. You can queue targets, review AI scoring, and export CSV in the same workflow.</li>
               <li>3. If setup blocks you, onboarding support is available via email.</li>
             </ul>
           </div>
@@ -366,6 +400,10 @@ export default function PricingPage() {
           </div>
 
           <p className="text-xs text-[var(--text-muted)] mt-8 text-center">
+            Founding {FOUNDING_OFFER_CAP} discount applies to the first billing cycle only, cannot be combined with other offers, and is limited to one redemption per account.
+          </p>
+
+          <p className="text-xs text-[var(--text-muted)] mt-4 text-center">
             By purchasing, you agree to our <Link href="/terms" className="underline hover:text-[var(--text-primary)]">Terms</Link>, <Link href="/privacy" className="underline hover:text-[var(--text-primary)]">Privacy Policy</Link>, and <Link href="/acceptable-use" className="underline hover:text-[var(--text-primary)]">Acceptable Use Policy</Link>.
           </p>
         </section>

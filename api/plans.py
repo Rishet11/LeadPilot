@@ -22,9 +22,26 @@ class PlanEntitlement:
 
 DEFAULT_PLANS = {
     "free": PlanEntitlement("free", monthly_lead_quota=100, instagram_enabled=False, max_concurrent_jobs=1),
-    "starter": PlanEntitlement("starter", monthly_lead_quota=500, instagram_enabled=False, max_concurrent_jobs=2),
-    "growth": PlanEntitlement("growth", monthly_lead_quota=2000, instagram_enabled=True, max_concurrent_jobs=3),
+    "launch": PlanEntitlement("launch", monthly_lead_quota=500, instagram_enabled=True, max_concurrent_jobs=2),
+    "starter": PlanEntitlement("starter", monthly_lead_quota=2500, instagram_enabled=True, max_concurrent_jobs=3),
 }
+
+LEGACY_PLAN_ALIASES = {
+    "agency": "starter",
+    "growth": "starter",
+}
+
+
+def _variant_plan_map() -> dict[str, str]:
+    mapping = {
+        # Dodo Payments product IDs (primary billing provider).
+        os.getenv("DODO_LAUNCH_PRODUCT_ID", "").strip(): "launch",
+        os.getenv("DODO_STARTER_PRODUCT_ID", "").strip(): "starter",
+        # Backward compatibility for legacy Lemon Squeezy variants.
+        os.getenv("LEMON_STARTER_VARIANT_ID", "").strip(): "launch",
+        os.getenv("LEMON_GROWTH_VARIANT_ID", "").strip(): "starter",
+    }
+    return {k: v for k, v in mapping.items() if k}
 
 
 def _active_subscription(customer: Customer) -> bool:
@@ -36,21 +53,17 @@ def infer_plan_tier(customer: Optional[Customer]) -> str:
         return "free"
 
     explicit_tier = (customer.plan_tier or "").lower().strip()
-    # Backward compatibility: agency tier was removed and now maps to growth.
-    if explicit_tier == "agency":
-        return "growth"
+    if explicit_tier in LEGACY_PLAN_ALIASES:
+        return LEGACY_PLAN_ALIASES[explicit_tier]
     if explicit_tier in DEFAULT_PLANS:
         return explicit_tier
 
     variant_id = str(customer.variant_id or "")
-    variant_map = {
-        os.getenv("LEMON_STARTER_VARIANT_ID", ""): "starter",
-        os.getenv("LEMON_GROWTH_VARIANT_ID", ""): "growth",
-    }
+    variant_map = _variant_plan_map()
     if variant_id and variant_map.get(variant_id):
         return variant_map[variant_id]
 
-    return "starter" if _active_subscription(customer) else "free"
+    return "launch" if _active_subscription(customer) else "free"
 
 
 def get_entitlement(customer: Optional[Customer]) -> PlanEntitlement:

@@ -83,9 +83,9 @@ class TestTargetBuilderAgent:
         assert len(data) > 0
         assert all(item["instagram_targets"] == [] for item in data)
 
-    def test_agent_templates_include_instagram_for_growth(self, client, db_session):
+    def test_agent_templates_include_instagram_for_paid_plan(self, client, db_session):
         customer = db_session.query(Customer).filter(Customer.id == 1).first()
-        customer.plan_tier = "growth"
+        customer.plan_tier = "launch"
         customer.subscription_status = "active"
         db_session.commit()
 

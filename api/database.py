@@ -50,13 +50,13 @@ class Customer(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)  # Admin sees all leads
     
-    # Subscription fields (Lemon Squeezy)
+    # Subscription fields (billing provider metadata)
     lemon_squeezy_customer_id = Column(String(100), nullable=True)
     subscription_id = Column(String(100), nullable=True)
     variant_id = Column(String(100), nullable=True)  # Plan ID
     subscription_status = Column(String(50), default="free")  # free, active, past_due, cancelled
     renews_at = Column(DateTime, nullable=True)
-    plan_tier = Column(String(50), default="free")  # free, starter, growth
+    plan_tier = Column(String(50), default="free")  # free, launch, starter
     
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -210,7 +210,7 @@ class WebhookEvent(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    source = Column(String(50), nullable=False)  # e.g. lemonsqueezy
+    source = Column(String(50), nullable=False)  # e.g. lemonsqueezy, dodo
     event_id = Column(String(255), nullable=False)
     event_name = Column(String(100), nullable=False)
     status = Column(String(50), default="received")  # received, processed, failed
