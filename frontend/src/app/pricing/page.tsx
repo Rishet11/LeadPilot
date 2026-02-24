@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { getCurrentSessionUser, CurrentSessionUser } from "@/lib/api";
 
 type PlanKey = "free" | "launch" | "starter";
 
@@ -147,6 +148,16 @@ function capability(value: boolean): string {
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [user, setUser] = useState<CurrentSessionUser | null>(null);
+
+  useEffect(() => {
+    getCurrentSessionUser()
+      .then(setUser)
+      .catch((err) => {
+        // user not logged in or backend error, stay null
+        console.warn("Could not load user session", err);
+      });
+  }, []);
 
   const checkoutLinks = useMemo(
     () => ({
@@ -162,6 +173,12 @@ export default function PricingPage() {
       return;
     }
 
+    if (!user) {
+      // Require login before showing checkout
+      window.location.assign(`/login?redirect=${encodeURIComponent("/pricing")}`);
+      return;
+    }
+
     const link = plan.key === "launch" ? checkoutLinks.launch : checkoutLinks.starter;
 
     if (!link) {
@@ -169,7 +186,11 @@ export default function PricingPage() {
       return;
     }
 
-    window.open(link, "_blank", "noopener,noreferrer");
+    // Append user's email to the checkout link so Dodo captures it
+    const checkoutUrl = new URL(link);
+    checkoutUrl.searchParams.set("customer_email", user.email || "");
+
+    window.open(checkoutUrl.toString(), "_blank", "noopener,noreferrer");
   };
 
   const getPerThousandCost = (plan: PlanConfig): string => {
@@ -362,9 +383,29 @@ export default function PricingPage() {
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
               Add credits without changing your plan: <span className="text-[var(--text-primary)] font-semibold">{formatInr(TOPUP_PRICE_PER_1000)} per 1,000 credits</span>.
             </p>
-            <p className="mt-2 text-xs text-[var(--text-muted)]">
+            <p className="mt-2 text-xs text-[var(--text-muted)] mt-1">
               Top-ups are useful for seasonal spikes so your collection flow does not pause mid-campaign.
             </p>
+            <div className="mt-4">
+              <button
+                onClick={() => {
+                  if (!user) {
+                    window.location.assign(`/login?redirect=${encodeURIComponent("/pricing")}`);
+                    return;
+                  }
+                  if (process.env.NEXT_PUBLIC_DODO_TOPUP_URL) {
+                    const topupUrl = new URL(process.env.NEXT_PUBLIC_DODO_TOPUP_URL);
+                    topupUrl.searchParams.set("customer_email", user.email || "");
+                    window.open(topupUrl.toString(), "_blank", "noopener,noreferrer");
+                  } else {
+                    window.location.assign(`mailto:rishetmehra11@gmail.com?subject=LeadPilot Credit Top-up`);
+                  }
+                }}
+                className="btn-secondary px-4 py-2 text-sm transition-all"
+              >
+                Buy 1,000 Credits
+              </button>
+            </div>
           </div>
         </section>
 
