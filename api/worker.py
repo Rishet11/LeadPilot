@@ -141,9 +141,15 @@ def _run_google_maps_job(db: Session, job: Job, targets: list, customer_id: Opti
     from batch_processor import process_batch_targets
 
     outcome = JobRunOutcome(total_leads=0, failed_targets=0, target_errors=[])
+
+    def on_progress(count: int):
+        # Prevent UI bouncing by adding completed target leads to active target count
+        job.leads_found = outcome.total_leads + count
+        db.commit()
+
     for target in targets:
         try:
-            leads_data = process_batch_targets([target])
+            leads_data = process_batch_targets([target], progress_callback=on_progress)
             for lead_dict in leads_data:
                 _persist_google_map_lead(db, customer_id, lead_dict)
                 outcome.total_leads += 1
@@ -161,9 +167,14 @@ def _run_instagram_job(db: Session, job: Job, targets: list, customer_id: Option
     from instagram_pipeline import process_instagram_targets
 
     outcome = JobRunOutcome(total_leads=0, failed_targets=0, target_errors=[])
+
+    def on_progress(count: int):
+        job.leads_found = outcome.total_leads + count
+        db.commit()
+
     for target in targets:
         try:
-            leads_data = process_instagram_targets([target])
+            leads_data = process_instagram_targets([target], progress_callback=on_progress)
             for lead_dict in leads_data:
                 _persist_instagram_lead(db, customer_id, lead_dict)
                 outcome.total_leads += 1

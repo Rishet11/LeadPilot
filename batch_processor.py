@@ -18,13 +18,14 @@ def load_batch_config(config_path: str = "batch_config.json") -> dict:
         return json.load(f)
 
 
-def process_batch_targets(targets: list) -> list:
+def process_batch_targets(targets: list, progress_callback = None) -> list:
     """
     Process batch targets and return leads as list of dicts.
     Used by the API for programmatic access.
 
     Args:
         targets: List of dicts with 'city', 'category', 'limit' keys
+        progress_callback: Optional progress streaming function
 
     Returns:
         List of lead dictionaries
@@ -43,7 +44,8 @@ def process_batch_targets(targets: list) -> list:
                 category=category,
                 limit=limit,
                 dry_run=target.get("dry_run", False),
-                agent_mode=target.get("agent_mode", True)
+                agent_mode=target.get("agent_mode", True),
+                progress_callback=progress_callback
             )
 
             if not df.empty:

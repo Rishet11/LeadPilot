@@ -125,13 +125,14 @@ def score_profile(profile: dict, target_city: str = None) -> int:
     return score
 
 
-def process_instagram_targets(targets: list) -> list:
+def process_instagram_targets(targets: list, progress_callback = None) -> list:
     """
     Process Instagram targets and return leads as list of dicts.
     Used by the API for programmatic access.
 
     Args:
         targets: List of dicts with 'keyword', 'limit' keys
+        progress_callback: Optional callback for live progress streaming
 
     Returns:
         List of lead dictionaries
@@ -139,7 +140,7 @@ def process_instagram_targets(targets: list) -> list:
     all_leads = []
 
     for target in targets:
-        leads = process_target(target)
+        leads = process_target(target, progress_callback=progress_callback)
         all_leads.extend(leads)
 
     if not all_leads:
@@ -174,7 +175,7 @@ def process_instagram_targets(targets: list) -> list:
     return final_leads
 
 
-def process_target(target: dict) -> list:
+def process_target(target: dict, progress_callback = None) -> list:
     """Process a single keyword target."""
     keyword = target.get("keyword")
     limit = target.get("limit", 30)
@@ -188,7 +189,7 @@ def process_target(target: dict) -> list:
         run_id = run_data["run_id"]
         dataset_id = run_data["dataset_id"]
 
-        status = poll_run_status(run_id)
+        status = poll_run_status(run_id, dataset_id=dataset_id, progress_callback=progress_callback)
         if status != "SUCCEEDED":
             logger.error("Scraper failed: %s", status)
             return []

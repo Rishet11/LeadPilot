@@ -55,7 +55,8 @@ def load_config(config_path: str = "config.json") -> dict:
 
 def run_pipeline(city: str, category: str, limit: int,
                  dry_run: bool = False, check_websites: bool = False,
-                 agent_mode: bool = True, find_emails: bool = False):
+                 agent_mode: bool = True, find_emails: bool = False,
+                 progress_callback = None):
     """
     Run the complete lead generation pipeline.
 
@@ -99,7 +100,7 @@ def run_pipeline(city: str, category: str, limit: int,
             logger.info("Dataset ID: %s", result['dataset_id'])
 
             logger.info("Waiting for scraper to complete...")
-            status = poll_run_status(result['run_id'])
+            status = poll_run_status(result['run_id'], dataset_id=result.get('dataset_id'), progress_callback=progress_callback)
 
             if status != "SUCCEEDED":
                 logger.error("Scraping failed with status: %s", status)

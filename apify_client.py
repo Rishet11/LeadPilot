@@ -77,7 +77,7 @@ def run_google_maps_scraper(city: str, category: str, limit: int = 100) -> dict:
     }
 
 
-def poll_run_status(run_id: str, max_wait: int = 300, poll_interval: int = 10) -> str:
+def poll_run_status(run_id: str, max_wait: int = 300, poll_interval: int = 10, dataset_id: str = None, progress_callback = None) -> str:
     """
     Poll the run status until completion.
     
@@ -85,6 +85,8 @@ def poll_run_status(run_id: str, max_wait: int = 300, poll_interval: int = 10) -
         run_id: The Apify run ID
         max_wait: Maximum seconds to wait
         poll_interval: Seconds between polls
+        dataset_id: Optional dataset ID to poll for progress
+        progress_callback: Optional callback to stream live item count (signature: (count: int))
         
     Returns:
         Final status (SUCCEEDED, FAILED, etc.)
@@ -105,6 +107,16 @@ def poll_run_status(run_id: str, max_wait: int = 300, poll_interval: int = 10) -
         
         status = response.json()["data"]["status"]
         logger.info("Run status: %s (elapsed: %ds)", status, elapsed)
+        
+        if progress_callback and dataset_id:
+            try:
+                ds_url = f"{APIFY_BASE_URL}/datasets/{dataset_id}"
+                ds_resp = requests.get(ds_url, headers=headers, timeout=APIFY_HTTP_TIMEOUT_SECONDS)
+                if ds_resp.status_code == 200:
+                    item_count = ds_resp.json()["data"]["itemCount"]
+                    progress_callback(item_count)
+            except Exception as e:
+                logger.debug("Failed to fetch dataset progress: %s", e)
         
         if status in ["SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"]:
             return status
